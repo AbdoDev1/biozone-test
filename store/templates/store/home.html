@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+
+{% block title %}Biozone | منصة المستلزمات الطبية بالجملة والقطاعي{% endblock %}
+
+{% block extra_head %}
+<meta name="description" content="Biozone — منصة أونلاين لبيع المستلزمات الطبية للصيدليات والمستشفيات والعيادات، بالجملة وبالقطاعي، بأسعار موثوقة وتوصيل سريع.">
+<link rel="canonical" href="{{ request.scheme }}://{{ request.get_host }}/">
+{% endblock %}
+
+{% block body_attrs %}
+hx-on:cartUpdated="htmx.ajax('GET','{% url 'orders:cart_badge' %}',{target:'#cart-badge',swap:'innerHTML'})"
+{% endblock %}
+
+{% block content %}
+
+<!-- Hero -->
+<div class="bg-blue-700 text-white text-center py-10 px-4">
+    <h1 class="text-3xl font-bold mb-2">
+        متجر المستلزمات الطبية
+    </h1>
+
+    <p class="text-blue-200 mb-6">
+        أكثر من {{ products|length }} منتج متاح للطلب
+    </p>
+
+    <!-- Search -->
+    <div class="max-w-xl mx-auto">
+        <input
+            type="text"
+            name="q"
+            placeholder="ابحث عن منتج..."
+            value="{{ search_q }}"
+            class="w-full px-4 py-3 rounded-xl text-gray-800 text-base outline-none"
+            hx-get="{% url 'store:home' %}"
+            hx-trigger="keyup changed delay:400ms"
+            hx-target="#product-grid"
+            hx-include="#filter-form"
+            hx-swap="innerHTML"
+        >
+    </div>
+</div>
+
+<div class="max-w-7xl mx-auto px-4 py-8 flex flex-col md:flex-row gap-6">
+
+    <!-- Sidebar -->
+    <form id="filter-form" class="w-full md:w-56 md:shrink-0 space-y-6">
+
+        <!-- Categories -->
+        <div>
+            <h3 class="font-bold text-gray-700 mb-3">
+                الأقسام
+            </h3>
+
+            <div class="space-y-2">
+
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input
+                        type="radio"
+                        name="category"
+                        value=""
+                        {% if not selected_category %}checked{% endif %}
+                        class="accent-blue-600"
+                        hx-get="{% url 'store:home' %}"
+                        hx-trigger="change"
+                        hx-target="#product-grid"
+                        hx-include="#filter-form"
+                        hx-swap="innerHTML">
+
+                    <span class="text-sm text-gray-600">
+                        الكل
+                    </span>
+                </label>
+
+                {% for cat in categories %}
+
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input
+                        type="radio"
+                        name="category"
+                        value="{{ cat.slug }}"
+                        {% if selected_category == cat.slug %}checked{% endif %}
+                        class="accent-blue-600"
+                        hx-get="{% url 'store:home' %}"
+                        hx-trigger="change"
+                        hx-target="#product-grid"
+                        hx-include="#filter-form"
+                        hx-swap="innerHTML">
+
+                    <span class="text-sm text-gray-600">
+                        {{ cat.name }}
+                    </span>
+                </label>
+
+                {% endfor %}
+
+            </div>
+        </div>
+
+        <!-- Manufacturers -->
+        {% if manufacturers %}
+
+        <div>
+
+            <h3 class="font-bold text-gray-700 mb-3">
+                الشركة المصنعة
+            </h3>
+
+            <div class="space-y-2">
+
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input
+                        type="radio"
+                        name="manufacturer"
+                        value=""
+                        {% if not selected_manufacturer %}checked{% endif %}
+                        class="accent-blue-600"
+                        hx-get="{% url 'store:home' %}"
+                        hx-trigger="change"
+                        hx-target="#product-grid"
+                        hx-include="#filter-form"
+                        hx-swap="innerHTML">
+
+                    <span class="text-sm text-gray-600">
+                        الكل
+                    </span>
+                </label>
+
+                {% for m in manufacturers %}
+
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input
+                        type="radio"
+                        name="manufacturer"
+                        value="{{ m }}"
+                        {% if selected_manufacturer == m %}checked{% endif %}
+                        class="accent-blue-600"
+                        hx-get="{% url 'store:home' %}"
+                        hx-trigger="change"
+                        hx-target="#product-grid"
+                        hx-include="#filter-form"
+                        hx-swap="innerHTML">
+
+                    <span class="text-sm text-gray-600">
+                        {{ m }}
+                    </span>
+                </label>
+
+                {% endfor %}
+
+            </div>
+
+        </div>
+
+        {% endif %}
+
+    </form>
+
+    <!-- Product Grid -->
+    <div class="flex-1">
+        <div id="product-grid">
+            {% include 'store/partials/product_grid.html' %}
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

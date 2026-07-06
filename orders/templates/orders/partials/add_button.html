@@ -1,0 +1,29 @@
+{# يتغير لونه بعد الإضافة. hx-target="this" + hx-swap="outerHTML" عشان يستبدل نفسه #}
+{# دلوقتي فيه خانة عدد لكل المنتجات (مش بس القابلة للتجزئة) — نفس نمط الكرتونة/القطعة #}
+{% if in_cart %}
+  <form hx-post="{% url 'orders:cart_add' unit.pk %}"
+        hx-target="this"
+        hx-swap="outerHTML"
+        class="flex items-stretch gap-2 mt-2">
+    {% csrf_token %}
+    <input type="number" name="quantity" value="1" min="1"
+           class="w-14 border border-gray-200 rounded-lg px-1 text-center text-xs outline-none focus:border-blue-400">
+    <button type="submit"
+            class="flex-1 bg-green-600 hover:bg-green-700 text-white text-xs py-2 rounded-lg transition flex items-center justify-center gap-1">
+      ✓ تمت الإضافة
+    </button>
+  </form>
+{% else %}
+  <form hx-post="{% url 'orders:cart_add' unit.pk %}"
+        hx-target="this"
+        hx-swap="outerHTML"
+        class="flex items-stretch gap-2 mt-2">
+    {% csrf_token %}
+    <input type="number" name="quantity" value="1" min="1"
+           class="w-14 border border-gray-200 rounded-lg px-1 text-center text-xs outline-none focus:border-blue-400">
+    <button type="submit"
+            class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs py-2 rounded-lg transition flex items-center justify-center gap-1">
+      🛒 أضف إلى السلة
+    </button>
+  </form>
+{% endif %}

@@ -1,0 +1,128 @@
+{% extends 'staff/base.html' %}
+{% block title %}المنتجات — Biozone{% endblock %}
+{% block content %}
+
+<div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
+    <h1 class="text-2xl font-bold text-gray-800">المنتجات</h1>
+    <div class="flex flex-col sm:flex-row gap-2">
+        <a href="{% url 'staff:product_add' %}"
+           class="bg-green-600 hover:bg-green-700 text-white text-sm px-4 py-2 rounded-lg transition">
+            + إضافة منتج
+        </a>
+        <a href="{% url 'staff:import_products' %}"
+           class="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded-lg transition">
+            استيراد من Excel
+        </a>
+    </div>
+</div>
+
+<!-- بحث وفلتر -->
+<form method="GET" class="bg-white rounded-xl shadow p-4 mb-6 flex flex-col sm:flex-row gap-3 sm:items-end">
+    <div class="flex-1">
+        <label class="text-xs text-gray-500 mb-1 block">بحث</label>
+        <input type="text" name="q" value="{{ search_q }}"
+               placeholder="اسم المنتج..."
+               class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400">
+    </div>
+    <div class="w-full sm:w-48">
+        <label class="text-xs text-gray-500 mb-1 block">القسم</label>
+        <select name="category"
+                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400">
+            <option value="">الكل</option>
+            {% for cat in categories %}
+            <option value="{{ cat.slug }}" {% if selected_category == cat.slug %}selected{% endif %}>
+                {{ cat.name }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+    <button type="submit"
+            class="bg-gray-800 text-white text-sm px-4 py-2 rounded-lg hover:bg-gray-700 transition">
+        بحث
+    </button>
+</form>
+
+<!-- جدول المنتجات -->
+<div class="bg-white rounded-xl shadow overflow-x-auto">
+    <table class="w-full text-sm min-w-[640px]">
+        <thead class="bg-gray-50 text-gray-600 border-b border-gray-200">
+            <tr>
+                <th class="px-4 py-3 text-right">المنتج</th>
+                <th class="px-4 py-3 text-right">القسم</th>
+                <th class="px-4 py-3 text-right">الشركة</th>
+                <th class="px-4 py-3 text-right">سعر القطعة</th>
+                <th class="px-4 py-3 text-right">المخزون</th>
+                <th class="px-4 py-3 text-right">الحالة</th>
+                <th class="px-4 py-3 text-right">إجراءات</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            {% for product in products %}
+            <tr class="hover:bg-gray-50 transition">
+                <td class="px-4 py-3">
+                    <div class="flex items-center gap-3">
+                        {% if product.image %}
+                            <img src="{{ product.image.url }}" class="w-10 h-10 rounded-lg object-cover">
+                        {% else %}
+                            <div class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-300 text-xs">
+                                لا صورة
+                            </div>
+                        {% endif %}
+                        <div>
+                            <p class="font-medium text-gray-800">{{ product.name_ar }}</p>
+                            {% if product.name_en %}
+                                <p class="text-xs text-gray-400">{{ product.name_en }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </td>
+                <td class="px-4 py-3 text-gray-600">{{ product.category.name }}</td>
+                <td class="px-4 py-3 text-gray-500">{{ product.manufacturer|default:"—" }}</td>
+                <td class="px-4 py-3 font-semibold text-blue-700">
+                    {% with unit=product.units.first %}
+                        {% if unit %}{{ unit.unit_price }} ج.م{% else %}—{% endif %}
+                    {% endwith %}
+                </td>
+                <td class="px-4 py-3">
+                    {% with unit=product.units.first %}
+                        {% if unit.inventory %}
+                            <span class="{% if unit.inventory.is_low %}text-red-600 font-bold{% else %}text-green-600{% endif %}">
+                                {{ unit.inventory.available }}
+                            </span>
+                        {% else %}—{% endif %}
+                    {% endwith %}
+                </td>
+                <td class="px-4 py-3">
+                    {% if product.is_active %}
+                        <span class="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full">نشط</span>
+                    {% else %}
+                        <span class="bg-red-100 text-red-600 text-xs px-2 py-1 rounded-full">معطل</span>
+                    {% endif %}
+                </td>
+                <td class="px-4 py-3">
+                    <div class="flex gap-2">
+                        <a href="{% url 'staff:product_edit' product.pk %}"
+                           class="bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs px-3 py-1 rounded-lg transition">
+                            تعديل
+                        </a>
+                        {% if request.user.role == 'ADMIN' %}
+                        <a href="{% url 'staff:product_delete' product.pk %}"
+                           class="bg-red-50 hover:bg-red-100 text-red-600 text-xs px-3 py-1 rounded-lg transition">
+                            حذف
+                        </a>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" class="text-center py-10 text-gray-400">لا توجد منتجات</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<p class="text-xs text-gray-400 mt-3">إجمالي: {{ products|length }} منتج</p>
+
+{% endblock %}

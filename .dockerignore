@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+*.sqlite3
+.env
+.env.production
+.git/
+media/
+staticfiles/
+locustfile.py
+docker-compose.yml

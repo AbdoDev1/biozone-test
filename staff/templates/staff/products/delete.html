@@ -1,0 +1,39 @@
+{% extends 'staff/base.html' %}
+{% block title %}حذف منتج — Biozone{% endblock %}
+{% block content %}
+
+<div class="max-w-md mx-auto">
+    <div class="bg-white rounded-xl shadow p-8 text-center">
+        {% if has_stock %}
+        <div class="text-5xl mb-4">⚠️</div>
+        <h1 class="text-xl font-bold text-gray-800 mb-2">تعطيل المنتج</h1>
+        <p class="text-gray-500 mb-2">
+            المنتج <span class="font-bold text-yellow-600">{{ product.name_ar }}</span>
+            له مخزون موجود.
+        </p>
+        <p class="text-sm text-yellow-600 bg-yellow-50 rounded-lg px-4 py-2 mb-6">
+            سيتم تعطيله وإخفاؤه من المتجر بدل الحذف.
+        </p>
+        {% else %}
+        <div class="text-5xl mb-4">🗑️</div>
+        <h1 class="text-xl font-bold text-gray-800 mb-2">تأكيد الحذف</h1>
+        <p class="text-gray-500 mb-6">
+            سيتم حذف المنتج <span class="font-bold text-red-600">{{ product.name_ar }}</span> نهائيًا، ولا يمكن التراجع عن هذا الإجراء.
+        </p>
+        {% endif %}
+
+        <form method="POST" class="flex gap-3 justify-center">
+            {% csrf_token %}
+            <button type="submit"
+                    class="{% if has_stock %}bg-yellow-500 hover:bg-yellow-600{% else %}bg-red-600 hover:bg-red-700{% endif %} text-white font-semibold px-6 py-2 rounded-lg transition">
+                {% if has_stock %}تعطيل{% else %}حذف نهائي{% endif %}
+            </button>
+            <a href="{% url 'staff:product_list' %}"
+               class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold px-6 py-2 rounded-lg transition">
+                إلغاء
+            </a>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

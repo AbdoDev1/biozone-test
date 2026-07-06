@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Biozone ERP{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>[x-cloak] { display: none !important; }</style>
+</head>
+<body class="bg-gray-100 min-h-screen" x-data="{ sidebarOpen: window.innerWidth >= 768 }">
+<!-- Topbar -->
+<header class="fixed top-0 right-0 left-0 h-14 bg-white shadow z-30 flex items-center px-4 gap-4">
+    <button @click="sidebarOpen = !sidebarOpen" class="text-gray-500 hover:text-gray-800">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+    </button>
+    <span class="font-bold text-blue-700 text-lg">Biozone ERP</span>
+    <div class="mr-auto flex items-center gap-4">
+        <span class="text-sm text-gray-500">{{ request.user.username }}</span>
+        <a href="{% url 'staff:logout' %}"
+           class="text-sm text-red-500 hover:underline">تسجيل الخروج</a>
+    </div>
+</header>
+
+<!-- Backdrop (موبايل بس — بيقفل السايدبار لما تدوس برّاه) -->
+<div x-show="sidebarOpen"
+     @click="sidebarOpen = false"
+     x-cloak
+     class="fixed inset-0 bg-black/30 z-10 md:hidden"></div>
+
+<!-- Sidebar -->
+<aside class="fixed top-14 bottom-0 right-0 bg-white shadow-md z-20 transition-all duration-300 overflow-hidden"
+       :class="sidebarOpen ? 'w-64 md:w-56' : 'w-0'">
+    <nav class="p-4 space-y-1 text-sm w-64 md:w-56">
+        <a href="{% url 'staff:dashboard' %}"
+           class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-blue-50 text-gray-700 hover:text-blue-600">
+            🏠 الرئيسية
+        </a>
+        <a href="{% url 'staff:clients' %}"
+           class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-blue-50 text-gray-700 hover:text-blue-600">
+            👥 العملاء
+        </a>
+        <a href="{% url 'staff:inventory' %}"
+           class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-blue-50 text-gray-700 hover:text-blue-600">
+            📦 المخزون
+        </a>
+        <a href="{% url 'staff:order_list' %}"
+           class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-blue-50 text-gray-700 hover:text-blue-600">
+            🧾 الطلبات
+        </a>
+        <a href="{% url 'staff:product_list' %}"
+           class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-blue-50 text-gray-700 hover:text-blue-600">
+            🛍️ المنتجات
+        </a>
+        {% if request.user.has_accounting_access %}
+        <a href="{% url 'staff:accounting_overview' %}"
+           class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-blue-50 text-gray-700 hover:text-blue-600">
+            💰 الحسابات
+        </a>
+        {% endif %}
+        <hr class="my-2">
+        <a href="/admin/"
+           class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-blue-50 text-gray-500 hover:text-blue-600 text-xs">
+            ⚙️ لوحة الإدارة
+        </a>
+    </nav>
+</aside>
+<!-- Main Content -->
+<main class="pt-14 transition-all duration-300"
+      :class="sidebarOpen ? 'md:mr-56' : 'mr-0'">
+    {% if messages %}
+    <div class="fixed top-16 left-1/2 -translate-x-1/2 z-50 space-y-2">
+        {% for message in messages %}
+        <div class="px-6 py-3 rounded-lg shadow text-white text-sm
+            {% if message.tags == 'success' %}bg-green-500
+            {% elif message.tags == 'error' %}bg-red-500
+            {% elif message.tags == 'warning' %}bg-yellow-500
+            {% else %}bg-blue-500{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    <div class="p-6">
+        {% block content %}{% endblock %}
+    </div>
+</main>
+</body>
+</html>

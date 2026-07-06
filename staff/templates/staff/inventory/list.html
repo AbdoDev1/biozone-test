@@ -1,0 +1,53 @@
+{% extends 'staff/base.html' %}
+{% block title %}المخزون — Biozone ERP{% endblock %}
+{% block content %}
+
+<h1 class="text-2xl font-bold text-gray-800 mb-6">تقرير المخزون</h1>
+
+<div class="bg-white rounded-xl shadow overflow-x-auto">
+    <table class="w-full text-sm min-w-[640px]">
+        <thead class="bg-gray-50 text-gray-600">
+            <tr>
+                <th class="px-4 py-3 text-right">المنتج</th>
+                <th class="px-4 py-3 text-right">الوحدات</th>
+                <th class="px-4 py-3 text-right">الرصيد (بالقطعة)</th>
+                <th class="px-4 py-3 text-right">محجوز</th>
+                <th class="px-4 py-3 text-right">متاح</th>
+                <th class="px-4 py-3 text-right">الحالة</th>
+                <th class="px-4 py-3 text-right">تفاصيل</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            {% for item in items %}
+            <tr class="hover:bg-gray-50 {% if item.is_low %}bg-red-50{% endif %}">
+                <td class="px-4 py-3 font-medium">{{ item.product.display_name }}</td>
+                <td class="px-4 py-3 text-xs text-gray-500">
+                    {% for unit in item.product.units.all %}
+                        {{ unit.name }}{% if unit.qty_in_small > 1 %} ({{ unit.qty_in_small }} قطعة){% endif %}{% if not forloop.last %} / {% endif %}
+                    {% endfor %}
+                </td>
+                <td class="px-4 py-3">{{ item.quantity }}</td>
+                <td class="px-4 py-3 text-yellow-600">{{ item.reserved }}</td>
+                <td class="px-4 py-3 font-bold">{{ item.available }}</td>
+                <td class="px-4 py-3">
+                    {% if item.is_low %}
+                    <span class="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs">منخفض</span>
+                    {% else %}
+                    <span class="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs">متاح</span>
+                    {% endif %}
+                </td>
+                <td class="px-4 py-3">
+                    <a href="{% url 'staff:inventory_detail' item.pk %}"
+                       class="text-blue-600 hover:underline text-xs">عرض</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" class="px-4 py-8 text-center text-gray-400">لا يوجد بيانات مخزون</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}

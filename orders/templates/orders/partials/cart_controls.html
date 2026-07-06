@@ -1,0 +1,44 @@
+{% if quantity > 0 %}
+
+<div class="flex items-center gap-2 mt-3">
+
+    <button
+        hx-post="{% url 'orders:cart_minus' unit_id %}"
+        hx-target="closest div"
+        hx-swap="outerHTML"
+        class="w-8 h-8 rounded-lg bg-gray-200 hover:bg-gray-300">
+        −
+    </button>
+
+    <span class="font-bold w-8 text-center">
+        {{ quantity }}
+    </span>
+
+    <button
+        hx-post="{% url 'orders:cart_plus' unit_id %}"
+        hx-target="closest div"
+        hx-swap="outerHTML"
+        class="w-8 h-8 rounded-lg bg-blue-600 text-white hover:bg-blue-700">
+        +
+    </button>
+
+</div>
+
+{% else %}
+
+<form
+    hx-post="{% url 'orders:cart_add' unit_id %}"
+    hx-target="this"
+    hx-swap="outerHTML">
+
+    {% csrf_token %}
+
+    <button
+        type="submit"
+        class="mt-2 w-full bg-blue-600 hover:bg-blue-700 text-white text-xs py-2 rounded-lg transition">
+        🛒 أضف إلى السلة
+    </button>
+
+</form>
+
+{% endif %}

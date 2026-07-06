@@ -1,0 +1,228 @@
+{% extends 'staff/base.html' %}
+{% block title %}الحسابات — Biozone ERP{% endblock %}
+{% block content %}
+
+<div x-data="{ tab: 'overview' }" class="max-w-6xl">
+
+    <div class="mb-4">
+        <h1 class="text-2xl font-bold text-gray-800">الحسابات</h1>
+        <p class="text-gray-500 text-sm mt-1">نظرة عامة على مديونيات كل العملاء وحركات الحسابات على مستوى النظام.</p>
+    </div>
+
+    <!-- ملخص -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <div class="bg-white rounded-2xl shadow p-5">
+            <p class="text-sm text-gray-500 mb-1">إجمالي المديونيات على العملاء</p>
+            <p class="text-2xl font-bold text-red-600">{{ total_receivable }} ج.م</p>
+        </div>
+        <div class="bg-white rounded-2xl shadow p-5">
+            <p class="text-sm text-gray-500 mb-1">إجمالي الأرصدة لصالح العملاء</p>
+            <p class="text-2xl font-bold text-green-600">{{ total_credit }} ج.م</p>
+        </div>
+        <div class="bg-white rounded-2xl shadow p-5">
+            <p class="text-sm text-gray-500 mb-1">عدد العملاء المديونين</p>
+            <p class="text-2xl font-bold text-gray-800">{{ debtors_count }}</p>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow overflow-hidden">
+        <div class="flex border-b overflow-x-auto text-sm">
+            <button @click="tab = 'overview'"
+                    :class="tab === 'overview' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                    class="px-5 py-3 border-b-2 font-medium whitespace-nowrap transition">
+                أرصدة العملاء
+            </button>
+            <button @click="tab = 'transactions'"
+                    :class="tab === 'transactions' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                    class="px-5 py-3 border-b-2 font-medium whitespace-nowrap transition">
+                آخر الحركات
+            </button>
+            <button @click="tab = 'entry'"
+                    :class="tab === 'entry' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                    class="px-5 py-3 border-b-2 font-medium whitespace-nowrap transition">
+                تسجيل دفعة / تسوية
+            </button>
+        </div>
+
+        <!-- تبويب: أرصدة العملاء -->
+        <div x-show="tab === 'overview'" class="p-4 md:p-6">
+            <div class="flex justify-end mb-4">
+                <a href="{% url 'staff:accounting_export' %}"
+                   class="text-sm bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded-lg transition">
+                    ⬇ تصدير Excel
+                </a>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="text-right text-gray-500 border-b">
+                            <th class="py-2 px-2">العميل</th>
+                            <th class="py-2 px-2">نوع النشاط</th>
+                            <th class="py-2 px-2">الرصيد</th>
+                            <th class="py-2 px-2"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in rows %}
+                        <tr class="border-b last:border-0 hover:bg-gray-50">
+                            <td class="py-2 px-2 font-medium">{{ row.profile.business_name }}</td>
+                            <td class="py-2 px-2 text-gray-500">{{ row.profile.get_business_type_display }}</td>
+                            <td class="py-2 px-2 font-semibold
+                                {% if row.balance > 0 %}text-red-600{% elif row.balance < 0 %}text-green-600{% else %}text-gray-400{% endif %}">
+                                {% if row.balance > 0 %}
+                                    {{ row.balance }} ج.م
+                                {% elif row.balance < 0 %}
+                                    له رصيد {{ row.balance_abs }} ج.م
+                                {% else %}
+                                    0 ج.م
+                                {% endif %}
+                            </td>
+                            <td class="py-2 px-2">
+                                <a href="{% url 'staff:client_detail' row.profile.pk %}" class="text-blue-600 hover:underline text-xs">
+                                    عرض الحساب
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="py-6 text-center text-gray-400">لا يوجد عملاء نشطون حتى الآن.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- تبويب: آخر الحركات -->
+        <div x-show="tab === 'transactions'" class="p-4 md:p-6">
+            <div class="overflow-x-auto">
+                <table class="w-full text-xs sm:text-sm">
+                    <thead class="bg-gray-50 text-gray-600">
+                        <tr>
+                            <th class="px-3 py-2 text-right">التاريخ</th>
+                            <th class="px-3 py-2 text-right">العميل</th>
+                            <th class="px-3 py-2 text-right">النوع</th>
+                            <th class="px-3 py-2 text-right">تفاصيل</th>
+                            <th class="px-3 py-2 text-right">المبلغ</th>
+                            <th class="px-3 py-2 text-right">بواسطة</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        {% for tx in recent_transactions %}
+                        <tr>
+                            <td class="px-3 py-2 text-gray-500">{{ tx.created_at|date:"Y-m-d H:i" }}</td>
+                            <td class="px-3 py-2 font-medium">{{ tx.client.client_profile.business_name|default:tx.client.username }}</td>
+                            <td class="px-3 py-2">
+                                <span class="px-2 py-0.5 rounded-full text-xs
+                                    {% if tx.kind == 'INVOICE' %}bg-blue-100 text-blue-700
+                                    {% elif tx.kind == 'PAYMENT' %}bg-green-100 text-green-700
+                                    {% else %}bg-orange-100 text-orange-700{% endif %}">
+                                    {{ tx.get_kind_display }}
+                                </span>
+                            </td>
+                            <td class="px-3 py-2 text-gray-500">
+                                {% if tx.invoice %}{{ tx.invoice.invoice_number }}{% endif %}
+                                {{ tx.note }}
+                                {% if tx.method %}({{ tx.get_method_display }}){% endif %}
+                            </td>
+                            <td class="px-3 py-2 font-medium {% if tx.amount > 0 %}text-red-600{% else %}text-green-600{% endif %}">
+                                {{ tx.amount }}
+                            </td>
+                            <td class="px-3 py-2 text-gray-400">{{ tx.created_by.username|default:'—' }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="px-3 py-6 text-center text-gray-400">لا يوجد حركات مسجّلة حتى الآن.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- تبويب: تسجيل دفعة / تسوية -->
+        <div x-show="tab === 'entry'" class="p-4 md:p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                <form method="post" action="{% url 'staff:accounting_quick_entry' %}"
+                      class="border border-gray-100 rounded-xl p-4 space-y-3">
+                    {% csrf_token %}
+                    <input type="hidden" name="kind" value="PAYMENT">
+                    <h4 class="text-sm font-semibold text-gray-700">تسجيل دفعة</h4>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">العميل</label>
+                        <select name="client_id" required
+                                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400">
+                            <option value="">اختر عميل...</option>
+                            {% for client in active_clients %}
+                            <option value="{{ client.user_id }}">{{ client.business_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">المبلغ</label>
+                        <input type="number" step="0.01" min="0.01" name="amount" required
+                               class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">طريقة السداد</label>
+                        <select name="method" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400">
+                            {% for value, label in payment_methods %}
+                            <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">ملاحظة (اختياري)</label>
+                        <input type="text" name="note"
+                               class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400">
+                    </div>
+                    <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white text-sm py-2 rounded-lg">
+                        تسجيل الدفعة
+                    </button>
+                </form>
+
+                <form method="post" action="{% url 'staff:accounting_quick_entry' %}"
+                      class="border border-gray-100 rounded-xl p-4 space-y-3">
+                    {% csrf_token %}
+                    <input type="hidden" name="kind" value="ADJUSTMENT">
+                    <h4 class="text-sm font-semibold text-gray-700">تسوية يدوية</h4>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">العميل</label>
+                        <select name="client_id" required
+                                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400">
+                            <option value="">اختر عميل...</option>
+                            {% for client in active_clients %}
+                            <option value="{{ client.user_id }}">{{ client.business_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">المبلغ</label>
+                        <input type="number" step="0.01" min="0.01" name="amount" required
+                               class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">الاتجاه</label>
+                        <select name="direction" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400">
+                            <option value="increase">زيادة المديونية (عليه)</option>
+                            <option value="decrease">تقليل المديونية (لصالحه)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">السبب <span class="text-red-500">*</span></label>
+                        <input type="text" name="note" required
+                               class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400">
+                    </div>
+                    <button type="submit" class="w-full bg-orange-500 hover:bg-orange-600 text-white text-sm py-2 rounded-lg">
+                        تسجيل التسوية
+                    </button>
+                </form>
+
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}

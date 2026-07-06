@@ -1,0 +1,78 @@
+{% load cart_tags %}
+
+{% with units=product|units_for_client:request.user %}
+{% with unit=units.0 %}
+{% with inv=product.inventory %}
+
+<div class="bg-white rounded-2xl shadow-sm hover:shadow-md transition overflow-hidden group relative">
+
+  {# شارة التوفر #}
+  <div class="absolute top-2 right-2 z-10">
+    {% if unit %}
+      {% if inv and inv.is_available %}
+        {% if inv.is_low %}
+          <span class="inline-flex items-center bg-orange-100 text-orange-700 text-[10px] font-semibold px-2 py-0.5 rounded-full">⚠ كمية محدودة</span>
+        {% else %}
+          <span class="inline-flex items-center bg-green-100 text-green-700 text-[10px] font-semibold px-2 py-0.5 rounded-full">✓ متوفر</span>
+        {% endif %}
+      {% else %}
+        <span class="inline-flex items-center bg-gray-100 text-gray-500 text-[10px] font-semibold px-2 py-0.5 rounded-full">✕ غير متوفر</span>
+      {% endif %}
+    {% endif %}
+  </div>
+
+  <a href="{% url 'store:product_detail' product.pk %}" class="block">
+    {# صورة #}
+    <div class="w-full h-48 bg-gray-100 overflow-hidden">
+      {% if product.image %}
+        <img src="{{ product.image.url }}"
+             alt="{{ product.name_ar }}"
+             class="w-full h-full object-contain p-2 group-hover:scale-105 transition duration-300">
+      {% else %}
+        <div class="w-full h-full flex items-center justify-center text-gray-300">
+          <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                  d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10"/>
+          </svg>
+        </div>
+      {% endif %}
+    </div>
+
+    {# الاسم #}
+    <div class="p-3 pb-0">
+      <h3 class="font-semibold text-gray-800 text-sm leading-snug line-clamp-2 min-h-[2.5rem]">
+        {{ product.name_ar }}
+      </h3>
+    </div>
+  </a>
+
+  {# السعر + الشراء — للمسجّلين بس، من غير أي جملة زيادة #}
+  <div class="p-3">
+    {% if not request.user.is_authenticated %}
+      <a href="{% url 'accounts:login' %}" class="block text-center text-xs text-blue-600 hover:underline mt-1">
+        يرجى تسجيل الدخول لعرض السعر
+      </a>
+    {% elif unit %}
+      {% with price=unit|price_for_client:request.user %}
+        <p class="text-blue-700 font-bold text-sm mb-2">{{ price }} ج.م <span class="text-gray-400 font-normal text-xs">/ {{ unit.name }}</span></p>
+      {% endwith %}
+
+      {% if request.user.role == 'CLIENT' and request.user.status == 'ACTIVE' %}
+        {% if inv and inv.is_available %}
+          {% with cart_qty=request.session.cart|get_item:unit.pk %}
+            {% include "orders/partials/add_button.html" with unit=unit in_cart=cart_qty %}
+          {% endwith %}
+        {% else %}
+          <button disabled class="mt-2 w-full bg-gray-100 text-gray-400 text-xs py-2 rounded-lg cursor-not-allowed">
+            غير متوفر حالياً
+          </button>
+        {% endif %}
+      {% endif %}
+    {% endif %}
+  </div>
+
+</div>
+
+{% endwith %}
+{% endwith %}
+{% endwith %}

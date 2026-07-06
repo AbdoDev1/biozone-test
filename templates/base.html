@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Biozone{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-gray-50 min-h-screen" dir="rtl" {% block body_attrs %}{% endblock %}>
+
+<!-- Navbar -->
+<nav class="bg-white shadow-sm sticky top-0 z-50 px-4 sm:px-6 py-3 flex flex-wrap justify-between items-center gap-2">
+    <a href="{% url 'store:home' %}" class="text-xl font-bold text-blue-700">Biozone</a>
+
+    <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+
+        {% if request.user.is_authenticated %}
+
+            <a href="{% url 'accounts:dashboard' %}" class="text-sm text-gray-500 hover:text-blue-600">
+                {{ request.user.username }}
+            </a>
+
+            {% if request.user.role in 'ADMIN,WAREHOUSE' %}
+
+                <a href="{% url 'staff:dashboard' %}"
+                   class="text-sm bg-gray-800 text-white px-4 py-2 rounded-lg">
+                    لوحة التحكم
+                </a>
+
+            {% elif request.user.role == 'CLIENT' %}
+
+                <a href="{% url 'store:home' %}"
+                   class="text-sm text-gray-600 hover:text-blue-700">
+                    المتجر
+                </a>
+
+                <a href="{% url 'orders:order_list' %}"
+                   class="text-sm text-gray-600 hover:text-blue-700">
+                    الطلبات
+                </a>
+
+                <a href="{% url 'orders:cart' %}"
+                   class="text-sm bg-blue-600 text-white px-4 py-2 rounded-lg relative">
+                    🛒 السلة
+                    <span id="cart-badge" class="absolute -top-1 -left-1">
+                        {% include 'orders/partials/cart_badge.html' with count=request.session.cart|length %}
+                    </span>
+                </a>
+
+            {% endif %}
+
+            <a href="{% url 'accounts:logout' %}"
+               class="text-sm text-red-500 hover:underline">
+                تسجيل الخروج
+            </a>
+
+        {% else %}
+
+            <a href="{% url 'accounts:login' %}"
+               class="text-sm border border-blue-600 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-50 transition">
+                تسجيل الدخول
+            </a>
+
+            <a href="{% url 'accounts:register' %}"
+               class="text-sm bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+                إنشاء حساب جديد
+            </a>
+
+        {% endif %}
+
+    </div>
+</nav>
+
+{% block content %}{% endblock %}
+
+{% block extra_js %}{% endblock %}
+</body>
+</html>

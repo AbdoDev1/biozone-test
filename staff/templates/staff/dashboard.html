@@ -1,0 +1,51 @@
+{% extends 'staff/base.html' %}
+{% block title %}الرئيسية — Biozone ERP{% endblock %}
+{% block content %}
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="bg-white rounded-xl shadow p-6">
+        <p class="text-gray-500 text-sm">طلبات التسجيل</p>
+        <p class="text-3xl font-bold text-yellow-500 mt-1">{{ pending_clients }}</p>
+        <a href="{% url 'staff:clients' %}" class="text-xs text-blue-600 hover:underline mt-2 block">عرض الكل</a>
+    </div>
+    <div class="bg-white rounded-xl shadow p-6">
+        <p class="text-gray-500 text-sm">أصناف المخزون</p>
+        <p class="text-3xl font-bold text-blue-600 mt-1">{{ total_products }}</p>
+        <a href="{% url 'staff:inventory' %}" class="text-xs text-blue-600 hover:underline mt-2 block">عرض المخزون</a>
+    </div>
+    <div class="bg-white rounded-xl shadow p-6">
+        <p class="text-gray-500 text-sm">تنبيهات المخزون</p>
+        <p class="text-3xl font-bold text-red-500 mt-1">{{ low_stock|length }}</p>
+        <a href="{% url 'staff:inventory' %}" class="text-xs text-blue-600 hover:underline mt-2 block">عرض التنبيهات</a>
+    </div>
+</div>
+
+{% if low_stock %}
+<div class="bg-white rounded-xl shadow p-6">
+    <h2 class="text-lg font-semibold text-red-600 mb-4">⚠️ مخزون منخفض</h2>
+    <div class="overflow-x-auto">
+    <table class="w-full text-sm min-w-[480px]">
+        <thead class="bg-gray-50 text-gray-600">
+            <tr>
+                <th class="px-4 py-2 text-right">المنتج</th>
+                <th class="px-4 py-2 text-right">الرصيد</th>
+                <th class="px-4 py-2 text-right">المتاح</th>
+                <th class="px-4 py-2 text-right">الحد الأدنى</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            {% for item in low_stock %}
+            <tr class="bg-red-50">
+                <td class="px-4 py-2">{{ item.product.display_name }}</td>
+                <td class="px-4 py-2">{{ item.quantity }} قطعة</td>
+                <td class="px-4 py-2 font-bold text-red-600">{{ item.available }}</td>
+                <td class="px-4 py-2">{{ item.min_quantity }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,323 @@
+{% extends 'staff/base.html' %}
+{% block title %}{{ title }} — Biozone{% endblock %}
+{% block content %}
+
+<div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold text-gray-800">{{ title }}</h1>
+    <a href="{% url 'staff:product_list' %}"
+       class="text-sm text-gray-500 hover:text-blue-600">← قائمة المنتجات</a>
+</div>
+
+<form method="POST" enctype="multipart/form-data" class="space-y-6">
+    {% csrf_token %}
+
+    <!-- بيانات المنتج -->
+    <div class="bg-white rounded-xl shadow p-6">
+        <h2 class="font-bold text-gray-700 mb-4 pb-2 border-b border-gray-100">بيانات المنتج</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            <div class="md:col-span-2">
+                <label class="text-sm font-medium text-gray-700 mb-1 block">
+                    {{ form.category.label }} <span class="text-red-500">*</span>
+                </label>
+                {{ form.category }}
+                {% if form.category.errors %}
+                    <p class="text-red-500 text-xs mt-1">{{ form.category.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <div>
+                <label class="text-sm font-medium text-gray-700 mb-1 block">
+                    {{ form.name_ar.label }} <span class="text-red-500">*</span>
+                </label>
+                {{ form.name_ar }}
+                {% if form.name_ar.errors %}
+                    <p class="text-red-500 text-xs mt-1">{{ form.name_ar.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <div>
+                <label class="text-sm font-medium text-gray-700 mb-1 block">{{ form.name_en.label }}</label>
+                {{ form.name_en }}
+            </div>
+
+            <div>
+                <label class="text-sm font-medium text-gray-700 mb-1 block">{{ form.manufacturer.label }}</label>
+                {{ form.manufacturer }}
+            </div>
+
+            <div>
+                <label class="text-sm font-medium text-gray-700 mb-1 block">{{ form.image.label }}</label>
+                {% if is_edit and product.image %}
+                    <img src="{{ product.image.url }}" class="w-20 h-20 object-cover rounded-lg mb-2">
+                {% endif %}
+                {{ form.image }}
+            </div>
+
+            <div class="md:col-span-2">
+                <label class="text-sm font-medium text-gray-700 mb-1 block">{{ form.description.label }}</label>
+                {{ form.description }}
+            </div>
+
+            <div class="flex items-center gap-2">
+                {{ form.is_active }}
+                <label class="text-sm font-medium text-gray-700">{{ form.is_active.label }}</label>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- الوحدات -->
+    <div class="bg-white rounded-xl shadow p-6">
+        <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-100">
+            <h2 class="font-bold text-gray-700">الوحدات والأسعار</h2>
+            <button type="button" id="add-unit-row"
+                    class="text-sm text-blue-600 hover:underline font-semibold">+ إضافة وحدة أخرى</button>
+        </div>
+
+        {{ formset.management_form }}
+        {% if formset.non_form_errors %}
+            <p class="text-red-500 text-xs mb-3">{{ formset.non_form_errors.0 }}</p>
+        {% endif %}
+
+        <div id="unit-rows" class="space-y-4">
+            {% for unit_form in formset.forms %}
+            <div class="unit-row border border-gray-100 rounded-lg p-4 relative {% if unit_form.errors %}border-red-300{% endif %}">
+                {% for hidden in unit_form.hidden_fields %}{{ hidden }}{% endfor %}
+                {% if is_edit and not unit_form.instance.pk %}
+                <span class="inline-block text-[11px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full mb-2">
+                    وحدة جديدة — سيتم حفظها مع باقي التعديلات عند الحفظ، دون الحاجة لحفظ منفصل
+                </span>
+                {% endif %}
+                {% if unit_form.non_field_errors %}
+                    <p class="text-red-500 text-xs mb-2">{{ unit_form.non_field_errors.0 }}</p>
+                {% endif %}
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                    <div>
+                        <label class="text-sm font-medium text-gray-700 mb-1 block">
+                            {{ unit_form.name.label }} <span class="text-red-500">*</span>
+                        </label>
+                        {{ unit_form.name }}
+                        {% if unit_form.name.errors %}
+                            <p class="text-red-500 text-xs mt-1">{{ unit_form.name.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium text-gray-700 mb-1 block">{{ unit_form.size.label }}</label>
+                        {{ unit_form.size }}
+                        {% if unit_form.size.errors %}
+                            <p class="text-red-500 text-xs mt-1">{{ unit_form.size.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium text-gray-700 mb-1 block">
+                            {{ unit_form.unit_price.label }} <span class="text-red-500">*</span>
+                        </label>
+                        {{ unit_form.unit_price }}
+                        <p class="text-[11px] text-gray-400 mt-1">إذا كانت هذه وحدة القطعة وتُركت فارغة، سيُحسب سعرها تلقائيًا من سعر الكرتونة مقسومًا على الكمية.</p>
+                        {% if unit_form.unit_price.errors %}
+                            <p class="text-red-500 text-xs mt-1">{{ unit_form.unit_price.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium text-gray-700 mb-1 block">{{ unit_form.qty_in_small.label }}</label>
+                        {{ unit_form.qty_in_small }}
+                        <p class="text-[11px] text-gray-400 mt-1">القطعة = 1، والكرتونة = عدد القطع التي تحتويها</p>
+                        {% if unit_form.qty_in_small.errors %}
+                            <p class="text-red-500 text-xs mt-1">{{ unit_form.qty_in_small.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    {% if not unit_form.instance.pk %}
+                    <div>
+                        <label class="text-sm font-medium text-gray-700 mb-1 block">{{ unit_form.initial_stock.label }}</label>
+                        {{ unit_form.initial_stock }}
+                        {% if unit_form.initial_stock.errors %}
+                            <p class="text-red-500 text-xs mt-1">{{ unit_form.initial_stock.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% if unit_form.instance.pk %}
+                <label class="flex items-center gap-2 mt-3 text-xs text-red-600">
+                    {{ unit_form.DELETE }} احذف هذه الوحدة
+                </label>
+                {% elif formset.forms|length > 1 %}
+                <button type="button" class="remove-unit-row mt-3 text-xs text-gray-400 hover:text-red-500">✕ حذف هذا الصف</button>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% if formset.errors and formset|length > 0 %}
+            {% for unit_form in formset.forms %}{% if unit_form.errors %}
+            <p class="text-red-500 text-sm mt-2">⚠ يوجد خطأ في بيانات إحدى الوحدات أعلاه — يرجى مراجعة الحقول المُعلَّمة باللون الأحمر.</p>
+            {% endif %}{% endfor %}
+        {% endif %}
+
+        <template id="empty-unit-template">
+            <div class="unit-row border border-gray-100 rounded-lg p-4 relative">
+                {{ formset.empty_form.id }}
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                    <div>
+                        <label class="text-sm font-medium text-gray-700 mb-1 block">اسم الوحدة <span class="text-red-500">*</span></label>
+                        {{ formset.empty_form.name }}
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium text-gray-700 mb-1 block">الحجم</label>
+                        {{ formset.empty_form.size }}
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium text-gray-700 mb-1 block">سعر الوحدة <span class="text-red-500">*</span></label>
+                        {{ formset.empty_form.unit_price }}
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium text-gray-700 mb-1 block">الكمية في الوحدة الصغرى</label>
+                        {{ formset.empty_form.qty_in_small }}
+                        <p class="text-[11px] text-gray-400 mt-1">القطعة = 1، والكرتونة = عدد القطع التي تحتويها</p>
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium text-gray-700 mb-1 block">الكمية الابتدائية</label>
+                        {{ formset.empty_form.initial_stock }}
+                    </div>
+                </div>
+                <button type="button" class="remove-unit-row mt-3 text-xs text-gray-400 hover:text-red-500">✕ حذف هذا الصف</button>
+            </div>
+        </template>
+    </div>
+
+    <!-- أزرار -->
+    <div class="flex flex-col sm:flex-row gap-3">
+        <button type="submit"
+                class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 rounded-xl transition">
+            {% if is_edit %}حفظ التعديلات{% else %}إضافة المنتج{% endif %}
+        </button>
+        <a href="{% url 'staff:product_list' %}"
+           class="text-center bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold px-8 py-3 rounded-xl transition">
+            إلغاء
+        </a>
+        {% if is_edit %}
+        <a href="{% url 'staff:product_delete' product.pk %}"
+           class="text-center sm:mr-auto bg-red-50 hover:bg-red-100 text-red-600 font-semibold px-8 py-3 rounded-xl transition">
+            حذف المنتج
+        </a>
+        {% endif %}
+    </div>
+
+</form>
+
+<script>
+(function () {
+    const totalFormsInput = document.querySelector('#id_units-TOTAL_FORMS');
+    const initialFormsInput = document.querySelector('#id_units-INITIAL_FORMS');
+    const rowsContainer = document.getElementById('unit-rows');
+    const template = document.getElementById('empty-unit-template');
+    const addBtn = document.getElementById('add-unit-row');
+
+    // بيرقّم أي صفوف "جديدة" (من غير pk) بترتيب متسلسل من غير فجوات، وبيحدّث
+    // TOTAL_FORMS على أساس العدد الفعلي للصفوف الموجودة في الـ DOM.
+    // ده ضروري لأن Django بيعتبر أي index بين INITIAL_FORMS و TOTAL_FORMS
+    // "فورم موجود ومفروض يتملى"، فلو فيه فجوة (index اتشال من غير ما TOTAL_FORMS
+    // ينزل) الفورم بيفشل كـ "هذا الحقل مطلوب" حتى لو مالوش صف ظاهر في الصفحة خالص،
+    // وده بيسقط الحفظ كله من غير ما يظهر أي سبب واضح للمستخدم.
+    function renumberExtraRows() {
+        const initialCount = parseInt(initialFormsInput.value, 10);
+        const rows = Array.from(rowsContainer.querySelectorAll('.unit-row'));
+        let nextIndex = initialCount;
+        rows.slice(initialCount).forEach(function (row) {
+            row.querySelectorAll('[name], [id], label[for]').forEach(function (el) {
+                ['name', 'id', 'for'].forEach(function (attr) {
+                    if (el.hasAttribute(attr)) {
+                        el.setAttribute(
+                            attr,
+                            el.getAttribute(attr).replace(/units-\d+-/, 'units-' + nextIndex + '-')
+                        );
+                    }
+                });
+            });
+            nextIndex += 1;
+        });
+        totalFormsInput.value = nextIndex;
+    }
+
+    function bindRemove(row) {
+        const btn = row.querySelector('.remove-unit-row');
+        if (btn) {
+            btn.addEventListener('click', function () {
+                row.remove();
+                renumberExtraRows();
+            });
+        }
+    }
+
+    document.querySelectorAll('.unit-row').forEach(bindRemove);
+
+    // حساب سعر الوحدة الصغرى (القطعة) تلقائيًا = سعر الكرتونة ÷ الكمية،
+    // لو الموظف سايب حقل سعرها فاضي. لو كتب سعر بنفسه، بنسيبه ومنلمسوش
+    // إلا لو مسحه تاني (رجع فاضي) فبيرجع للحساب التلقائي.
+    // ده بس شكل مرئي فوري للموظف وقت الكتابة؛ نفس الحساب بيتعمل تاني في
+    // السيرفر (products/pricing.py) كضمان لو الـ JS معطّل أو الصف اتبعت فاضي.
+    function recalcSmallPrice() {
+        const rows = Array.from(rowsContainer.querySelectorAll('.unit-row'));
+        const bySize = {};
+        rows.forEach(function (row) {
+            const sizeField = row.querySelector('[name$="-size"]');
+            if (sizeField && (sizeField.value === 'L' || sizeField.value === 'S')) {
+                bySize[sizeField.value] = row;
+            }
+        });
+        const largeRow = bySize['L'];
+        const smallRow = bySize['S'];
+        if (!largeRow || !smallRow) return;
+
+        const largePriceField = largeRow.querySelector('[name$="-unit_price"]');
+        const largeQtyField = largeRow.querySelector('[name$="-qty_in_small"]');
+        const smallPriceField = smallRow.querySelector('[name$="-unit_price"]');
+        if (!largePriceField || !largeQtyField || !smallPriceField) return;
+
+        // لو الموظف كاتب سعر يدوي في خانة القطعة، منلمسوش
+        if (smallPriceField.dataset.manual === 'true' && smallPriceField.value.trim() !== '') {
+            return;
+        }
+
+        const largePrice = parseFloat(largePriceField.value);
+        const largeQty = parseFloat(largeQtyField.value);
+        if (!largePrice || !largeQty || largePrice <= 0 || largeQty <= 0) {
+            return;
+        }
+        smallPriceField.value = (largePrice / largeQty).toFixed(2);
+        smallPriceField.dataset.manual = 'false';
+    }
+
+    rowsContainer.addEventListener('input', function (e) {
+        const target = e.target;
+        if (target.matches && target.matches('[name$="-unit_price"]')) {
+            const row = target.closest('.unit-row');
+            const sizeField = row ? row.querySelector('[name$="-size"]') : null;
+            if (sizeField && sizeField.value === 'S') {
+                target.dataset.manual = target.value.trim() === '' ? 'false' : 'true';
+            }
+        }
+        recalcSmallPrice();
+    });
+    rowsContainer.addEventListener('change', function (e) {
+        if (e.target.matches && (e.target.matches('[name$="-size"]') || e.target.matches('[name$="-qty_in_small"]'))) {
+            recalcSmallPrice();
+        }
+    });
+    recalcSmallPrice();
+
+    addBtn.addEventListener('click', function () {
+        // أي index مؤقت هنا هيتصحّح فورًا في renumberExtraRows() تحت،
+        // فمش مهم يبقى دقيق وقت الإنشاء.
+        const tempIndex = rowsContainer.querySelectorAll('.unit-row').length;
+        const html = template.innerHTML.replace(/__prefix__/g, tempIndex);
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = html.trim();
+        const newRow = wrapper.firstElementChild;
+        rowsContainer.appendChild(newRow);
+        bindRemove(newRow);
+        renumberExtraRows();
+        recalcSmallPrice();
+    });
+})();
+</script>
+{% endblock %}

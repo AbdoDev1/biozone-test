@@ -1,0 +1,11 @@
+{% if products %}
+<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+  {% for product in products %}
+    {% include 'store/partials/product_card.html' %}
+  {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-20 text-gray-400">
+  <p class="text-xl">لا توجد منتجات مطابقة</p>
+</div>
+{% endif %}
