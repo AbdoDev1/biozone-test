@@ -26,10 +26,13 @@ services:
     environment:
       DB_HOST: db
       DB_PORT: 5432
-      GUNICORN_WORKERS: 3
+      # مش بنحط GUNICORN_WORKERS هنا خالص — entrypoint.sh بيحسبه تلقائيًا من
+      # عدد أنوية السيرفر الحقيقي وقت التشغيل. لو حابب رقم يدوي ثابت بدل
+      # الحساب التلقائي، ضيفه في .env.production (GUNICORN_WORKERS=X) مش هنا.
     volumes:
       - static_volume:/app/staticfiles
       - media_volume:/app/media
+      - ./logs:/app/logs
     depends_on:
       db:
         condition: service_healthy

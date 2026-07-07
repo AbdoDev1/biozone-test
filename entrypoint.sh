@@ -13,10 +13,21 @@ python manage.py migrate --noinput
 echo "== تجميع الملفات الثابتة =="
 python manage.py collectstatic --noinput --clear
 
-echo "== تشغيل gunicorn =="
+# عدد الـ workers: لو GUNICORN_WORKERS متحدد صراحة في .env.production بنستخدمه
+# زي ما هو (تحكم يدوي كامل). لو مش متحدد، بنحسبه تلقائيًا من عدد أنوية
+# المعالج الفعلية للحاوية بمعادلة gunicorn المعتمدة: (2 × الأنوية) + 1.
+# ده بيحل مشكلة الرقم الثابت (3) اللي كان مش مبني على سيرفر حقيقي.
+if [ -n "${GUNICORN_WORKERS:-}" ]; then
+    WORKERS="$GUNICORN_WORKERS"
+else
+    CORES=$(nproc 2>/dev/null || echo 1)
+    WORKERS=$((2 * CORES + 1))
+fi
+echo "== تشغيل gunicorn بعدد workers: $WORKERS (أنوية متاحة: $(nproc 2>/dev/null || echo '؟')) =="
+
 exec gunicorn config.wsgi:application \
     --bind 0.0.0.0:8000 \
-    --workers "${GUNICORN_WORKERS:-3}" \
+    --workers "$WORKERS" \
     --timeout 60 \
     --access-logfile - \
     --error-logfile -

@@ -23,17 +23,30 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 DEBUG = config('DEBUG', cast=bool)
 
+# الدومين/الدومينات الحقيقية بتتحدد وقت التشغيل من .env، مش هنا في الكود.
+# ده معناه إنك تقدر تغيّر الدومين أو تضيف واحد جديد (أو تشغّل على IP مباشرة)
+# من غير ما تلمس settings.py خالص ولا تعمل --build تاني — بس تعدّل .env.production
+# وتعمل `docker compose restart web`.
+#
+# القيمة في .env بتبقى قائمة مفصولة بفواصل، مثلاً:
+#   EXTRA_ALLOWED_HOSTS=biozone.example.com,www.biozone.example.com
+#   EXTRA_CSRF_TRUSTED_ORIGINS=https://biozone.example.com,https://www.biozone.example.com
+# لو الدومين لسه مش متحدد (زي دلوقتي)، سيبها فاضية في .env وهيفضل شغال
+# بالإعدادات الافتراضية (localhost + أي *.trycloudflare.com) زي ما هو دلوقتي.
+_extra_hosts = config('EXTRA_ALLOWED_HOSTS', default='')
+_extra_csrf = config('EXTRA_CSRF_TRUSTED_ORIGINS', default='')
+
 ALLOWED_HOSTS = [
     "127.0.0.1",
     "localhost",
     ".trycloudflare.com",
+] + [h.strip() for h in _extra_hosts.split(',') if h.strip()]
 
-]
 CSRF_TRUSTED_ORIGINS = [
     "https://*.trycloudflare.com",
     "http://localhost:8080",
     "http://127.0.0.1:8080",
-]
+] + [o.strip() for o in _extra_csrf.split(',') if o.strip()]
 
 
 # Application definition
@@ -156,3 +169,84 @@ CSRF_COOKIE_SECURE = USE_HTTPS_SECURITY
 SECURE_HSTS_SECONDS = 31536000 if USE_HTTPS_SECURITY else 0
 SECURE_HSTS_INCLUDE_SUBDOMAINS = USE_HTTPS_SECURITY
 SECURE_HSTS_PRELOAD = USE_HTTPS_SECURITY
+
+
+# ============================================================================
+# Logging — شغال دايمًا محليًا (مش محتاج أي خدمة خارجية ولا حساب).
+# بيكتب الأخطاء (WARNING فما فوق) في ملف داخل logs/ جوه الحاوية، ومربوط بـ
+# volume في docker-compose.yml عشان الملف يفضل موجود حتى لو الحاوية اتعملها
+# rebuild أو restart. بيتقلب تلقائيًا (rotate) لما يوصل 5 ميجا، ومحتفظ بآخر
+# 5 نسخ بس عشان القرص متمتلاش.
+# ============================================================================
+LOGS_DIR = BASE_DIR / 'logs'
+LOGS_DIR.mkdir(exist_ok=True)
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{asctime} [{levelname}] {name}: {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+        'error_file': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOGS_DIR / 'errors.log',
+            'maxBytes': 5 * 1024 * 1024,  # 5MB
+            'backupCount': 5,
+            'formatter': 'verbose',
+            'level': 'WARNING',
+        },
+    },
+    'root': {
+        'handlers': ['console', 'error_file'],
+        'level': 'WARNING',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console', 'error_file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django.request': {
+            # الأخطاء الفعلية اللي بتطلع 500 للمستخدم (exceptions جوه الـ views).
+            'handlers': ['console', 'error_file'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+        'django.security': {
+            'handlers': ['console', 'error_file'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+    },
+}
+
+
+# ============================================================================
+# Sentry — اختياري تمامًا ومطفي افتراضيًا. بيشتغل بس لو حطيت SENTRY_DSN في
+# .env.production. لو سيبتها فاضية (زي دلوقتي)، السطر ده مبيعملش حاجة خالص
+# والمشروع بيفضل معتمد على الـ logging المحلي بس.
+# sentry-sdk متضاف في requirements.txt جاهز، فمش محتاج --build إضافي غير
+# وقت أول مرة بس. تفعيله الفعلي = بس تحط SENTRY_DSN في .env.production.
+# ============================================================================
+SENTRY_DSN = config('SENTRY_DSN', default='')
+if SENTRY_DSN:
+    import sentry_sdk
+    from sentry_sdk.integrations.django import DjangoIntegration
+
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=[DjangoIntegration()],
+        # بيبعت نسخة من كل الترانزاكشنز لقياس الأداء. لو حابب تقلل الحمل/البيانات
+        # المبعوتة لـ Sentry، قلل الرقم ده (مثلاً 0.2 = 20% من الطلبات بس).
+        traces_sample_rate=config('SENTRY_TRACES_SAMPLE_RATE', default=1.0, cast=float),
+        send_default_pii=False,  # ميبعتش بيانات شخصية للعميل (اسم/إيميل) لـ Sentry تلقائيًا.
+        environment=config('SENTRY_ENVIRONMENT', default='production'),
+    )
