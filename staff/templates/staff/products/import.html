@@ -37,52 +37,38 @@
 <div class="bg-white rounded-xl shadow p-4 mb-6">
     <h2 class="font-bold text-gray-700 mb-3 text-sm">الأعمدة في الملف</h2>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-        {% for col, label, required in col_info|default:"" %}
-        {% endfor %}
         <div class="flex items-center gap-2">
             <span class="bg-red-100 text-red-600 px-2 py-0.5 rounded">مطلوب</span>
-            <span class="text-gray-600">name_ar — اسم المنتج بالعربي</span>
+            <span class="text-gray-600">1. name_ar — اسم المنتج بالعربي</span>
         </div>
         <div class="flex items-center gap-2">
             <span class="bg-red-100 text-red-600 px-2 py-0.5 rounded">مطلوب</span>
-            <span class="text-gray-600">category_slug — كود القسم</span>
+            <span class="text-gray-600">2. category_slug — كود القسم</span>
         </div>
         <div class="flex items-center gap-2">
             <span class="bg-red-100 text-red-600 px-2 py-0.5 rounded">مطلوب</span>
-            <span class="text-gray-600">unit_name — اسم الوحدة</span>
-        </div>
-        <div class="flex items-center gap-2">
-            <span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded">مطلوب إلا لو فيه كرتونة</span>
-            <span class="text-gray-600">unit_price — سعر القطعة (سيبه فاضي لو مالئ بيانات الكرتونة تحت)</span>
+            <span class="text-gray-600">3. large_unit_name — اسم الوحدة الكبرى (كرتونة)</span>
         </div>
         <div class="flex items-center gap-2">
             <span class="bg-red-100 text-red-600 px-2 py-0.5 rounded">مطلوب</span>
-            <span class="text-gray-600">initial_stock — الكمية الابتدائية</span>
+            <span class="text-gray-600">4. large_qty_in_small — كام قطعة جوه الكرتونة</span>
         </div>
         <div class="flex items-center gap-2">
-            <span class="bg-gray-100 text-gray-500 px-2 py-0.5 rounded">اختياري</span>
-            <span class="text-gray-600">name_en — الاسم بالإنجليزي</span>
+            <span class="bg-red-100 text-red-600 px-2 py-0.5 rounded">مطلوب</span>
+            <span class="text-gray-600">5. large_unit_price — سعر الكرتونة</span>
         </div>
         <div class="flex items-center gap-2">
-            <span class="bg-gray-100 text-gray-500 px-2 py-0.5 rounded">اختياري</span>
-            <span class="text-gray-600">manufacturer — الشركة المصنعة</span>
+            <span class="bg-red-100 text-red-600 px-2 py-0.5 rounded">مطلوب</span>
+            <span class="text-gray-600">6. unit_name — اسم الوحدة الصغرى (قطعة)</span>
         </div>
         <div class="flex items-center gap-2">
-            <span class="bg-gray-100 text-gray-500 px-2 py-0.5 rounded">اختياري</span>
-            <span class="text-gray-600">large_unit_name — اسم الوحدة الكبرى (كرتونة)</span>
-        </div>
-        <div class="flex items-center gap-2">
-            <span class="bg-gray-100 text-gray-500 px-2 py-0.5 rounded">اختياري</span>
-            <span class="text-gray-600">large_qty_in_small — عدد القطع في الكرتونة</span>
-        </div>
-        <div class="flex items-center gap-2">
-            <span class="bg-gray-100 text-gray-500 px-2 py-0.5 rounded">اختياري</span>
-            <span class="text-gray-600">large_unit_price — سعر الكرتونة</span>
+            <span class="bg-red-100 text-red-600 px-2 py-0.5 rounded">مطلوب</span>
+            <span class="text-gray-600">7. initial_stock — الكمية الافتتاحية بالقطعة</span>
         </div>
     </div>
     <p class="text-xs text-gray-500 mt-3">
-        لو عبّيت الأعمدة التلاتة الخاصة بالكرتونة، ممكن تسيب <code>unit_price</code>
-        فاضي وهيتحسب سعر القطعة تلقائيًا (سعر الكرتونة ÷ عدد القطع فيها).
+        سعر القطعة بيتحسب تلقائيًا دايمًا = <code>large_unit_price ÷ large_qty_in_small</code>.
+        مفيش عمود <code>unit_price</code> منفصل يتكتب في الملف.
     </p>
 </div>
 

@@ -200,24 +200,17 @@ def import_products(request):
             wb = openpyxl.load_workbook(excel_file)
             ws = wb.active
             headers = [str(cell.value).strip() if cell.value else '' for cell in ws[1]]
-            # unit_price بقى اختياري على مستوى الأعمدة المطلوبة، لأنه ممكن
-            # يتحسب تلقائيًا من عمود large_unit_price لو الملف فيه وحدة
-            # كبرى (كرتونة) — شوف المنطق تحت.
-            required_headers = ['name_ar', 'category_slug', 'unit_name', 'initial_stock']
+            # الأعمدة السبعة كلها مطلوبة دلوقتي. سعر القطعة (الوحدة الصغرى)
+            # مبقاش بيتكتب في الملف خالص — بيتحسب دايمًا تلقائيًا من
+            # large_unit_price ÷ large_qty_in_small.
+            required_headers = [
+                'name_ar', 'category_slug',
+                'large_unit_name', 'large_qty_in_small', 'large_unit_price',
+                'unit_name', 'initial_stock',
+            ]
             missing = [h for h in required_headers if h not in headers]
             if missing:
                 messages.error(request, f'الأعمدة التالية ناقصة في الملف: {", ".join(missing)}')
-                return redirect('staff:import_products')
-            has_large_unit_columns = all(
-                h in headers for h in ('large_unit_name', 'large_qty_in_small', 'large_unit_price')
-            )
-            if 'unit_price' not in headers and not has_large_unit_columns:
-                messages.error(
-                    request,
-                    'لازم يكون فيه عمود unit_price، أو الأعمدة الثلاثة '
-                    '(large_unit_name, large_qty_in_small, large_unit_price) '
-                    'عشان يتحسب سعر القطعة تلقائيًا منها.'
-                )
                 return redirect('staff:import_products')
             idx = {h: headers.index(h) for h in headers if h}
             success_count = 0
@@ -230,38 +223,21 @@ def import_products(request):
                     category_slug = str(row[idx['category_slug']]).strip() if row[idx['category_slug']] else ''
                     unit_name = str(row[idx['unit_name']]).strip() if row[idx['unit_name']] else ''
                     initial_stock = int(row[idx['initial_stock']]) if row[idx['initial_stock']] else 0
-                    name_en = str(row[idx['name_en']]).strip() if 'name_en' in idx and row[idx['name_en']] else ''
-                    manufacturer = str(row[idx['manufacturer']]).strip() if 'manufacturer' in idx and row[idx['manufacturer']] else ''
 
-                    # --- بيانات الوحدة الكبرى (كرتونة) — اختيارية لكل سطر على حدة ---
-                    large_name = ''
-                    large_qty = None
-                    large_price = None
-                    if has_large_unit_columns:
-                        large_name = str(row[idx['large_unit_name']]).strip() if row[idx['large_unit_name']] else ''
-                        large_qty = row[idx['large_qty_in_small']]
-                        large_price = row[idx['large_unit_price']]
-                        large_qty = int(large_qty) if large_qty else None
-                        large_price = float(large_price) if large_price else None
+                    # --- بيانات الوحدة الكبرى (كرتونة) — مطلوبة لكل سطر ---
+                    large_name = str(row[idx['large_unit_name']]).strip() if row[idx['large_unit_name']] else ''
+                    raw_large_qty = row[idx['large_qty_in_small']]
+                    raw_large_price = row[idx['large_unit_price']]
+                    large_qty = int(raw_large_qty) if raw_large_qty else None
+                    large_price = float(raw_large_price) if raw_large_price else None
 
-                    has_large_unit = bool(large_name and large_qty and large_price)
-
-                    # --- سعر القطعة (الوحدة الصغرى): يدوي، أو محسوب تلقائيًا من الكرتونة ---
-                    raw_unit_price = row[idx['unit_price']] if 'unit_price' in idx else None
-                    unit_price = float(raw_unit_price) if raw_unit_price else 0
-                    if not unit_price and has_large_unit:
-                        unit_price = round(large_price / large_qty, 2)
-
-                    if not name_ar or not category_slug or not unit_name or not unit_price:
+                    if not name_ar or not category_slug or not unit_name \
+                            or not large_name or not large_qty or not large_price:
                         error_rows.append(f'سطر {row_num}: بيانات ناقصة')
                         continue
 
-                    if has_large_unit and large_price <= unit_price:
-                        error_rows.append(
-                            f'سطر {row_num}: سعر الكرتونة ({large_price}) لازم يكون أكبر '
-                            f'من سعر القطعة ({unit_price}) — راجع large_unit_price.'
-                        )
-                        continue
+                    # --- سعر القطعة (الوحدة الصغرى): محسوب تلقائيًا دايمًا ---
+                    unit_price = round(large_price / large_qty, 2)
 
                     try:
                         category = Category.objects.get(slug=category_slug)
@@ -272,14 +248,11 @@ def import_products(request):
                         name_ar=name_ar,
                         defaults={
                             'category': category,
-                            'name_en': name_en,
-                            'manufacturer': manufacturer,
                             'is_active': True,
                         }
                     )
                     if not created:
                         product.category = category
-                        product.manufacturer = manufacturer
                         product.save()
                     unit, _ = ProductUnit.objects.update_or_create(
                         product=product,
@@ -290,16 +263,15 @@ def import_products(request):
                             'qty_in_small': 1,
                         }
                     )
-                    if has_large_unit:
-                        ProductUnit.objects.update_or_create(
-                            product=product,
-                            size='L',
-                            defaults={
-                                'name': large_name,
-                                'unit_price': large_price,
-                                'qty_in_small': large_qty,
-                            }
-                        )
+                    ProductUnit.objects.update_or_create(
+                        product=product,
+                        size='L',
+                        defaults={
+                            'name': large_name,
+                            'unit_price': large_price,
+                            'qty_in_small': large_qty,
+                        }
+                    )
                     inventory, _ = Inventory.objects.get_or_create(
                         product=product,
                         defaults={'quantity': 0, 'reserved': 0, 'min_quantity': 0}
@@ -331,15 +303,18 @@ def download_template(request):
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = 'المنتجات'
-    headers = ['name_ar', 'name_en', 'category_slug', 'manufacturer',
-               'unit_name', 'unit_price', 'initial_stock',
-               'large_unit_name', 'large_qty_in_small', 'large_unit_price']
+    headers = [
+        'name_ar', 'category_slug',
+        'large_unit_name', 'large_qty_in_small', 'large_unit_price',
+        'unit_name', 'initial_stock',
+    ]
     ws.append(headers)
-    # صف مثال 1: وحدة صغرى بس (سعر يدوي، زي القديم بالظبط)
-    ws.append(['قفازات لاتكس', 'Latex Gloves', 'gloves', 'Medline', 'علبة', 25.00, 100, '', '', ''])
-    # صف مثال 2: كرتونة + قطعة مع بعض — سعر القطعة (unit_price) سيبه فاضي
-    # ليتحسب تلقائيًا = large_unit_price ÷ large_qty_in_small
-    ws.append(['شاش طبي', 'Medical Gauze', 'gauze', 'Medline', 'قطعة', '', 200, 'كرتونة', 50, 100.00])
+    # سعر القطعة = large_unit_price ÷ large_qty_in_small تلقائيًا،
+    # initial_stock دايمًا بالقطعة (الوحدة الصغرى).
+    # مثال 1: كرتونة فيها 50 قطعة بسعر 100 جنيه -> سعر القطعة = 2.00 جنيه
+    ws.append(['شاش طبي', 'gauze', 'كرتونة', 50, 100.00, 'قطعة', 200])
+    # مثال 2: كرتونة فيها 10 علب بسعر 250 جنيه -> سعر العلبة = 25.00 جنيه
+    ws.append(['قفازات لاتكس', 'gloves', 'كرتونة', 10, 250.00, 'علبة', 100])
     for col in ws.columns:
         ws.column_dimensions[col[0].column_letter].width = 20
     from django.http import HttpResponse
