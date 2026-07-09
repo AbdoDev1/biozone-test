@@ -90,6 +90,7 @@ class Order(models.Model):
                 note='تم إنشاء الطلب.',
                 created_by=actor,
             )
+            self._notify_new_order()
         elif status_changed:
             OrderLog.objects.create(
                 order=self,
@@ -98,7 +99,101 @@ class Order(models.Model):
                 new_status=self.status,
                 created_by=actor,
             )
+            self._notify_status_change(actor)
         self._old_status = self.status
+
+    def _notify_new_order(self):
+        """طلب جديد وصل — إشعار لكل موظف عنده صلاحية عرض الطلبات."""
+        from notifications.services import notify_staff_with_perm
+        from notifications.models import Notification
+        notify_staff_with_perm(
+            'orders.view_order',
+            kind=Notification.Kind.NEW_ORDER,
+            title=f'طلب جديد #{self.pk}',
+            message=f'وصل طلب جديد من العميل {self.client.username}.',
+            url_name='staff:order_detail',
+            url_kwargs={'pk': self.pk},
+        )
+
+    def _notify_status_change(self, actor):
+        """
+        تغيّرت حالة الطلب — بنبعت الإشعار المناسب حسب الحالة الجديدة:
+        - NEEDS_APPROVAL: المخزن عدّل الطلب وعايز موافقة العميل → إشعار للعميل.
+        - CONFIRMED: تم تأكيد الطلب → إشعار للعميل (إلا لو هو نفسه اللي أكده).
+        - REJECTED: تم رفض الطلب → إشعار للعميل (إلا لو هو نفسه اللي رفضه).
+        - DELIVERED: تم التسليم → إشعار للعميل.
+        ولو صاحب الحدث هو العميل نفسه (وافق/رفض تعديل)، بنبعت إشعار
+        للموظفين بدل ما نبعت للعميل حاجة هو عارفها أصلًا (حركة عميل).
+        """
+        from notifications.services import notify, notify_staff_with_perm
+        from notifications.models import Notification
+
+        client_is_actor = actor is not None and getattr(actor, 'pk', None) == self.client_id
+
+        if self.status == self.Status.NEEDS_APPROVAL:
+            notify(
+                self.client,
+                kind=Notification.Kind.ORDER_NEEDS_APPROVAL,
+                title=f'طلبك #{self.pk} يحتاج موافقتك',
+                message='المخزن عدّل كميات في طلبك، يرجى مراجعة التعديل والموافقة عليه أو رفضه.',
+                url_name='orders:order_detail',
+                url_kwargs={'pk': self.pk},
+            )
+
+        elif self.status == self.Status.CONFIRMED:
+            if client_is_actor:
+                notify_staff_with_perm(
+                    'orders.change_order',
+                    kind=Notification.Kind.CLIENT_APPROVED_AMENDMENT,
+                    title=f'العميل وافق على تعديل الطلب #{self.pk}',
+                    message=f'العميل {self.client.username} وافق على التعديل المقترح.',
+                    url_name='staff:order_detail',
+                    url_kwargs={'pk': self.pk},
+                    exclude_actor=actor,
+                )
+            else:
+                notify(
+                    self.client,
+                    kind=Notification.Kind.ORDER_CONFIRMED,
+                    title=f'تم تأكيد طلبك #{self.pk}',
+                    message='تم تأكيد طلبك وجاري تجهيزه.',
+                    url_name='orders:order_detail',
+                    url_kwargs={'pk': self.pk},
+                    exclude_actor=actor,
+                )
+
+        elif self.status == self.Status.REJECTED:
+            if client_is_actor:
+                notify_staff_with_perm(
+                    'orders.change_order',
+                    kind=Notification.Kind.CLIENT_REJECTED_AMENDMENT,
+                    title=f'العميل رفض تعديل الطلب #{self.pk}',
+                    message=f'العميل {self.client.username} رفض التعديل المقترح، وتم فك الحجز.',
+                    url_name='staff:order_detail',
+                    url_kwargs={'pk': self.pk},
+                    exclude_actor=actor,
+                )
+            else:
+                notify(
+                    self.client,
+                    kind=Notification.Kind.ORDER_REJECTED,
+                    title=f'تم رفض طلبك #{self.pk}',
+                    message='نأسف، تم رفض طلبك. تواصل معانا لمزيد من التفاصيل.',
+                    url_name='orders:order_detail',
+                    url_kwargs={'pk': self.pk},
+                    exclude_actor=actor,
+                )
+
+        elif self.status == self.Status.DELIVERED:
+            notify(
+                self.client,
+                kind=Notification.Kind.ORDER_DELIVERED,
+                title=f'تم تسليم طلبك #{self.pk}',
+                message='تم تسليم طلبك بنجاح. تقدر تشوف الفاتورة من صفحة الطلب.',
+                url_name='orders:order_detail',
+                url_kwargs={'pk': self.pk},
+                exclude_actor=actor,
+            )
 
     # ---------- منطق سير العمل (المرحلة 8) ----------
 

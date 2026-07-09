@@ -1,0 +1,94 @@
+{# جرس الإشعارات — Alpine.js component بيعمل poll لنقطة JSON كل 15 ثانية
+   عشان يحدّث نفسه لوحده من غير ما المستخدم يعمل refresh للصفحة. #}
+<div class="relative"
+     x-data="notificationBell({{ nav_unread_count|default:0 }})"
+     x-init="init()">
+
+    {% csrf_token %}
+
+    <button @click="toggle()" @click.outside="open = false"
+            class="relative flex items-center justify-center w-9 h-9 rounded-lg text-gray-500 hover:text-blue-600 hover:bg-gray-50">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 10-12 0v3.2a2 2 0 01-.6 1.4L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+        </svg>
+        <span x-show="unreadCount > 0" x-cloak x-text="unreadCount > 99 ? '99+' : unreadCount"
+              class="absolute -top-1 -left-1 bg-red-500 text-white text-[10px] leading-none rounded-full min-w-[16px] h-4 flex items-center justify-center px-1"></span>
+    </button>
+
+    <div x-show="open" x-cloak x-transition
+         class="absolute left-0 mt-2 w-80 max-w-[90vw] bg-white rounded-lg shadow-lg border border-gray-100 z-50">
+        <div class="flex items-center justify-between px-4 py-2 border-b border-gray-100">
+            <span class="text-sm font-semibold text-gray-800">الإشعارات</span>
+            <button x-show="unreadCount > 0" @click="markAllRead()" class="text-xs text-blue-600 hover:underline">
+                تحديد الكل كمقروء
+            </button>
+        </div>
+
+        <div class="max-h-80 overflow-y-auto divide-y divide-gray-50">
+            <template x-for="n in items" :key="n.id">
+                <a :href="n.url || '{% url 'notifications:list' %}'"
+                   class="block px-4 py-3 text-sm hover:bg-gray-50"
+                   :class="!n.is_read ? 'bg-blue-50/50' : ''">
+                    <div class="flex items-start gap-2">
+                        <span x-show="!n.is_read" class="w-2 h-2 mt-1.5 rounded-full bg-blue-500 shrink-0"></span>
+                        <div class="min-w-0">
+                            <p class="font-medium text-gray-800 truncate" x-text="n.title"></p>
+                            <p x-show="n.message" class="text-xs text-gray-500 mt-0.5 line-clamp-2" x-text="n.message"></p>
+                            <p class="text-[11px] text-gray-400 mt-1" x-text="n.created_since + ' فات'"></p>
+                        </div>
+                    </div>
+                </a>
+            </template>
+            <p x-show="items.length === 0" class="px-4 py-6 text-center text-sm text-gray-400">لا توجد إشعارات</p>
+        </div>
+
+        <a href="{% url 'notifications:list' %}"
+           class="block text-center px-4 py-2 text-xs text-blue-600 hover:underline border-t border-gray-100">
+            عرض كل الإشعارات
+        </a>
+    </div>
+</div>
+
+<script>
+function notificationBell(initialUnread) {
+    return {
+        open: false,
+        unreadCount: initialUnread,
+        items: [],
+        pollTimer: null,
+        init() {
+            this.refresh();
+            this.pollTimer = setInterval(() => this.refresh(), 15000);
+        },
+        toggle() {
+            this.open = !this.open;
+            if (this.open) this.refresh();
+        },
+        async refresh() {
+            try {
+                const res = await fetch("{% url 'notifications:bell_data' %}", {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+                this.unreadCount = data.unread_count;
+                this.items = data.items;
+            } catch (e) {
+                // فشل مؤقت في الشبكة — نتجاهله ونحاول تاني في الـ poll الجاي
+            }
+        },
+        async markAllRead() {
+            const token = this.$el.querySelector('[name=csrfmiddlewaretoken]').value;
+            try {
+                await fetch("{% url 'notifications:mark_all_read' %}", {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': token, 'X-Requested-With': 'XMLHttpRequest' },
+                });
+                this.items = this.items.map(n => ({ ...n, is_read: true }));
+                this.unreadCount = 0;
+            } catch (e) {}
+        },
+    };
+}
+</script>

@@ -9,7 +9,16 @@ def register_view(request):
     if request.method == 'POST':
         form = RegisterForm(request.POST)
         if form.is_valid():
-            form.save()
+            client = form.save()
+            from notifications.services import notify_staff_with_perm
+            from notifications.models import Notification
+            notify_staff_with_perm(
+                'accounts.change_clientprofile',
+                kind=Notification.Kind.NEW_CLIENT_REGISTRATION,
+                title='طلب تسجيل عميل جديد',
+                message=f'العميل {client.username} قدّم طلب تسجيل وبانتظار المراجعة.',
+                url_name='staff:clients',
+            )
             messages.success(request, 'تم إرسال طلب التسجيل، انتظر موافقة الإدارة.')
             return redirect('accounts:pending')
     else:

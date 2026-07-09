@@ -18,6 +18,7 @@
     </button>
     <span class="font-bold text-blue-700 text-lg">Biozone ERP</span>
     <div class="mr-auto flex items-center gap-4">
+        {% include 'notifications/partials/bell.html' %}
         <span class="text-sm text-gray-500">{{ request.user.username }}</span>
         <a href="{% url 'staff:logout' %}"
            class="text-sm text-red-500 hover:underline">تسجيل الخروج</a>

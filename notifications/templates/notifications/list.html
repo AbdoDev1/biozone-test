@@ -1,0 +1,35 @@
+{% extends notifications_base_template|default:"base.html" %}
+{% block title %}الإشعارات — Biozone{% endblock %}
+{% block content %}
+
+<div class="max-w-2xl mx-auto {% if not is_staff_view %}py-8 px-4{% endif %}">
+    <div class="flex items-center justify-between mb-4">
+        <h1 class="text-xl font-bold text-gray-800">الإشعارات</h1>
+        {% if notifications %}
+        <form method="post" action="{% url 'notifications:mark_all_read' %}">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{% url 'notifications:list' %}">
+            <button type="submit" class="text-sm text-blue-600 hover:underline">تحديد الكل كمقروء</button>
+        </form>
+        {% endif %}
+    </div>
+
+    <div class="bg-white rounded-2xl shadow divide-y divide-gray-50">
+        {% for n in notifications %}
+        <a href="{% url 'notifications:open' n.pk %}"
+           class="flex items-start gap-3 px-5 py-4 hover:bg-gray-50 {% if not n.is_read %}bg-blue-50/40{% endif %}">
+            {% if not n.is_read %}<span class="w-2 h-2 mt-2 rounded-full bg-blue-500 shrink-0"></span>
+            {% else %}<span class="w-2 h-2 mt-2 shrink-0"></span>{% endif %}
+            <div class="min-w-0">
+                <p class="font-medium text-gray-800">{{ n.title }}</p>
+                {% if n.message %}<p class="text-sm text-gray-500 mt-1">{{ n.message }}</p>{% endif %}
+                <p class="text-xs text-gray-400 mt-1">{{ n.created_at|timesince }}</p>
+            </div>
+        </a>
+        {% empty %}
+        <p class="px-5 py-10 text-center text-gray-400">لا توجد إشعارات حتى الآن</p>
+        {% endfor %}
+    </div>
+</div>
+
+{% endblock %}

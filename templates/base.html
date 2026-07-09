@@ -22,6 +22,8 @@
 
             {% if request.user.role in 'ADMIN,WAREHOUSE' %}
 
+                {% include 'notifications/partials/bell.html' %}
+
                 <a href="{% url 'accounts:dashboard' %}" class="text-sm text-gray-500 hover:text-blue-600">
                     {{ request.user.username }}
                 </a>
@@ -37,6 +39,8 @@
                 </a>
 
             {% elif request.user.role == 'CLIENT' %}
+
+                {% include 'notifications/partials/bell.html' %}
 
                 <!-- قائمة الحساب المنبثقة: بتجمع كل صفحات العميل (الحساب، المتجر، الطلبات، تسجيل الخروج) -->
                 <div class="relative" x-data="{ open: false }">
