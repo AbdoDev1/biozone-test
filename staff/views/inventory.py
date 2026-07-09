@@ -2,6 +2,7 @@ from django.core.paginator import Paginator
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from inventory.models import Inventory, StockMovement
 from products.models import ProductUnit
 from staff.permissions import perm_required
@@ -66,22 +67,31 @@ def add_movement(request, pk):
             messages.error(request, 'الكمية غير صحيحة')
             return redirect('staff:inventory_detail', pk=pk)
 
-        movement = StockMovement(
-            inventory=item,
-            unit=unit,
-            movement_type=movement_type,
-            quantity=quantity,
-            note=note,
-            created_by=request.user,
-        )
-        try:
-            movement.full_clean()
-        except ValidationError as e:
-            for err in e.messages:
-                messages.error(request, err)
-            return redirect('staff:inventory_detail', pk=pk)
+        # نقفل صف المخزون فعليًا (select_for_update) طول مدة التحقق والحفظ،
+        # بنفس الأسلوب المستخدم في orders/models.py و orders/views.py.
+        # ده بيمنع تعارض لو موظفين اتنين سجّلوا حركة يدوية على نفس الصنف
+        # في نفس اللحظة: الاتنين كانوا ممكن يعدّوا فحص "الكمية كافية؟"
+        # بنفس القيمة القديمة قبل ما أي حركة تتسجل فعليًا.
+        with transaction.atomic():
+            locked_item = Inventory.objects.select_for_update().get(pk=item.pk)
 
-        movement.save()
+            movement = StockMovement(
+                inventory=locked_item,
+                unit=unit,
+                movement_type=movement_type,
+                quantity=quantity,
+                note=note,
+                created_by=request.user,
+            )
+            try:
+                movement.full_clean()
+            except ValidationError as e:
+                for err in e.messages:
+                    messages.error(request, err)
+                return redirect('staff:inventory_detail', pk=pk)
+
+            movement.save()
+
         messages.success(request, 'تم تسجيل الحركة بنجاح')
         return redirect('staff:inventory_detail', pk=pk)
     return redirect('staff:inventory_detail', pk=pk)
