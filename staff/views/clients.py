@@ -1,3 +1,4 @@
+from django.core.paginator import Paginator
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.core.exceptions import ValidationError
@@ -9,6 +10,8 @@ from invoices.models import Invoice
 from accounting.models import AccountTransaction
 from staff.permissions import perm_required
 
+STAFF_LIST_PAGE_SIZE = 30
+
 
 # إدارة حسابات العملاء بقت مبنية على صلاحيات دجانجو حقيقية دقيقة (مش قفل
 # كامل على الأدمن بس زي الأول): عرض العملاء يحتاج accounts.view_clientprofile،
@@ -19,12 +22,21 @@ from staff.permissions import perm_required
 # الصلاحية المطلوبة صراحةً من شاشة تعديل الموظف.
 @perm_required('accounts.view_clientprofile')
 def client_list(request):
+    # قوائم "قيد المراجعة" و"مرفوض" محدودة العدد بطبيعتها (بتتصفّى بسرعة
+    # بموافقة/رفض)، فبنعرضها كاملة. "النشطين" هي اللي بتكبر مع الوقت
+    # وبتحتاج pagination فعلاً.
     pending = ClientProfile.objects.filter(user__status='PENDING').select_related('user')
-    active = ClientProfile.objects.filter(user__status='ACTIVE').select_related('user')
     rejected = ClientProfile.objects.filter(user__status='REJECTED').select_related('user')
+
+    active_qs = ClientProfile.objects.filter(user__status='ACTIVE').select_related('user').order_by('business_name')
+    active_paginator = Paginator(active_qs, STAFF_LIST_PAGE_SIZE)
+    active_page = active_paginator.get_page(request.GET.get('active_page'))
+
     return render(request, 'staff/clients/list.html', {
         'pending': pending,
-        'active': active,
+        'active': active_page,
+        'active_page_obj': active_page,
+        'total_active': active_paginator.count,
         'rejected': rejected,
     })
 

@@ -1,4 +1,5 @@
 import json
+from django.core.paginator import Paginator
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from django.contrib import messages
@@ -187,8 +188,10 @@ def order_detail(request, pk):
 def order_list(request):
     if request.user.role != 'CLIENT':
         return redirect('store:home')
-    orders = Order.objects.filter(client=request.user)
-    return render(request, 'orders/order_list.html', {'orders': orders})
+    orders_qs = Order.objects.filter(client=request.user)
+    paginator = Paginator(orders_qs, 20)
+    page_obj = paginator.get_page(request.GET.get('page'))
+    return render(request, 'orders/order_list.html', {'orders': page_obj, 'page_obj': page_obj})
 
 
 @login_required

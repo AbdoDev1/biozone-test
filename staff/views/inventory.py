@@ -1,3 +1,4 @@
+from django.core.paginator import Paginator
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.core.exceptions import ValidationError
@@ -5,15 +6,22 @@ from inventory.models import Inventory, StockMovement
 from products.models import ProductUnit
 from staff.permissions import perm_required
 
+STAFF_LIST_PAGE_SIZE = 30
+
 
 @perm_required('inventory.view_inventory')
 def inventory_list(request):
-    items = list(
-        Inventory.objects.select_related(
-            'product__category'
-        ).prefetch_related('product__units').order_by('product__name_ar')
-    )
-    return render(request, 'staff/inventory/list.html', {'items': items})
+    items_qs = Inventory.objects.select_related(
+        'product__category'
+    ).prefetch_related('product__units').order_by('product__name_ar')
+
+    paginator = Paginator(items_qs, STAFF_LIST_PAGE_SIZE)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
+    return render(request, 'staff/inventory/list.html', {
+        'items': page_obj,
+        'page_obj': page_obj,
+    })
 
 
 @perm_required('inventory.view_inventory')

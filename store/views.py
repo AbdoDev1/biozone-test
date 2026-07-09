@@ -1,6 +1,10 @@
+from django.core.paginator import Paginator
 from django.shortcuts import render, get_object_or_404
 from products.models import Category, Product, ProductUnit
 from inventory.models import Inventory
+
+PRODUCTS_PER_PAGE = 24
+
 
 def store_home(request):
     categories = Category.objects.filter(is_active=True)
@@ -23,8 +27,15 @@ def store_home(request):
                            .values_list('manufacturer', flat=True)\
                            .distinct()
 
+    paginator = Paginator(products, PRODUCTS_PER_PAGE)
+    # لو فلتر (فئة/بحث) اتغيّر ورجع صفحة مش موجودة (مثلاً كنت في صفحة 5
+    # وبقى الناتج صفحتين بس)، get_page بترجع آخر صفحة صالحة بدل ما تطلع خطأ.
+    page_obj = paginator.get_page(request.GET.get('page'))
+
     context = {
-        'products': products,
+        'products': page_obj,
+        'page_obj': page_obj,
+        'total_products': paginator.count,
         'categories': categories,
         'manufacturers': manufacturers,
         'selected_category': selected_category,

@@ -20,7 +20,7 @@ hx-on:cartUpdated="htmx.ajax('GET','{% url 'orders:cart_badge' %}',{target:'#car
     </h1>
 
     <p class="text-blue-200 mb-6">
-        أكثر من {{ products|length }} منتج متاح للطلب
+        أكثر من {{ total_products }} منتج متاح للطلب
     </p>
 
     <!-- Search -->

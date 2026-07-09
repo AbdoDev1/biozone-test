@@ -4,6 +4,43 @@
     {% include 'store/partials/product_card.html' %}
   {% endfor %}
 </div>
+
+{% if page_obj.paginator.num_pages > 1 %}
+<div class="flex items-center justify-center gap-2 mt-8 text-sm">
+
+  {% if page_obj.has_previous %}
+    <button
+        class="px-3 py-2 rounded-lg bg-white shadow-sm hover:bg-blue-50 text-gray-600"
+        hx-get="{% url 'store:home' %}"
+        hx-vals='{"page": {{ page_obj.previous_page_number }}}'
+        hx-include="#filter-form"
+        hx-target="#product-grid"
+        hx-swap="innerHTML"
+        hx-push-url="true">
+      السابق
+    </button>
+  {% endif %}
+
+  <span class="text-gray-500 px-2">
+    صفحة {{ page_obj.number }} من {{ page_obj.paginator.num_pages }}
+  </span>
+
+  {% if page_obj.has_next %}
+    <button
+        class="px-3 py-2 rounded-lg bg-white shadow-sm hover:bg-blue-50 text-gray-600"
+        hx-get="{% url 'store:home' %}"
+        hx-vals='{"page": {{ page_obj.next_page_number }}}'
+        hx-include="#filter-form"
+        hx-target="#product-grid"
+        hx-swap="innerHTML"
+        hx-push-url="true">
+      التالي
+    </button>
+  {% endif %}
+
+</div>
+{% endif %}
+
 {% else %}
 <div class="text-center py-20 text-gray-400">
   <p class="text-xl">لا توجد منتجات مطابقة</p>

@@ -1,3 +1,4 @@
+from django.core.paginator import Paginator
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.db import IntegrityError, transaction
@@ -8,6 +9,8 @@ from products.pricing import autofill_small_unit_price
 from inventory.models import Inventory, StockMovement
 from staff.permissions import perm_required
 import openpyxl
+
+STAFF_LIST_PAGE_SIZE = 30
 
 
 @perm_required('products.view_product')
@@ -20,8 +23,14 @@ def product_list(request):
         products = products.filter(category__slug=selected_category)
     if search_q:
         products = products.filter(name_ar__icontains=search_q)
+
+    paginator = Paginator(products, STAFF_LIST_PAGE_SIZE)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
     return render(request, 'staff/products/list.html', {
-        'products': products,
+        'products': page_obj,
+        'page_obj': page_obj,
+        'total_products': paginator.count,
         'categories': categories,
         'selected_category': selected_category,
         'search_q': search_q,

@@ -45,8 +45,8 @@
 </div>
 
 <!-- العملاء النشطين -->
-<div class="mb-8">
-    <h2 class="text-lg font-semibold text-green-600 mb-3">العملاء النشطين ({{ active|length }})</h2>
+<div class="mb-8" id="active-clients">
+    <h2 class="text-lg font-semibold text-green-600 mb-3">العملاء النشطين ({{ total_active }})</h2>
     {% if active %}
     <div class="bg-white rounded-xl shadow overflow-hidden">
         <table class="w-full text-sm">
@@ -73,6 +73,19 @@
             </tbody>
         </table>
     </div>
+    {% if active_page_obj.paginator.num_pages > 1 %}
+    <div class="flex items-center justify-center gap-2 mt-4 text-sm">
+        {% if active_page_obj.has_previous %}
+        <a href="?active_page={{ active_page_obj.previous_page_number }}#active-clients"
+           class="px-3 py-2 rounded-lg bg-white shadow-sm hover:bg-blue-50 text-gray-600">السابق</a>
+        {% endif %}
+        <span class="text-gray-500 px-2">صفحة {{ active_page_obj.number }} من {{ active_page_obj.paginator.num_pages }}</span>
+        {% if active_page_obj.has_next %}
+        <a href="?active_page={{ active_page_obj.next_page_number }}#active-clients"
+           class="px-3 py-2 rounded-lg bg-white shadow-sm hover:bg-blue-50 text-gray-600">التالي</a>
+        {% endif %}
+    </div>
+    {% endif %}
     {% else %}
     <p class="text-gray-400 text-sm">لا يوجد عملاء نشطين</p>
     {% endif %}
