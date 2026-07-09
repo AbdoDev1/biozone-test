@@ -1,5 +1,7 @@
-{# جرس الإشعارات — Alpine.js component بيعمل poll لنقطة JSON كل 15 ثانية
-   عشان يحدّث نفسه لوحده من غير ما المستخدم يعمل refresh للصفحة. #}
+{% comment %}
+جرس الإشعارات — Alpine.js component بيعمل poll لنقطة JSON كل 15 ثانية
+عشان يحدّث نفسه لوحده من غير ما المستخدم يعمل refresh للصفحة.
+{% endcomment %}
 <div class="relative"
      x-data="notificationBell({{ nav_unread_count|default:0 }})"
      x-init="init()">
@@ -27,7 +29,7 @@
 
         <div class="max-h-80 overflow-y-auto divide-y divide-gray-50">
             <template x-for="n in items" :key="n.id">
-                <a :href="n.url || '{% url 'notifications:list' %}'"
+                <a :href="'{% url 'notifications:open' 0 %}'.replace('/0/', '/' + n.id + '/')"
                    class="block px-4 py-3 text-sm hover:bg-gray-50"
                    :class="!n.is_read ? 'bg-blue-50/50' : ''">
                     <div class="flex items-start gap-2">

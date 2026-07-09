@@ -25,6 +25,22 @@ def order_list(request):
 
 
 @perm_required('orders.view_order')
+def order_print(request, pk):
+    """
+    نسخة قابلة للطباعة من الطلب — لتسهيل المراجعة اليدوية على المخزن
+    أثناء التحضير أو قبل اتخاذ قرار التأكيد/الرفض. بدون WeasyPrint،
+    بنفس أسلوب invoices/print.html (window.print() من المتصفح).
+    """
+    order = get_object_or_404(
+        Order.objects.select_related('client', 'client__client_profile').prefetch_related(
+            'items__product_unit__product__inventory'
+        ),
+        pk=pk,
+    )
+    return render(request, 'staff/orders/print.html', {'order': order})
+
+
+@perm_required('orders.view_order')
 def order_detail(request, pk):
     order = get_object_or_404(
         Order.objects.select_related('client').prefetch_related('items__product_unit__product__inventory'),

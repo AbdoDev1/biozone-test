@@ -51,6 +51,9 @@
                 <td class="px-4 py-3 text-gray-500">{{ order.created_at|date:"Y-m-d H:i" }}</td>
                 <td class="px-4 py-3">
                     <a href="{% url 'staff:order_detail' order.pk %}" class="text-blue-600 hover:underline text-xs">عرض</a>
+                    {% if order.status in 'PENDING,NEEDS_APPROVAL,CONFIRMED' %}
+                    <a href="{% url 'staff:order_print' order.pk %}" target="_blank" class="text-gray-500 hover:underline text-xs mr-2">🖨️ طباعة</a>
+                    {% endif %}
                 </td>
             </tr>
             {% empty %}

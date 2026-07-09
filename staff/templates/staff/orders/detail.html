@@ -33,6 +33,15 @@
 </div>
 {% endif %}
 
+{% if order.status in 'PENDING,NEEDS_APPROVAL,CONFIRMED' %}
+<div class="mb-6">
+    <a href="{% url 'staff:order_print' order.pk %}" target="_blank"
+       class="inline-flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-700 text-sm px-4 py-2 rounded-lg border border-gray-300">
+        🖨️ طباعة الطلب للمراجعة اليدوية
+    </a>
+</div>
+{% endif %}
+
 {% if order.status == 'NEEDS_APPROVAL' %}
 <div class="bg-orange-50 border border-orange-200 text-orange-800 rounded-xl px-4 py-3 mb-6 text-sm">
     ⏳ تم تعديل هذا الطلب وهو بانتظار موافقة العميل. لا يمكن تأكيده أو تسليمه قبل موافقة العميل على التعديل.
