@@ -26,18 +26,9 @@
     </div>
 
     <!-- خياراتك -->
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8 text-sm text-center">
-        <a href="{% url 'store:home' %}" class="bg-white rounded-xl shadow p-4 hover:bg-blue-50 transition">
-            🛍️<br>تصفح المنتجات
-        </a>
-        <a href="{% url 'orders:cart' %}" class="bg-white rounded-xl shadow p-4 hover:bg-blue-50 transition">
+    <div class="grid grid-cols-1 sm:grid-cols-1 gap-3 mb-8 text-sm text-center">
+        <a href="{% url 'orders:cart' %}" class="bg-white rounded-xl shadow p-4 hover:bg-blue-50 transition sm:max-w-xs sm:mx-auto sm:w-full">
             🛒<br>سلة المشتريات
-        </a>
-        <a href="{% url 'orders:order_list' %}" class="bg-white rounded-xl shadow p-4 hover:bg-blue-50 transition">
-            📦<br>الطلبات
-        </a>
-        <a href="{% url 'accounts:logout' %}" class="bg-white rounded-xl shadow p-4 hover:bg-red-50 transition text-red-600">
-            🚪<br>تسجيل الخروج
         </a>
     </div>
 
