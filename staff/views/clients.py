@@ -1,6 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from decimal import Decimal, InvalidOperation
@@ -8,19 +7,17 @@ from accounts.models import User, ClientProfile, BusinessTypeSetting
 from orders.models import Order
 from invoices.models import Invoice
 from accounting.models import AccountTransaction
+from staff.permissions import perm_required
 
 
-def staff_required(view_func):
-    def wrapper(request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return redirect('staff:login')
-        if request.user.role not in ['ADMIN', 'WAREHOUSE']:
-            return redirect('staff:login')
-        return view_func(request, *args, **kwargs)
-    return wrapper
-
-
-@staff_required
+# إدارة حسابات العملاء بقت مبنية على صلاحيات دجانجو حقيقية دقيقة (مش قفل
+# كامل على الأدمن بس زي الأول): عرض العملاء يحتاج accounts.view_clientprofile،
+# الموافقة/الرفض/التعديل يحتاج accounts.change_clientprofile، وتسجيل أي حركة
+# مالية (دفعة/تسوية) يحتاج accounting.add_accounttransaction — بالظبط نفس
+# الصلاحية المستخدمة في قسم الحسابات، لأنها فعليًا نفس العملية (إنشاء AccountTransaction).
+# الأدمن Superuser تلقائيًا فعنده وصول كامل دايمًا، والمخزن لازم ياخد
+# الصلاحية المطلوبة صراحةً من شاشة تعديل الموظف.
+@perm_required('accounts.view_clientprofile')
 def client_list(request):
     pending = ClientProfile.objects.filter(user__status='PENDING').select_related('user')
     active = ClientProfile.objects.filter(user__status='ACTIVE').select_related('user')
@@ -32,7 +29,7 @@ def client_list(request):
     })
 
 
-@staff_required
+@perm_required('accounts.view_clientprofile')
 def client_detail(request, pk):
     profile = get_object_or_404(ClientProfile, pk=pk)
     orders = Order.objects.filter(client=profile.user).prefetch_related('items')
@@ -61,7 +58,7 @@ def client_detail(request, pk):
     })
 
 
-@staff_required
+@perm_required('accounting.add_accounttransaction')
 def client_add_payment(request, pk):
     profile = get_object_or_404(ClientProfile, pk=pk)
 
@@ -95,7 +92,7 @@ def client_add_payment(request, pk):
     return redirect('staff:client_detail', pk=profile.pk)
 
 
-@staff_required
+@perm_required('accounting.add_accounttransaction')
 def client_add_adjustment(request, pk):
     profile = get_object_or_404(ClientProfile, pk=pk)
 
@@ -131,7 +128,7 @@ def client_add_adjustment(request, pk):
     return redirect('staff:client_detail', pk=profile.pk)
 
 
-@staff_required
+@perm_required('accounts.change_clientprofile')
 def client_approve(request, pk):
     profile = get_object_or_404(ClientProfile, pk=pk)
     default_setting = BusinessTypeSetting.get_for(profile.business_type)
@@ -163,7 +160,7 @@ def client_approve(request, pk):
     })
 
 
-@staff_required
+@perm_required('accounts.change_clientprofile')
 def client_reject(request, pk):
     profile = get_object_or_404(ClientProfile, pk=pk)
     user = profile.user

@@ -6,18 +6,11 @@ from products.models import Product, ProductUnit, Category
 from products.forms import ProductForm, ProductUnitForm, ProductUnitFormSet
 from products.pricing import autofill_small_unit_price
 from inventory.models import Inventory, StockMovement
+from staff.permissions import perm_required
 import openpyxl
 
 
-def staff_required(view_func):
-    def wrapper(request, *args, **kwargs):
-        if not request.user.is_authenticated or request.user.role not in ['ADMIN', 'WAREHOUSE']:
-            return redirect('staff:login')
-        return view_func(request, *args, **kwargs)
-    return wrapper
-
-
-@staff_required
+@perm_required('products.view_product')
 def product_list(request):
     products = Product.objects.select_related('category').prefetch_related('units').all()
     categories = Category.objects.filter(is_active=True)
@@ -35,7 +28,7 @@ def product_list(request):
     })
 
 
-@staff_required
+@perm_required('products.add_product')
 def product_add(request):
     if request.method == 'POST':
         # لو سعر القطعة (الوحدة الصغرى) سايبينه فاضي وفي كرتونة (وحدة كبرى)
@@ -93,7 +86,7 @@ def product_add(request):
     })
 
 
-@staff_required
+@perm_required('products.change_product')
 def product_edit(request, pk):
     product = get_object_or_404(Product, pk=pk)
     if request.method == 'POST':
@@ -163,7 +156,7 @@ def product_edit(request, pk):
     })
 
 
-@staff_required
+@perm_required('products.delete_product')
 def product_delete(request, pk):
     product = get_object_or_404(Product, pk=pk)
 
@@ -186,7 +179,7 @@ def product_delete(request, pk):
     })
 
 
-@staff_required
+@perm_required('products.add_product')
 def import_products(request):
     if request.method == 'POST':
         excel_file = request.FILES.get('excel_file')
@@ -298,7 +291,7 @@ def import_products(request):
     return render(request, 'staff/products/import.html')
 
 
-@staff_required
+@perm_required('products.view_product')
 def download_template(request):
     wb = openpyxl.Workbook()
     ws = wb.active

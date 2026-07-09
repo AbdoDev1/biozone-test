@@ -3,19 +3,10 @@ from django.contrib import messages
 from django.core.exceptions import ValidationError
 from inventory.models import Inventory, StockMovement
 from products.models import ProductUnit
+from staff.permissions import perm_required
 
 
-def staff_required(view_func):
-    def wrapper(request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return redirect('staff:login')
-        if request.user.role not in ['ADMIN', 'WAREHOUSE']:
-            return redirect('staff:login')
-        return view_func(request, *args, **kwargs)
-    return wrapper
-
-
-@staff_required
+@perm_required('inventory.view_inventory')
 def inventory_list(request):
     items = list(
         Inventory.objects.select_related(
@@ -25,7 +16,7 @@ def inventory_list(request):
     return render(request, 'staff/inventory/list.html', {'items': items})
 
 
-@staff_required
+@perm_required('inventory.view_inventory')
 def inventory_detail(request, pk):
     item = get_object_or_404(Inventory, pk=pk)
     movements = item.movements.select_related('created_by', 'unit').order_by('-created_at')[:20]
@@ -38,7 +29,7 @@ def inventory_detail(request, pk):
     })
 
 
-@staff_required
+@perm_required('inventory.add_stockmovement')
 def add_movement(request, pk):
     item = get_object_or_404(Inventory, pk=pk)
     if request.method == 'POST':

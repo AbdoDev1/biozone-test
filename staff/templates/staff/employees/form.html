@@ -1,0 +1,110 @@
+{% extends 'staff/base.html' %}
+{% block title %}{% if is_new %}إضافة موظف{% else %}تعديل صلاحيات {{ employee.username }}{% endif %} — Biozone ERP{% endblock %}
+{% block content %}
+
+<div class="mb-4">
+    <a href="{% url 'staff:employees' %}" class="text-blue-600 hover:underline text-sm">→ صلاحيات الموظفين</a>
+</div>
+
+<div class="max-w-xl mx-auto bg-white rounded-2xl shadow p-6 md:p-8">
+    <h1 class="text-xl font-bold text-gray-800 mb-6">
+        {% if is_new %}إضافة موظف جديد{% else %}تعديل صلاحيات {{ employee.username }}{% endif %}
+    </h1>
+
+    {% if form.non_field_errors %}
+    <div class="bg-red-50 text-red-700 text-sm rounded-lg p-3 mb-4">
+        {{ form.non_field_errors }}
+    </div>
+    {% endif %}
+
+    <form method="post" class="space-y-4">
+        {% csrf_token %}
+
+        <div>
+            <label class="text-sm font-medium text-gray-700 mb-1 block">اسم المستخدم</label>
+            {{ form.username }}
+            {% if form.username.errors %}<p class="text-xs text-red-600 mt-1">{{ form.username.errors|join:", " }}</p>{% endif %}
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+                <label class="text-sm font-medium text-gray-700 mb-1 block">الاسم الأول</label>
+                {{ form.first_name }}
+            </div>
+            <div>
+                <label class="text-sm font-medium text-gray-700 mb-1 block">الاسم الأخير</label>
+                {{ form.last_name }}
+            </div>
+        </div>
+
+        <div>
+            <label class="text-sm font-medium text-gray-700 mb-1 block">البريد الإلكتروني</label>
+            {{ form.email }}
+        </div>
+
+        {% if is_new %}
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+                <label class="text-sm font-medium text-gray-700 mb-1 block">كلمة المرور</label>
+                {{ form.password1 }}
+                {% if form.password1.errors %}<p class="text-xs text-red-600 mt-1">{{ form.password1.errors|join:", " }}</p>{% endif %}
+            </div>
+            <div>
+                <label class="text-sm font-medium text-gray-700 mb-1 block">تأكيد كلمة المرور</label>
+                {{ form.password2 }}
+                {% if form.password2.errors %}<p class="text-xs text-red-600 mt-1">{{ form.password2.errors|join:", " }}</p>{% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <hr class="my-2">
+        <h2 class="text-sm font-semibold text-gray-700">الدور والصلاحيات</h2>
+
+        <div>
+            <label class="text-sm font-medium text-gray-700 mb-1 block">الدور الوظيفي</label>
+            {{ form.role }}
+        </div>
+
+        <label class="flex items-center gap-2 border rounded-lg px-3 py-2 cursor-pointer has-[:checked]:border-green-500 has-[:checked]:bg-green-50">
+            {{ form.is_active }}
+            <span class="text-sm">الحساب مفعّل (يقدر يسجّل دخول)</span>
+        </label>
+
+        <hr class="my-2">
+        <h2 class="text-sm font-semibold text-gray-700">صلاحيات الأقسام</h2>
+        <p class="text-xs text-gray-500 -mt-2">
+            حدّد بالظبط إيه اللي يقدر الموظف ده يعمله في كل قسم. المدير عنده وصول كامل لكل الأقسام تلقائيًا
+            بغض النظر عن الاختيارات دي.
+        </p>
+
+        <div class="space-y-3">
+            {% for group in permission_groups %}
+            <div class="border rounded-lg p-3">
+                <p class="text-sm font-medium text-gray-800 mb-2">{{ group.label }}</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {% for item in group.items %}
+                    <label class="flex items-center gap-2 border rounded-lg px-3 py-2 cursor-pointer has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                        <input type="checkbox" name="perm_codenames" value="{{ item.codename }}"
+                               {% if item.checked %}checked{% endif %} class="accent-blue-600">
+                        <span class="text-sm">{{ item.label }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-3 pt-2">
+            <button type="submit"
+                    class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-xl transition">
+                {% if is_new %}إضافة الموظف{% else %}حفظ التعديلات{% endif %}
+            </button>
+            <a href="{% url 'staff:employees' %}"
+               class="text-center border border-gray-200 text-gray-600 px-6 py-3 rounded-xl hover:bg-gray-50 transition">
+                إلغاء
+            </a>
+        </div>
+    </form>
+</div>
+
+{% endblock %}

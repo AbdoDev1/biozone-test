@@ -6,7 +6,9 @@
     <div class="bg-white rounded-xl shadow p-6">
         <p class="text-gray-500 text-sm">طلبات التسجيل</p>
         <p class="text-3xl font-bold text-yellow-500 mt-1">{{ pending_clients }}</p>
+        {% if perms.accounts.view_clientprofile %}
         <a href="{% url 'staff:clients' %}" class="text-xs text-blue-600 hover:underline mt-2 block">عرض الكل</a>
+        {% endif %}
     </div>
     <div class="bg-white rounded-xl shadow p-6">
         <p class="text-gray-500 text-sm">أصناف المخزون</p>

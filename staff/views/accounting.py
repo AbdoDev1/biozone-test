@@ -8,22 +8,7 @@ from django.http import HttpResponse
 
 from accounts.models import User, ClientProfile
 from accounting.models import AccountTransaction
-
-
-def accounting_required(view_func):
-    """
-    زي staff_required العادي، بس بيتأكد كمان إن الحساب عنده صلاحية القسم
-    المالي فعليًا (الأدمن دايمًا عنده وصول كامل، والمخزن لازم يتفعّل له
-    can_access_accounting من لوحة الأدمن أولًا — شوف User.has_accounting_access()).
-    """
-    def wrapper(request, *args, **kwargs):
-        if not request.user.is_authenticated or request.user.role not in ['ADMIN', 'WAREHOUSE']:
-            return redirect('staff:login')
-        if not request.user.has_accounting_access():
-            messages.error(request, 'لا تملك صلاحية الوصول إلى القسم المالي. يرجى التواصل مع الأدمن.')
-            return redirect('staff:dashboard')
-        return view_func(request, *args, **kwargs)
-    return wrapper
+from staff.permissions import perm_required
 
 
 def _clients_with_balance():
@@ -44,7 +29,7 @@ def _clients_with_balance():
     return rows
 
 
-@accounting_required
+@perm_required('accounting.view_accounttransaction')
 def accounting_overview(request):
     rows = _clients_with_balance()
 
@@ -70,7 +55,7 @@ def accounting_overview(request):
     })
 
 
-@accounting_required
+@perm_required('accounting.add_accounttransaction')
 def accounting_quick_entry(request):
     if request.method != 'POST':
         return redirect('staff:accounting_overview')
@@ -131,7 +116,7 @@ def accounting_quick_entry(request):
     return redirect('staff:accounting_overview')
 
 
-@accounting_required
+@perm_required('accounting.view_accounttransaction')
 def accounting_export(request):
     import openpyxl
     from openpyxl.utils import get_column_letter

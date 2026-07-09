@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <style>[x-cloak] { display: none !important; }</style>
     {% block extra_head %}{% endblock %}
 </head>
 <body class="bg-gray-50 min-h-screen" dir="rtl" {% block body_attrs %}{% endblock %}>
@@ -19,28 +20,57 @@
 
         {% if request.user.is_authenticated %}
 
-            <a href="{% url 'accounts:dashboard' %}" class="text-sm text-gray-500 hover:text-blue-600">
-                {{ request.user.username }}
-            </a>
-
             {% if request.user.role in 'ADMIN,WAREHOUSE' %}
+
+                <a href="{% url 'accounts:dashboard' %}" class="text-sm text-gray-500 hover:text-blue-600">
+                    {{ request.user.username }}
+                </a>
 
                 <a href="{% url 'staff:dashboard' %}"
                    class="text-sm bg-gray-800 text-white px-4 py-2 rounded-lg">
                     لوحة التحكم
                 </a>
 
+                <a href="{% url 'accounts:logout' %}"
+                   class="text-sm text-red-500 hover:underline">
+                    تسجيل الخروج
+                </a>
+
             {% elif request.user.role == 'CLIENT' %}
 
-                <a href="{% url 'store:home' %}"
-                   class="text-sm text-gray-600 hover:text-blue-700">
-                    المتجر
-                </a>
+                <!-- قائمة الحساب المنبثقة: بتجمع كل صفحات العميل (الحساب، المتجر، الطلبات، تسجيل الخروج) -->
+                <div class="relative" x-data="{ open: false }">
+                    <button @click="open = !open" @click.outside="open = false"
+                            class="flex items-center gap-1 text-sm text-gray-700 hover:text-blue-600 px-2 py-2 rounded-lg hover:bg-gray-50">
+                        <span>👤</span>
+                        <span>{{ request.user.username }}</span>
+                        <svg class="w-4 h-4 transition-transform" :class="open ? 'rotate-180' : ''"
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </button>
 
-                <a href="{% url 'orders:order_list' %}"
-                   class="text-sm text-gray-600 hover:text-blue-700">
-                    الطلبات
-                </a>
+                    <div x-show="open" x-cloak x-transition
+                         class="absolute left-0 mt-2 w-52 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-50">
+                        <a href="{% url 'accounts:dashboard' %}"
+                           class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
+                            🧾 حسابي
+                        </a>
+                        <a href="{% url 'store:home' %}"
+                           class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
+                            🏬 المتجر
+                        </a>
+                        <a href="{% url 'orders:order_list' %}"
+                           class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
+                            📦 طلباتي
+                        </a>
+                        <hr class="my-1 border-gray-100">
+                        <a href="{% url 'accounts:logout' %}"
+                           class="flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50">
+                            🚪 تسجيل الخروج
+                        </a>
+                    </div>
+                </div>
 
                 <a href="{% url 'orders:cart' %}"
                    class="text-sm bg-blue-600 text-white px-4 py-2 rounded-lg relative">
@@ -51,11 +81,6 @@
                 </a>
 
             {% endif %}
-
-            <a href="{% url 'accounts:logout' %}"
-               class="text-sm text-red-500 hover:underline">
-                تسجيل الخروج
-            </a>
 
         {% else %}
 

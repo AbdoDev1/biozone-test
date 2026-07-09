@@ -1,0 +1,82 @@
+{% extends 'staff/base.html' %}
+{% block title %}صلاحيات الموظفين — Biozone ERP{% endblock %}
+{% block content %}
+
+<div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold text-gray-800">صلاحيات الموظفين</h1>
+    <a href="{% url 'staff:employee_add' %}"
+       class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg text-sm">
+        + إضافة موظف
+    </a>
+</div>
+
+<div class="bg-white rounded-xl shadow overflow-hidden">
+    <table class="w-full text-sm">
+        <thead class="bg-gray-50 text-gray-600">
+            <tr>
+                <th class="px-4 py-3 text-right">اسم المستخدم</th>
+                <th class="px-4 py-3 text-right">البريد الإلكتروني</th>
+                <th class="px-4 py-3 text-right">الدور</th>
+                <th class="px-4 py-3 text-right">نشط</th>
+                <th class="px-4 py-3 text-right">صلاحية الوصول للقسم المالي</th>
+                <th class="px-4 py-3 text-right">إجراء</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            {% for employee in employees %}
+            <tr class="hover:bg-gray-50">
+                <td class="px-4 py-3 font-medium">
+                    {{ employee.username }}
+                    {% if employee.pk == request.user.pk %}
+                    <span class="text-xs text-gray-400">(أنت)</span>
+                    {% endif %}
+                </td>
+                <td class="px-4 py-3 text-gray-500">{{ employee.email|default:"-" }}</td>
+                <td class="px-4 py-3">
+                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold
+                        {% if employee.role == 'ADMIN' %}bg-purple-100 text-purple-700
+                        {% else %}bg-blue-100 text-blue-700{% endif %}">
+                        {{ employee.get_role_display }}
+                    </span>
+                </td>
+                <td class="px-4 py-3">
+                    {% if employee.is_active %}
+                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">نشط</span>
+                    {% else %}
+                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">موقوف</span>
+                    {% endif %}
+                </td>
+                <td class="px-4 py-3">
+                    {% if employee.role == 'ADMIN' %}
+                    <span class="text-xs text-gray-400">دايمًا متاحة (مدير)</span>
+                    {% elif employee.can_access_accounting %}
+                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">متاحة</span>
+                    {% else %}
+                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-500">غير متاحة</span>
+                    {% endif %}
+                </td>
+                <td class="px-4 py-3 flex flex-wrap gap-2">
+                    <a href="{% url 'staff:employee_edit' employee.pk %}"
+                       class="text-blue-600 hover:underline text-xs">تعديل الصلاحيات</a>
+                    {% if employee.pk != request.user.pk %}
+                    <form method="post" action="{% url 'staff:employee_toggle_active' employee.pk %}">
+                        {% csrf_token %}
+                        {% if employee.is_active %}
+                        <button type="submit" class="text-red-600 hover:underline text-xs">إيقاف</button>
+                        {% else %}
+                        <button type="submit" class="text-green-600 hover:underline text-xs">تفعيل</button>
+                        {% endif %}
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" class="px-4 py-6 text-center text-gray-400">لا يوجد موظفين حتى الآن.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}

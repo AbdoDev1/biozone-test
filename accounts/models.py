@@ -1,7 +1,7 @@
 from django.db import models
 
 # Create your models here.
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, UserManager
 from django.db import models
 
 
@@ -30,16 +30,54 @@ class User(AbstractUser):
 
     can_access_accounting = models.BooleanField(
         default=False,
-        verbose_name='صلاحية الوصول للقسم المالي',
-        help_text='الأدمن دايمًا عنده وصول كامل للقسم المالي بغض النظر عن هذا الحقل. '
-                   'فعّل هذا الحقل لو عايز تسمح لحساب مخزن معيّن بالوصول للقسم المالي.',
+        verbose_name='صلاحية الوصول للقسم المالي (قديم)',
+        help_text='حقل قديم — استُبدل بنظام الصلاحيات الدقيق (staff.permissions.PERMISSION_SECTIONS). '
+                   'اترك القيمة الافتراضية ومنّح صلاحية "الحسابات" من شاشة تعديل الموظف بدلًا منه.',
     )
 
+    def save(self, *args, **kwargs):
+        # الأدمن دايمًا Superuser تلقائيًا (وصول كامل لكل الصلاحيات بدون استثناء)،
+        # وأي دور تاني (مخزن/عميل) مش Superuser أبدًا حتى لو اتغيّر يدويًا —
+        # الدور هو مصدر الحقيقة الوحيد، مش حقل is_superuser نفسه.
+        self.is_superuser = (self.role == self.Role.ADMIN)
+        super().save(*args, **kwargs)
+
     def has_accounting_access(self):
-        return self.role == self.Role.ADMIN or self.can_access_accounting
+        """
+        الأدمن عنده وصول كامل تلقائيًا (Superuser بيرجع True من has_perm دايمًا).
+        المخزن لازم يتاخد له صلاحية 'accounting.view_accounttransaction' صراحةً
+        من شاشة تعديل الموظف (قسم الحسابات في كتالوج الصلاحيات).
+        """
+        return self.has_perm('accounting.view_accounttransaction')
 
     def __str__(self):
         return f"{self.username} ({self.get_role_display()})"
+
+
+class EmployeeManager(UserManager):
+    """
+    مدير خاص بيرجع الموظفين بس (مدير/مخزن) — بيتفصل عن العملاء تمامًا.
+    مستخدم في لوحة الإدارة (Employee proxy) وفي أي مكان محتاج يتعامل مع
+    الموظفين بدون ما يلمس حسابات العملاء بالغلط. بيورث من UserManager
+    العادي (مش Manager) عشان يفضل عنده create_user/normalize_email
+    وكل حاجة لازمة لفورمات لوحة الإدارة الخاصة بالمستخدمين.
+    """
+    def get_queryset(self):
+        return super().get_queryset().filter(role__in=[User.Role.ADMIN, User.Role.WAREHOUSE])
+
+
+class Employee(User):
+    """
+    Proxy model على User بيقصر النطاق على الموظفين (مدير/مخزن) بس.
+    مستخدم عشان نفصل شاشة إدارة الموظفين في لوحة الإدارة عن شاشة العملاء،
+    ونمنع ظهور صلاحية الوصول للقسم المالي لحسابات العملاء.
+    """
+    objects = EmployeeManager()
+
+    class Meta:
+        proxy = True
+        verbose_name = 'موظف'
+        verbose_name_plural = 'الموظفين'
 
 
 class BusinessType(models.TextChoices):

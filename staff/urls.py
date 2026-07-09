@@ -1,5 +1,5 @@
 from django.urls import path
-from staff.views import dashboard, inventory, clients, products, orders, accounting
+from staff.views import dashboard, inventory, clients, products, orders, accounting, employees
 
 app_name = 'staff'
 
@@ -7,6 +7,10 @@ urlpatterns = [
     path('', dashboard.dashboard, name='dashboard'),
     path('login/', dashboard.staff_login, name='login'),
     path('logout/', dashboard.staff_logout, name='logout'),
+    path('employees/', employees.employee_list, name='employees'),
+    path('employees/add/', employees.employee_add, name='employee_add'),
+    path('employees/<int:pk>/edit/', employees.employee_edit, name='employee_edit'),
+    path('employees/<int:pk>/toggle-active/', employees.employee_toggle_active, name='employee_toggle_active'),
     path('inventory/', inventory.inventory_list, name='inventory'),
     path('inventory/<int:pk>/', inventory.inventory_detail, name='inventory_detail'),
     path('inventory/<int:pk>/movement/', inventory.add_movement, name='add_movement'),

@@ -38,23 +38,37 @@
            class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-blue-50 text-gray-700 hover:text-blue-600">
             🏠 الرئيسية
         </a>
+        {% if perms.accounts.view_clientprofile %}
         <a href="{% url 'staff:clients' %}"
            class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-blue-50 text-gray-700 hover:text-blue-600">
-            👥 العملاء
+            👥 إدارة حسابات العملاء
         </a>
+        {% endif %}
+        {% if request.user.role == 'ADMIN' %}
+        <a href="{% url 'staff:employees' %}"
+           class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-blue-50 text-gray-700 hover:text-blue-600">
+            🧑‍💼 صلاحيات الموظفين
+        </a>
+        {% endif %}
+        {% if perms.inventory.view_inventory %}
         <a href="{% url 'staff:inventory' %}"
            class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-blue-50 text-gray-700 hover:text-blue-600">
             📦 المخزون
         </a>
+        {% endif %}
+        {% if perms.orders.view_order %}
         <a href="{% url 'staff:order_list' %}"
            class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-blue-50 text-gray-700 hover:text-blue-600">
             🧾 الطلبات
         </a>
+        {% endif %}
+        {% if perms.products.view_product %}
         <a href="{% url 'staff:product_list' %}"
            class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-blue-50 text-gray-700 hover:text-blue-600">
             🛍️ المنتجات
         </a>
-        {% if request.user.has_accounting_access %}
+        {% endif %}
+        {% if perms.accounting.view_accounttransaction %}
         <a href="{% url 'staff:accounting_overview' %}"
            class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-blue-50 text-gray-700 hover:text-blue-600">
             💰 الحسابات

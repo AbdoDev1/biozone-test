@@ -1,22 +1,15 @@
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.shortcuts import render, redirect, get_object_or_404
 
 from orders.models import Order, OrderItem
 from invoices.models import Invoice
+from staff.permissions import perm_required
 
 
-def _staff_required(user):
-    return user.is_authenticated and user.role in ['ADMIN', 'WAREHOUSE']
-
-
-@login_required
+@perm_required('orders.view_order')
 def order_list(request):
-    if not _staff_required(request.user):
-        return redirect('store:home')
-
     status = request.GET.get('status', '')
     orders = Order.objects.select_related('client').prefetch_related('items')
 
@@ -31,17 +24,20 @@ def order_list(request):
     return render(request, 'staff/orders/list.html', context)
 
 
-@login_required
+@perm_required('orders.view_order')
 def order_detail(request, pk):
-    if not _staff_required(request.user):
-        return redirect('store:home')
-
     order = get_object_or_404(
         Order.objects.select_related('client').prefetch_related('items__product_unit__product__inventory'),
         pk=pk,
     )
 
     if request.method == 'POST':
+        # الإجراءات دي بتعدّل حالة الطلب فعليًا (تأكيد/رفض/تسليم/تعديل كمية)
+        # فمحتاجة صلاحية "تعديل" مش "عرض" بس.
+        if not request.user.has_perm('orders.change_order'):
+            messages.error(request, 'ليس لديك صلاحية تعديل الطلبات. تواصل مع الأدمن.')
+            return redirect('staff:order_detail', pk=order.pk)
+
         action = request.POST.get('action')
 
         if action == 'update_quantities':
