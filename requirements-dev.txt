@@ -1,0 +1,4 @@
+# متطلبات التطوير المحلي فقط — متستخدمش الملف ده في الـ Dockerfile ولا على Render
+-r requirements.txt
+
+django-debug-toolbar==5.1.0

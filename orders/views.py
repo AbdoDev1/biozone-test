@@ -1,4 +1,5 @@
 import json
+from functools import wraps
 from django.core.paginator import Paginator
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
@@ -11,15 +12,25 @@ from .cart import Cart
 from .models import Order, OrderItem, SiteConfig
 
 
+def client_required(view_func):
+    """
+    بوابة موحّدة لكل عمليات السلة والطلبات: لازم المستخدم يكون مسجّل دخول،
+    ودوره CLIENT، وحالته ACTIVE. استخدام decorator واحد بدل تكرار نفس
+    الفحص يدويًا في كل دالة يمنع نسيانه بالغلط في دالة جديدة مستقبلًا
+    (زي ما حصل مع cart_update/remove/plus/minus).
+    """
+    @wraps(view_func)
+    @login_required
+    def wrapper(request, *args, **kwargs):
+        if request.user.role != 'CLIENT' or request.user.status != 'ACTIVE':
+            messages.error(request, 'ليست لديك صلاحية للوصول إلى هذه الصفحة.')
+            return redirect('store:home')
+        return view_func(request, *args, **kwargs)
+    return wrapper
+
+
+@client_required
 def cart_add(request, unit_id):
-    if not request.user.is_authenticated:
-        messages.warning(request, 'يرجى تسجيل الدخول أولاً.')
-        return redirect('accounts:login')
-
-    if request.user.role != 'CLIENT' or request.user.status != 'ACTIVE':
-        messages.error(request, 'ليست لديك صلاحية للوصول إلى هذه الصفحة.')
-        return redirect('store:home')
-
     cart = Cart(request)
     quantity = int(request.POST.get("quantity", 1))
     cart.add(unit_id, quantity)
@@ -42,6 +53,7 @@ def cart_badge(request):
     return render(request, 'orders/partials/cart_badge.html', {'count': len(cart)})
 
 
+@client_required
 def cart_update(request, unit_id):
     cart = Cart(request)
     quantity = int(request.POST.get("quantity", 1))
@@ -51,6 +63,7 @@ def cart_update(request, unit_id):
     return redirect("orders:cart")
 
 
+@client_required
 def cart_remove(request, unit_id):
     cart = Cart(request)
     cart.remove(unit_id)
@@ -59,9 +72,8 @@ def cart_remove(request, unit_id):
     return redirect("orders:cart")
 
 
+@client_required
 def cart_view(request):
-    if not request.user.is_authenticated:
-        return redirect('accounts:login')
     cart = Cart(request)
     config = SiteConfig.get_solo()
     total = cart.get_total()
@@ -75,12 +87,14 @@ def cart_view(request):
     })
 
 
+@client_required
 def cart_plus(request, unit_id):
     cart = Cart(request)
     cart.increase(unit_id)
     return cart_controls(request, unit_id)
 
 
+@client_required
 def cart_minus(request, unit_id):
     cart = Cart(request)
     cart.decrease(unit_id)
@@ -99,11 +113,8 @@ def cart_controls(request, unit_id):
     return response
 
 
-@login_required
+@client_required
 def checkout(request):
-    if request.user.role != 'CLIENT' or request.user.status != 'ACTIVE':
-        return redirect('store:home')
-
     cart = Cart(request)
     items = cart.get_items()
 
@@ -178,23 +189,24 @@ def checkout(request):
     })
 
 
-@login_required
+@client_required
 def order_detail(request, pk):
-    order = get_object_or_404(Order, pk=pk, client=request.user)
+    order = get_object_or_404(
+        Order.objects.prefetch_related('items__product_unit__product'),
+        pk=pk, client=request.user,
+    )
     return render(request, 'orders/order_detail.html', {'order': order})
 
 
-@login_required
+@client_required
 def order_list(request):
-    if request.user.role != 'CLIENT':
-        return redirect('store:home')
-    orders_qs = Order.objects.filter(client=request.user)
+    orders_qs = Order.objects.filter(client=request.user).prefetch_related('items')
     paginator = Paginator(orders_qs, 20)
     page_obj = paginator.get_page(request.GET.get('page'))
     return render(request, 'orders/order_list.html', {'orders': page_obj, 'page_obj': page_obj})
 
 
-@login_required
+@client_required
 def order_approve_amendment(request, pk):
     order = get_object_or_404(Order, pk=pk, client=request.user)
     if order.status != Order.Status.NEEDS_APPROVAL:
@@ -205,7 +217,7 @@ def order_approve_amendment(request, pk):
     return redirect('orders:order_detail', pk=order.pk)
 
 
-@login_required
+@client_required
 def order_reject_amendment(request, pk):
     order = get_object_or_404(Order, pk=pk, client=request.user)
     if order.status != Order.Status.NEEDS_APPROVAL:

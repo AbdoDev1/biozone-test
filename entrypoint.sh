@@ -13,6 +13,13 @@ python manage.py migrate --noinput
 echo "== تجميع الملفات الثابتة =="
 python manage.py collectstatic --noinput --clear
 
+# تأكيد وجود حساب الأدمن تلقائيًا لو متغيرات البيئة متحددة في .env.production.
+# آمن يتنفذ كل مرة (get_or_create + تحديث) — مش هيبوّظ حساب موجود ولا يعمل تكرار.
+if [ -n "${DJANGO_ADMIN_USERNAME:-}" ] && [ -n "${DJANGO_ADMIN_PASSWORD:-}" ]; then
+    echo "== التأكد من وجود حساب الأدمن =="
+    python manage.py ensure_admin
+fi
+
 # عدد الـ workers: لو GUNICORN_WORKERS متحدد صراحة في .env.production بنستخدمه
 # زي ما هو (تحكم يدوي كامل). لو مش متحدد، بنحسبه تلقائيًا من عدد أنوية
 # المعالج الفعلية للحاوية بمعادلة gunicorn المعتمدة: (2 × الأنوية) + 1.

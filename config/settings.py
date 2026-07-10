@@ -72,6 +72,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -79,6 +80,18 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+# django-debug-toolbar للتطوير المحلي بس (عشان نكشف N+1 وأي queries زيادة).
+# بيتفعّل بس لو DEBUG=True وموجودة فعليًا في requirements-dev.txt، فمستحيل
+# تتحمّل أو تشتغل في الإنتاج على Render حتى لو حد نسي وسابها بالغلط.
+if DEBUG:
+    try:
+        import debug_toolbar  # noqa: F401
+        INSTALLED_APPS += ['debug_toolbar']
+        MIDDLEWARE += ['debug_toolbar.middleware.DebugToolbarMiddleware']
+        INTERNAL_IPS = ['127.0.0.1']
+    except ImportError:
+        pass
 
 ROOT_URLCONF = 'config.urls'
 
@@ -152,6 +165,19 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# WhiteNoise: بيقدّم الملفات الثابتة مباشرة من Django/gunicorn، ده بديل
+# nginx على منصات زي Render اللي مبتدعمش حاوية nginx منفصلة. الميزة إن
+# الملفات بتتضغط تلقائيًا وبتاخد اسم فيه hash عشان الكاش يبقى دايم وآمن.
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
+
 AUTH_USER_MODEL = 'accounts.User'
 
 import os

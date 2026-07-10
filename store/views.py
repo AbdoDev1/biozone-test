@@ -2,6 +2,8 @@ from django.core.paginator import Paginator
 from django.shortcuts import render, get_object_or_404
 from products.models import Category, Product, ProductUnit
 from inventory.models import Inventory
+from django.db.models import Q
+
 
 PRODUCTS_PER_PAGE = 24
 
@@ -19,9 +21,10 @@ def store_home(request):
     if selected_manufacturer:
         products = products.filter(manufacturer=selected_manufacturer)
     if search_q:
-        products = products.filter(name_ar__icontains=search_q) | \
-                   products.filter(name_en__icontains=search_q)
-
+       products = products.filter(
+    Q(name_ar__icontains=search_q) |
+    Q(name_en__icontains=search_q)
+)
     manufacturers = Product.objects.filter(is_active=True)\
                            .exclude(manufacturer='')\
                            .values_list('manufacturer', flat=True)\
