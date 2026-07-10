@@ -79,18 +79,16 @@
                 <td class="px-4 py-3 text-gray-600">{{ product.category.name }}</td>
                 <td class="px-4 py-3 text-gray-500">{{ product.manufacturer|default:"—" }}</td>
                 <td class="px-4 py-3 font-semibold text-blue-700">
-                    {% with unit=product.units.first %}
+                    {% with unit=product.units.all|first %}
                         {% if unit %}{{ unit.unit_price }} ج.م{% else %}—{% endif %}
                     {% endwith %}
                 </td>
                 <td class="px-4 py-3">
-                    {% with unit=product.units.first %}
-                        {% if unit.inventory %}
-                            <span class="{% if unit.inventory.is_low %}text-red-600 font-bold{% else %}text-green-600{% endif %}">
-                                {{ unit.inventory.available }}
-                            </span>
-                        {% else %}—{% endif %}
-                    {% endwith %}
+                    {% if product.inventory %}
+                        <span class="{% if product.inventory.is_low %}text-red-600 font-bold{% else %}text-green-600{% endif %}">
+                            {{ product.inventory.available }}
+                        </span>
+                    {% else %}—{% endif %}
                 </td>
                 <td class="px-4 py-3">
                     {% if product.is_active %}

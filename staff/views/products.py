@@ -15,7 +15,7 @@ STAFF_LIST_PAGE_SIZE = 30
 
 @perm_required('products.view_product')
 def product_list(request):
-    products = Product.objects.select_related('category').prefetch_related('units').all()
+    products = Product.objects.select_related('category', 'inventory').prefetch_related('units').all()
     categories = Category.objects.filter(is_active=True)
     selected_category = request.GET.get('category', '')
     search_q = request.GET.get('q', '')

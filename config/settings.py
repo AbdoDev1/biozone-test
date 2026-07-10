@@ -129,6 +129,24 @@ DATABASES = {
     }
 }
 
+ #----- الإيميل (لازم لإرسال روابط إعادة تعيين كلمة السر) -----
+# EMAIL_BACKEND الافتراضي بيطبع الإيميل في الـ console (docker compose logs -f web)
+# ده مفيد جدًا للتجربة المحلية من غير ما تحتاج SMTP حقيقي.
+EMAIL_BACKEND = config(
+    'EMAIL_BACKEND',
+    default='django.core.mail.backends.console.EmailBackend',
+)
+EMAIL_HOST = config('EMAIL_HOST', default='')
+EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
+EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='Biozone <no-reply@biozone.local>')
+
+# رابط إعادة التعيين صالح لمدة ساعة واحدة بس (بالثواني)
+PASSWORD_RESET_TIMEOUT = 60 * 60
+
+
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
 
