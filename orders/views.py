@@ -32,7 +32,10 @@ def client_required(view_func):
 @client_required
 def cart_add(request, unit_id):
     cart = Cart(request)
-    quantity = int(request.POST.get("quantity", 1))
+    try:
+        quantity = int(request.POST.get("quantity", 1))
+    except (TypeError, ValueError):
+        quantity = 1
     cart.add(unit_id, quantity)
 
     if request.headers.get("HX-Request"):
@@ -56,7 +59,10 @@ def cart_badge(request):
 @client_required
 def cart_update(request, unit_id):
     cart = Cart(request)
-    quantity = int(request.POST.get("quantity", 1))
+    try:
+        quantity = int(request.POST.get("quantity", 1))
+    except (TypeError, ValueError):
+        quantity = 1
     cart.set_quantity(unit_id, quantity)
     if request.headers.get("HX-Request"):
         return cart_controls(request, unit_id)
@@ -168,6 +174,8 @@ def checkout(request):
                     order=order,
                     product_unit=item['unit'],
                     quantity=item['quantity'],
+                    public_price=item['public_price'],
+                    discount_percent=item['discount_percent'],
                     unit_price=item['unit_price'],
                 )
                 inv = locked_inventories[item['unit'].product_id]

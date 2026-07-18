@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block title %}الوارد الجديد | Biozone{% endblock %}
+
+{% block body_attrs %}
+hx-on:cartUpdated="htmx.ajax('GET','{% url 'orders:cart_badge' %}',{target:'#cart-badge',swap:'innerHTML'})"
+{% endblock %}
+
+{% block content %}
+
+<div class="bg-blue-700 text-white text-center py-10 px-4">
+    <h1 class="text-3xl font-bold mb-2">🆕 الوارد الجديد</h1>
+    <p class="text-blue-200">
+        {% if total_products %}
+            {{ total_products }} صنف — منتجات جديدة أو اتزوّد رصيدها، لحد ما تتباع لحد الحد الأدنى (أو يعدي {{ window_days }} أيام)
+        {% else %}
+            مفيش وارد جديد حاليًا
+        {% endif %}
+    </p>
+</div>
+
+<div class="max-w-7xl mx-auto px-4 py-8">
+    <div id="product-grid">
+        {% include 'store/partials/product_grid.html' %}
+    </div>
+</div>
+
+{% endblock %}

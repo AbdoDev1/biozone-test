@@ -16,8 +16,8 @@
         <div class="flex justify-between text-sm">
           <span class="text-gray-600">
             {{ item.unit.product.name_ar }} × {{ item.quantity }}
-            {% if item.is_wholesale %}
-              <span class="inline-block bg-green-100 text-green-700 text-[10px] font-semibold px-2 py-0.5 rounded-full mr-1">جملة</span>
+            {% if item.is_large_unit %}
+              <span class="inline-block bg-green-100 text-green-700 text-[10px] font-semibold px-2 py-0.5 rounded-full mr-1">{{ item.unit.name }}</span>
             {% endif %}
           </span>
           <span class="font-semibold text-gray-800">{{ item.subtotal }} ج.م</span>

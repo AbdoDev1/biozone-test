@@ -126,13 +126,13 @@ def accounting_export(request):
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = 'المديونيات'
-    headers = ['اسم النشاط', 'نوع النشاط', 'الهاتف', 'الرصيد (ج.م)']
+    headers = ['اسم النشاط', 'نوع الحساب', 'الهاتف', 'الرصيد (ج.م)']
     ws.append(headers)
     for row in rows:
         profile = row['profile']
         ws.append([
             profile.business_name,
-            profile.get_business_type_display(),
+            profile.account_type.name,
             profile.phone,
             float(row['balance']),
         ])

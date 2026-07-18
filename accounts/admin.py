@@ -2,7 +2,7 @@ from django import forms
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from .models import User, Employee, ClientProfile, BusinessTypeSetting
+from .models import User, Employee, ClientProfile
 
 
 # =====================================================================
@@ -120,8 +120,7 @@ class ClientProfileForm(forms.ModelForm):
     class Meta:
         model = ClientProfile
         fields = (
-            'user', 'business_name', 'business_type', 'address', 'phone', 'verified_at',
-            'is_wholesale_override', 'custom_discount_percent',
+            'user', 'business_name', 'account_type', 'address', 'phone', 'verified_at',
         )
 
     def __init__(self, *args, **kwargs):
@@ -153,24 +152,17 @@ class ClientProfileAdmin(admin.ModelAdmin):
     """
     form = ClientProfileForm
     list_display = (
-        'business_name', 'business_type', 'user', 'phone',
+        'business_name', 'account_type', 'user', 'phone',
         'account_status_display', 'is_active_display',
-        'is_wholesale', 'effective_discount_percent',
     )
-    list_filter = ('business_type', 'user__status', 'user__is_active')
+    list_filter = ('account_type', 'user__status', 'user__is_active')
     search_fields = ('business_name', 'user__username', 'phone')
     actions = ['activate_accounts', 'deactivate_accounts']
 
     fields = (
-        'user', 'business_name', 'business_type', 'address', 'phone', 'verified_at',
+        'user', 'business_name', 'account_type', 'address', 'phone', 'verified_at',
         'account_status', 'is_active',
-        'is_wholesale_override', 'custom_discount_percent',
     )
-
-    def is_wholesale(self, obj):
-        return obj.is_wholesale
-    is_wholesale.boolean = True
-    is_wholesale.short_description = 'جملة؟'
 
     def account_status_display(self, obj):
         return obj.user.get_status_display()
@@ -215,12 +207,3 @@ class BaseUserAdmin(admin.ModelAdmin):
     def get_model_perms(self, request):
         return {}
 
-
-@admin.register(BusinessTypeSetting)
-class BusinessTypeSettingAdmin(admin.ModelAdmin):
-    list_display = ('get_business_type_display', 'is_wholesale', 'discount_percent')
-    list_editable = ('is_wholesale', 'discount_percent')
-
-    def get_business_type_display(self, obj):
-        return obj.get_business_type_display()
-    get_business_type_display.short_description = 'نوع النشاط'

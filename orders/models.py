@@ -16,6 +16,15 @@ class SiteConfig(models.Model):
         verbose_name='الحد الأدنى لقيمة الطلب',
         help_text='أقل قيمة إجمالية مسموح بها لإرسال الطلب (بالجنيه). اترك القيمة صفرًا في حال عدم الرغبة في تحديد حد أدنى.',
     )
+    show_discounted_prices = models.BooleanField(
+        default=False,
+        verbose_name='إظهار سعر المخزن في المتجر',
+        help_text=(
+            'لو مفعّل، هيظهر للعميل في صفحات المتجر سعر المخزن (بعد خصم نوع حسابه) جنب سعر '
+            'الجمهور. اتركه غير مفعّل لحين التأكد من صحة أسعار الخصم الجديدة — سعر الجمهور '
+            'بيظهر دايمًا بغض النظر عن هذا الإعداد.'
+        ),
+    )
 
     class Meta:
         verbose_name = 'إعدادات الموقع'
@@ -48,7 +57,7 @@ class Order(models.Model):
         DELIVERED       = 'DELIVERED',        'تم التسليم'
 
     client      = models.ForeignKey(User, on_delete=models.PROTECT, related_name='orders')
-    status      = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+    status      = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING, db_index=True)
     notes       = models.TextField(blank=True)
     created_at  = models.DateTimeField(auto_now_add=True)
     updated_at  = models.DateTimeField(auto_now=True)
@@ -212,13 +221,14 @@ class Order(models.Model):
         if self.status == self.Status.REJECTED:
             raise ValueError('الطلب ده مرفوض بالفعل.')
 
-        product_ids = [item.product_unit.product_id for item in self.items.all()]
+        items = list(self.items.select_related('product_unit').all())
+        product_ids = [item.product_unit.product_id for item in items]
         locked_inventories = {
             inv.product_id: inv
             for inv in Inventory.objects.select_for_update().filter(product_id__in=product_ids)
         }
 
-        for item in self.items.all():
+        for item in items:
             inv = locked_inventories.get(item.product_unit.product_id)
             if inv and inv.reserved > 0:
                 # الحجز اتسجّل بوحدة الصنف (item.product_unit) — بنفك بنفس
@@ -247,13 +257,14 @@ class Order(models.Model):
     def mark_delivered(self, actor=None):
         """تسليم الطلب — بيحوّل الكمية المحجوزة لصادر فعلي من المخزون، وبيصدر الفاتورة تلقائيًا."""
         from inventory.models import Inventory, StockMovement
-        product_ids = [item.product_unit.product_id for item in self.items.all()]
+        items = list(self.items.select_related('product_unit').all())
+        product_ids = [item.product_unit.product_id for item in items]
         locked_inventories = {
             inv.product_id: inv
             for inv in Inventory.objects.select_for_update().filter(product_id__in=product_ids)
         }
 
-        for item in self.items.all():
+        for item in items:
             inv = locked_inventories.get(item.product_unit.product_id)
             if inv:
                 out_movement = StockMovement(
@@ -361,6 +372,11 @@ class OrderItem(models.Model):
     order        = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
     product_unit = models.ForeignKey(ProductUnit, on_delete=models.PROTECT)
     quantity     = models.PositiveIntegerField()
+    # سعر الجمهور ونسبة الخصم وقت الطلب — Snapshot لا يتغيّر حتى لو الأدمن
+    # عدّل قائمة الخصومات بعد كده. unit_price = السعر الفعلي بعد الخصم
+    # (سعر الجمهور × (1 - نسبة الخصم/100))، وهو المستخدم في كل الحسابات.
+    public_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    discount_percent = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     unit_price   = models.DecimalField(max_digits=10, decimal_places=2)
     original_quantity   = models.PositiveIntegerField(null=True, blank=True)
     original_unit_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)

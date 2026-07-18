@@ -50,3 +50,25 @@ def notify_staff_with_perm(codename, kind, title, message='', url_name='', url_k
     if notifications:
         Notification.objects.bulk_create(notifications)
     return notifications
+
+
+def notify_all_clients(kind, title, message='', url_name='', url_kwargs=None):
+    """
+    بتبعت نفس الإشعار لكل العملاء النشطين (role=CLIENT, status=ACTIVE).
+    استخدام حالي: تنبيه العملاء بوارد جديد بعد استيراد أصناف من إكسل
+    (راجع staff/views/products.py — import_products_confirm)، لكنها عامة
+    وممكن تتستخدم لأي إشعار جماعي تاني للعملاء مستقبلًا.
+    bulk_create عشان لو الكتالوج/قاعدة العملاء كبرت، السطر ده يفضل عملية
+    واحدة على قاعدة البيانات بدل استعلام منفصل لكل عميل.
+    """
+    clients = User.objects.filter(role=User.Role.CLIENT, status=User.Status.ACTIVE, is_active=True)
+    notifications = [
+        Notification(
+            recipient=client, kind=kind, title=title, message=message,
+            url_name=url_name, url_kwargs=url_kwargs or {},
+        )
+        for client in clients
+    ]
+    if notifications:
+        Notification.objects.bulk_create(notifications)
+    return notifications

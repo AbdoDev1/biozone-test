@@ -1,0 +1,59 @@
+{% extends 'staff/base.html' %}
+{% block title %}أنواع الحسابات — Biozone{% endblock %}
+{% block content %}
+
+<div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold text-gray-800">أنواع الحسابات وقوائم الخصومات</h1>
+    <a href="{% url 'staff:account_type_add' %}"
+       class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg text-sm">
+        + إضافة نوع حساب
+    </a>
+</div>
+
+<p class="text-sm text-gray-500 mb-6">
+    كل عميل مرتبط بنوع حساب واحد (يُحدَّد عند تسجيله ويمكن تعديله من صفحة العميل).
+    نوع الحساب يحدد الوحدة (صغرى/كبرى) التي تظهر له في المتجر، وقائمة الخصومات الخاصة
+    بكل صنف. لا يوجد خصم عام على الحساب — كل صنف له نسبة خصمه المستقلة لهذا النوع.
+</p>
+
+<div class="bg-white rounded-xl shadow overflow-hidden">
+    <table class="w-full text-sm">
+        <thead class="bg-gray-50 text-gray-600">
+            <tr>
+                <th class="px-4 py-3 text-right">اسم النوع</th>
+                <th class="px-4 py-3 text-right">الوحدة الافتراضية في المتجر</th>
+                <th class="px-4 py-3 text-right">عدد العملاء</th>
+                <th class="px-4 py-3 text-right">نشط</th>
+                <th class="px-4 py-3 text-right">إجراء</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            {% for type in account_types %}
+            <tr class="hover:bg-gray-50">
+                <td class="px-4 py-3 font-medium">{{ type.name }}</td>
+                <td class="px-4 py-3 text-gray-500">{{ type.get_default_unit_size_display }}</td>
+                <td class="px-4 py-3 text-gray-500">{{ type.client_profiles.count }}</td>
+                <td class="px-4 py-3">
+                    {% if type.is_active %}
+                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">نشط</span>
+                    {% else %}
+                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-500">موقوف</span>
+                    {% endif %}
+                </td>
+                <td class="px-4 py-3 flex flex-wrap gap-3">
+                    <a href="{% url 'staff:account_type_edit' type.pk %}"
+                       class="text-blue-600 hover:underline text-xs">تعديل</a>
+                    <a href="{% url 'staff:account_type_discounts' type.pk %}"
+                       class="text-green-600 hover:underline text-xs">قائمة الخصومات</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="px-4 py-6 text-center text-gray-400">لا يوجد أنواع حسابات حتى الآن.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}

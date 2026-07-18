@@ -7,7 +7,7 @@ from .models import Product, ProductUnit, Category
 class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = ['category', 'name_ar', 'name_en', 'manufacturer', 'description', 'image', 'is_active']
+        fields = ['category', 'name_ar', 'name_en', 'barcode', 'manufacturer', 'description', 'image', 'is_active']
         widgets = {
             'category': forms.Select(attrs={
                 'class': 'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400'
@@ -15,6 +15,11 @@ class ProductForm(forms.ModelForm):
             'name_ar': forms.TextInput(attrs={
                 'class': 'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400',
                 'placeholder': 'اسم المنتج بالعربي'
+            }),
+            'barcode': forms.TextInput(attrs={
+                'class': 'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 font-mono',
+                'placeholder': 'امسحه بالاسكانر أو اكتبه يدويًا (اختياري)',
+                'autocomplete': 'off',
             }),
             'name_en': forms.TextInput(attrs={
                 'class': 'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400',
@@ -37,6 +42,7 @@ class ProductForm(forms.ModelForm):
             'category': 'القسم',
             'name_ar': 'الاسم بالعربي',
             'name_en': 'الاسم بالإنجليزي',
+            'barcode': 'الباركود',
             'manufacturer': 'الشركة المصنعة',
             'description': 'الوصف',
             'image': 'صورة المنتج',

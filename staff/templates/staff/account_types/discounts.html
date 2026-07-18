@@ -1,0 +1,110 @@
+{% extends 'staff/base.html' %}
+{% block title %}خصومات {{ account_type.name }} — Biozone{% endblock %}
+{% block content %}
+
+<div class="mb-4">
+    <a href="{% url 'staff:account_types' %}" class="text-blue-600 hover:underline text-sm">→ أنواع الحسابات</a>
+</div>
+
+<div class="flex flex-col sm:flex-row justify-between sm:items-center gap-3 mb-6">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-800">قائمة خصومات: {{ account_type.name }}</h1>
+        <p class="text-sm text-gray-500 mt-1">
+            سعر الجمهور ثابت لكل الأصناف. حدّد هنا نسبة الخصم (لو موجودة) للوحدة الصغرى (قطعة) لكل صنف تحديدًا لهذا
+            النوع من الحسابات. اترك الحقل فارغًا لعدم تطبيق أي خصم (سعر الجمهور كامل). سعر الوحدة الكبرى (كرتونة)
+            بيتحسب تلقائيًا من سعر القطعة بعد الخصم — لا يمكن تعديله يدويًا لو المنتج عنده وحدة صغرى.
+        </p>
+    </div>
+</div>
+
+<form method="get" class="mb-4 flex gap-2">
+    <input type="text" name="q" value="{{ search_q }}" placeholder="بحث باسم المنتج..."
+           class="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400">
+    <button type="submit" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm">بحث</button>
+</form>
+
+<form method="post">
+    {% csrf_token %}
+    <div class="bg-white rounded-xl shadow overflow-hidden">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50 text-gray-600">
+                <tr>
+                    <th class="px-4 py-3 text-right">المنتج</th>
+                    <th class="px-4 py-3 text-right">الوحدة</th>
+                    <th class="px-4 py-3 text-right">سعر الجمهور</th>
+                    <th class="px-4 py-3 text-right">نسبة الخصم (%)</th>
+                    <th class="px-4 py-3 text-right">سعر القطعة بعد الخصم</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for product in products %}
+                    {% for unit in product.units.all %}
+                    {% if unit.is_editable %}
+                    <tr class="hover:bg-gray-50"
+                        x-data="{
+                            price: {{ unit.unit_price }},
+                            discount: '{{ unit.current_discount|default:'' }}',
+                            get finalPrice() {
+                                const d = parseFloat(this.discount);
+                                if (isNaN(d)) return this.price.toFixed(2);
+                                return (this.price * (1 - d / 100)).toFixed(2);
+                            }
+                        }">
+                        <td class="px-4 py-3 font-medium">
+                            {% if forloop.first %}{{ product.display_name }}{% endif %}
+                        </td>
+                        <td class="px-4 py-3 text-gray-500">{{ unit.name }} ({{ unit.get_size_display }})</td>
+                        <td class="px-4 py-3 text-gray-500">{{ unit.unit_price }} ج.م</td>
+                        <td class="px-4 py-3">
+                            <input type="number" step="0.01" min="0" max="100"
+                                   name="discount_{{ unit.pk }}"
+                                   x-model="discount"
+                                   placeholder="بدون خصم"
+                                   class="w-24 border border-gray-200 rounded-lg px-2 py-1 text-sm outline-none focus:border-blue-400">
+                        </td>
+                        <td class="px-4 py-3 font-semibold text-green-700" x-text="finalPrice + ' ج.م'"></td>
+                    </tr>
+                    {% else %}
+                    <tr class="hover:bg-gray-50 bg-gray-50/50">
+                        <td class="px-4 py-3 font-medium">
+                            {% if forloop.first %}{{ product.display_name }}{% endif %}
+                        </td>
+                        <td class="px-4 py-3 text-gray-500">{{ unit.name }} ({{ unit.get_size_display }})</td>
+                        <td class="px-4 py-3 text-gray-500">{{ unit.unit_price }} ج.م</td>
+                        <td class="px-4 py-3 text-gray-400 text-xs">محسوب تلقائيًا من القطعة</td>
+                        <td class="px-4 py-3 font-semibold text-green-700">{{ unit.price_after_discount }} ج.م</td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="px-4 py-6 text-center text-gray-400">لا يوجد منتجات مطابقة.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if page_obj.paginator.num_pages > 1 %}
+    <div class="flex items-center justify-center gap-2 mt-4 text-sm">
+        {% if page_obj.has_previous %}
+        <a href="?q={{ search_q }}&page={{ page_obj.previous_page_number }}"
+           class="px-3 py-2 rounded-lg bg-white shadow-sm hover:bg-blue-50 text-gray-600">السابق</a>
+        {% endif %}
+        <span class="text-gray-500 px-2">صفحة {{ page_obj.number }} من {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+        <a href="?q={{ search_q }}&page={{ page_obj.next_page_number }}"
+           class="px-3 py-2 rounded-lg bg-white shadow-sm hover:bg-blue-50 text-gray-600">التالي</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="mt-6">
+        <button type="submit"
+                class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-xl transition">
+            حفظ قائمة الخصومات (هذه الصفحة)
+        </button>
+    </div>
+</form>
+
+{% endblock %}

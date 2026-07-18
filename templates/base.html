@@ -64,6 +64,13 @@
                            class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
                             🏬 المتجر
                         </a>
+                        <a href="{% url 'store:new_arrivals' %}"
+                           class="flex items-center justify-between gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
+                            <span>🆕 الوارد الجديد</span>
+                            {% if new_arrivals_count %}
+                            <span class="bg-red-500 text-white text-[10px] font-bold rounded-full px-1.5 py-0.5">{{ new_arrivals_count }}</span>
+                            {% endif %}
+                        </a>
                         <a href="{% url 'orders:order_list' %}"
                            class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
                             📦 طلباتي

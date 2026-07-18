@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from decimal import Decimal, InvalidOperation
-from accounts.models import User, ClientProfile, BusinessTypeSetting
+from accounts.models import User, ClientProfile, AccountType
 from orders.models import Order
 from invoices.models import Invoice
 from accounting.models import AccountTransaction
@@ -143,19 +143,19 @@ def client_add_adjustment(request, pk):
 @perm_required('accounts.change_clientprofile')
 def client_approve(request, pk):
     profile = get_object_or_404(ClientProfile, pk=pk)
-    default_setting = BusinessTypeSetting.get_for(profile.business_type)
+    account_types = AccountType.objects.filter(is_active=True)
 
     if request.method == 'POST':
-        override_choice = request.POST.get('wholesale_override', 'default')
-        if override_choice == 'wholesale':
-            profile.is_wholesale_override = True
-        elif override_choice == 'retail':
-            profile.is_wholesale_override = False
-        else:
-            profile.is_wholesale_override = None
+        account_type_id = request.POST.get('account_type')
+        account_type = account_types.filter(pk=account_type_id).first()
+        if not account_type:
+            messages.error(request, 'يجب اختيار نوع حساب صالح.')
+            return render(request, 'staff/clients/approve.html', {
+                'profile': profile,
+                'account_types': account_types,
+            })
 
-        discount_raw = request.POST.get('custom_discount_percent', '').strip()
-        profile.custom_discount_percent = discount_raw or None
+        profile.account_type = account_type
 
         user = profile.user
         user.status = User.Status.ACTIVE
@@ -168,7 +168,7 @@ def client_approve(request, pk):
 
     return render(request, 'staff/clients/approve.html', {
         'profile': profile,
-        'default_setting': default_setting,
+        'account_types': account_types,
     })
 
 

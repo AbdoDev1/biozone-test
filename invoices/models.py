@@ -110,6 +110,8 @@ class Invoice(models.Model):
                 product_name=item.product_unit.product.display_name,
                 unit_name=item.product_unit.name,
                 quantity=item.quantity,
+                public_price=item.public_price,
+                discount_percent=item.discount_percent,
                 unit_price=item.unit_price,
             )
 
@@ -132,6 +134,10 @@ class InvoiceItem(models.Model):
     product_name = models.CharField(max_length=255)
     unit_name = models.CharField(max_length=100)
     quantity = models.PositiveIntegerField()
+    # سعر الجمهور ونسبة الخصم وقت إصدار الفاتورة — هما اللي بيظهروا للعميل،
+    # مش سعر القطعة الفعلي بعد الخصم (unit_price) اللي يفضل داخلي/للموظفين بس.
+    public_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    discount_percent = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
 
     class Meta:
@@ -144,6 +150,16 @@ class InvoiceItem(models.Model):
     @property
     def subtotal(self):
         return self.unit_price * self.quantity
+
+    @property
+    def public_subtotal(self):
+        """إجمالي سعر الجمهور قبل الخصم (الكمية × سعر الجمهور)."""
+        return self.public_price * self.quantity
+
+    @property
+    def discount_amount(self):
+        """قيمة الخصم بالجنيه (إجمالي سعر الجمهور - الإجمالي بعد الخصم)."""
+        return self.public_subtotal - self.subtotal
 
     def save(self, *args, **kwargs):
         if self.pk is not None:

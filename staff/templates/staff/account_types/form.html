@@ -1,0 +1,57 @@
+{% extends 'staff/base.html' %}
+{% block title %}{{ title }} — Biozone{% endblock %}
+{% block content %}
+
+<div class="mb-4">
+    <a href="{% url 'staff:account_types' %}" class="text-blue-600 hover:underline text-sm">→ أنواع الحسابات</a>
+</div>
+
+<div class="max-w-xl mx-auto bg-white rounded-2xl shadow p-6 md:p-8">
+    <h1 class="text-xl font-bold text-gray-800 mb-6">{{ title }}</h1>
+
+    <form method="post" class="space-y-5">
+        {% csrf_token %}
+
+        <div>
+            <label class="text-sm font-medium text-gray-700 mb-1 block">اسم نوع الحساب</label>
+            <input type="text" name="name" value="{{ account_type.name|default:'' }}"
+                   placeholder="مثال: جملة، صيدلية، مستشفى"
+                   class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400">
+        </div>
+
+        <div>
+            <label class="text-sm font-medium text-gray-700 mb-2 block">الوحدة التي تظهر لهذا النوع في المتجر</label>
+            <div class="space-y-2">
+                {% for value, label in unit_sizes %}
+                <label class="flex items-center gap-2 border rounded-lg px-3 py-2 cursor-pointer has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                    <input type="radio" name="default_unit_size" value="{{ value }}"
+                           {% if account_type.default_unit_size == value or not account_type and value == 'S' %}checked{% endif %}
+                           class="accent-blue-600">
+                    <span class="text-sm">{{ label }}</span>
+                </label>
+                {% endfor %}
+            </div>
+            <p class="text-xs text-gray-400 mt-1">
+                مثلًا: نوع "جملة" غالبًا يظهر له الوحدة الكبرى (كرتونة)، وأنواع التجزئة (صيدلية/مستشفى) تظهر لها الوحدة الصغرى (قطعة).
+            </p>
+        </div>
+
+        <label class="flex items-center gap-2 border rounded-lg px-3 py-2 cursor-pointer has-[:checked]:border-green-500 has-[:checked]:bg-green-50">
+            <input type="checkbox" name="is_active" {% if account_type.is_active or not is_edit %}checked{% endif %} class="accent-green-600">
+            <span class="text-sm">نوع نشط (يظهر كخيار عند تسجيل عملاء جدد)</span>
+        </label>
+
+        <div class="flex flex-col sm:flex-row gap-3 pt-2">
+            <button type="submit"
+                    class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-xl transition">
+                {% if is_edit %}حفظ التعديلات{% else %}إضافة نوع الحساب{% endif %}
+            </button>
+            <a href="{% url 'staff:account_types' %}"
+               class="text-center border border-gray-200 text-gray-600 px-6 py-3 rounded-xl hover:bg-gray-50 transition">
+                إلغاء
+            </a>
+        </div>
+    </form>
+</div>
+
+{% endblock %}

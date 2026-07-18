@@ -5,9 +5,9 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-# مكتبات نظام لازمة لـ psycopg2 و Pillow
+# مكتبات نظام لازمة لـ psycopg2 و Pillow + curl لـ healthcheck
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libpq-dev gcc \
+    libpq-dev gcc curl \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .

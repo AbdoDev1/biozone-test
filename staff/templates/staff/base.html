@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Biozone ERP{% endblock %}</title>
+    <title>{% block title %}Biozone{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>[x-cloak] { display: none !important; }</style>
@@ -16,7 +16,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
         </svg>
     </button>
-    <span class="font-bold text-blue-700 text-lg">Biozone ERP</span>
+    <a href="{% url 'staff:dashboard' %}" class="font-bold text-blue-700 text-lg hover:text-blue-800">Biozone</a>
     <div class="mr-auto flex items-center gap-4">
         {% include 'notifications/partials/bell.html' %}
         <span class="text-sm text-gray-500">{{ request.user.username }}</span>
@@ -49,6 +49,10 @@
         <a href="{% url 'staff:employees' %}"
            class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-blue-50 text-gray-700 hover:text-blue-600">
             🧑‍💼 صلاحيات الموظفين
+        </a>
+        <a href="{% url 'staff:account_types' %}"
+           class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-blue-50 text-gray-700 hover:text-blue-600">
+            🏷️ أنواع الحسابات والخصومات
         </a>
         {% endif %}
         {% if perms.inventory.view_inventory %}
@@ -88,7 +92,13 @@
     {% if messages %}
     <div class="fixed top-16 left-1/2 -translate-x-1/2 z-50 space-y-2">
         {% for message in messages %}
-        <div class="px-6 py-3 rounded-lg shadow text-white text-sm
+        <div x-data="{ show: true }"
+             x-show="show"
+             x-init="setTimeout(() => show = false, 4000)"
+             x-transition:leave="transition ease-in duration-500"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="px-6 py-3 rounded-lg shadow text-white text-sm
             {% if message.tags == 'success' %}bg-green-500
             {% elif message.tags == 'error' %}bg-red-500
             {% elif message.tags == 'warning' %}bg-yellow-500

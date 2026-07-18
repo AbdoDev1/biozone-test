@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 from products.models import Product, ProductUnit
 
 
@@ -123,6 +124,10 @@ class StockMovement(models.Model):
         inv_qs = Inventory.objects.filter(pk=self.inventory_id)
         if self.movement_type == self.MovementType.IN:
             inv_qs.update(quantity=F('quantity') + stock_qty)
+            # أي تزويد رصيد (وارد) بيخلي المنتج يظهر في "الوارد الجديد" للعملاء
+            # لفترة معيّنة (راجع products.new_arrivals) — النقطة المركزية دي
+            # بتغطي كل مسارات إضافة الرصيد (يدوي، استيراد إكسل، ...) تلقائيًا.
+            Product.objects.filter(pk=self.inventory.product_id).update(new_arrival_at=timezone.now())
         elif self.movement_type in (self.MovementType.OUT, self.MovementType.OUT_RESERVED):
             inv_qs.update(quantity=F('quantity') - stock_qty)
         elif self.movement_type == self.MovementType.RESERVE:

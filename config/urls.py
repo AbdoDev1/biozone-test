@@ -3,8 +3,18 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.shortcuts import redirect, render
+from django.http import HttpResponse
 from django.views.generic.base import RedirectView
 from store.views import store_home
+
+def healthz(request):
+    """
+    فحص خفيف لحالة container الـ web — بيرجع 200 بس لو Django فعليًا
+    قادر يستقبل طلبات (مش بس الـ process بدأ). مقصود إنه من غير أي
+    اعتماد على قاعدة البيانات، عشان يفرّق بين "web جاهز" و"db مش جاهزة"
+    (الانتظار على الداتابيز أصلًا متكفّل بيه entrypoint.sh قبل ما gunicorn يشتغل).
+    """
+    return HttpResponse('ok')
 
 def home(request):
     # الصفحة الرئيسية (/) هي "Biozone" نفسها — بتعرض محتوى المتجر مباشرة
@@ -28,6 +38,7 @@ class LegacyCatalogRedirect(RedirectView):
         return f'/store/{subpath}'
 
 urlpatterns = [
+    path('healthz/', healthz, name='healthz'),
     path('admin/', admin.site.urls),
     path('', home, name='home'),
     path('accounts/', include('accounts.urls')),

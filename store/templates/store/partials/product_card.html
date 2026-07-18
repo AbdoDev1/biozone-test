@@ -53,9 +53,14 @@
         يرجى تسجيل الدخول لعرض السعر
       </a>
     {% elif unit %}
-      {% with price=unit|price_for_client:request.user %}
-        <p class="text-blue-700 font-bold text-sm mb-2">{{ price }} ج.م <span class="text-gray-400 font-normal text-xs">/ {{ unit.name }}</span></p>
-      {% endwith %}
+      <p class="text-gray-800 font-bold text-sm {% if site_config.show_discounted_prices %}mb-0.5{% else %}mb-2{% endif %}">
+        {{ unit.unit_price }} ج.م <span class="text-gray-400 font-normal text-xs">/ {{ unit.name }}</span>
+      </p>
+      {% if site_config.show_discounted_prices %}
+        {% with price=unit|price_for_client:request.user %}
+          <p class="text-green-700 font-bold text-sm mb-2">{{ price }} ج.م <span class="text-gray-400 font-normal text-xs">سعر المخزن</span></p>
+        {% endwith %}
+      {% endif %}
 
       {% if request.user.role == 'CLIENT' and request.user.status == 'ACTIVE' %}
         {% if inv and inv.is_available %}

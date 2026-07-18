@@ -20,6 +20,7 @@ class Notification(models.Model):
         CLIENT_APPROVED_AMENDMENT = 'CLIENT_APPROVED_AMENDMENT', 'العميل وافق على التعديل'
         CLIENT_REJECTED_AMENDMENT = 'CLIENT_REJECTED_AMENDMENT', 'العميل رفض التعديل'
         NEW_CLIENT_REGISTRATION = 'NEW_CLIENT_REGISTRATION', 'طلب تسجيل عميل جديد'
+        NEW_ARRIVALS = 'NEW_ARRIVALS', 'وارد جديد في المتجر'
 
     recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
     kind = models.CharField(max_length=40, choices=Kind.choices)

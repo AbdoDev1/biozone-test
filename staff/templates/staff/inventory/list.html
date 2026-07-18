@@ -1,8 +1,30 @@
 {% extends 'staff/base.html' %}
-{% block title %}المخزون — Biozone ERP{% endblock %}
+{% block title %}المخزون — Biozone{% endblock %}
 {% block content %}
 
-<h1 class="text-2xl font-bold text-gray-800 mb-6">تقرير المخزون</h1>
+<div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-800">تقرير المخزون</h1>
+</div>
+
+<!-- شريط البحث: بالاسم أو الكود أو الباركود (اضغط في الخانة وامسح بالاسكانر مباشرة) -->
+<form method="get" class="mb-4">
+    <div class="relative max-w-md">
+        <svg class="w-4 h-4 text-gray-400 absolute top-1/2 -translate-y-1/2 right-3 pointer-events-none"
+             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z M7 11h1 M9 11h1"/>
+        </svg>
+        <input type="text" name="q" value="{{ search_q }}" autofocus autocomplete="off"
+               placeholder="ابحث بالاسم، الكود، أو امسح الباركود بالاسكانر..."
+               class="w-full border border-gray-200 rounded-lg pr-9 pl-3 py-2.5 text-sm outline-none focus:border-blue-400 bg-white shadow-sm">
+    </div>
+    <p class="text-xs text-gray-400 mt-1.5">
+        📷 مخصّص لقارئ الباركود: دوس في الخانة وامسح — القارئ بيدخل الرقم ويبعت تلقائيًا من غير ما تحتاج تدوس Enter.
+    </p>
+    {% if search_q %}
+    <a href="{% url 'staff:inventory' %}" class="text-xs text-gray-400 hover:text-red-500 mt-1 inline-block">✕ مسح البحث</a>
+    {% endif %}
+</form>
 
 <div class="bg-white rounded-xl shadow overflow-x-auto">
     <table class="w-full text-sm min-w-[640px]">
@@ -43,7 +65,9 @@
             </tr>
             {% empty %}
             <tr>
-                <td colspan="7" class="px-4 py-8 text-center text-gray-400">لا يوجد بيانات مخزون</td>
+                <td colspan="7" class="px-4 py-8 text-center text-gray-400">
+                    {% if search_q %}لا يوجد نتائج لـ "{{ search_q }}"{% else %}لا يوجد بيانات مخزون{% endif %}
+                </td>
             </tr>
             {% endfor %}
         </tbody>
@@ -53,12 +77,12 @@
 {% if page_obj.paginator.num_pages > 1 %}
 <div class="flex items-center justify-center gap-2 mt-4 text-sm">
     {% if page_obj.has_previous %}
-    <a href="?page={{ page_obj.previous_page_number }}"
+    <a href="?page={{ page_obj.previous_page_number }}{% if search_q %}&q={{ search_q|urlencode }}{% endif %}"
        class="px-3 py-2 rounded-lg bg-white shadow-sm hover:bg-blue-50 text-gray-600">السابق</a>
     {% endif %}
     <span class="text-gray-500 px-2">صفحة {{ page_obj.number }} من {{ page_obj.paginator.num_pages }}</span>
     {% if page_obj.has_next %}
-    <a href="?page={{ page_obj.next_page_number }}"
+    <a href="?page={{ page_obj.next_page_number }}{% if search_q %}&q={{ search_q|urlencode }}{% endif %}"
        class="px-3 py-2 rounded-lg bg-white shadow-sm hover:bg-blue-50 text-gray-600">التالي</a>
     {% endif %}
 </div>

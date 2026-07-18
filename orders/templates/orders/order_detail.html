@@ -51,6 +51,10 @@
           <div>
             <p class="font-medium text-gray-800">{{ item.product_unit.product.name_ar }}</p>
             <p class="text-gray-400 text-xs">{{ item.product_unit.name }} × {{ item.quantity }}</p>
+            <p class="text-gray-400 text-xs mt-0.5">
+              السعر: {{ item.public_price }} ج.م
+              {% if item.discount_percent %}<span class="text-green-600">(خصم {{ item.discount_percent }}%)</span>{% endif %}
+            </p>
             {% if item.is_amended %}
             <p class="text-xs text-orange-600 mt-1">
               الكمية السابقة: {{ item.original_quantity }} وحدة بسعر {{ item.original_unit_price }} ج.م

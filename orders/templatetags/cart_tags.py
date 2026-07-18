@@ -38,9 +38,3 @@ def units_for_client(product, user):
         return []
     return product.units_for_client(_client_of(user))
 
-
-@register.filter
-def is_wholesale_user(user):
-    """هل هذا المستخدم عميل جملة؟ — لتبسيط الشرط في التمبليت."""
-    profile = getattr(user, 'client_profile', None)
-    return bool(profile and profile.is_wholesale)

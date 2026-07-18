@@ -1,5 +1,5 @@
 {% extends 'staff/base.html' %}
-{% block title %}الحسابات — Biozone ERP{% endblock %}
+{% block title %}الحسابات — Biozone{% endblock %}
 {% block content %}
 
 <div x-data="{ tab: 'overview' }" class="max-w-6xl">
@@ -57,7 +57,7 @@
                     <thead>
                         <tr class="text-right text-gray-500 border-b">
                             <th class="py-2 px-2">العميل</th>
-                            <th class="py-2 px-2">نوع النشاط</th>
+                            <th class="py-2 px-2">نوع الحساب</th>
                             <th class="py-2 px-2">الرصيد</th>
                             <th class="py-2 px-2"></th>
                         </tr>
@@ -66,7 +66,7 @@
                         {% for row in rows %}
                         <tr class="border-b last:border-0 hover:bg-gray-50">
                             <td class="py-2 px-2 font-medium">{{ row.profile.business_name }}</td>
-                            <td class="py-2 px-2 text-gray-500">{{ row.profile.get_business_type_display }}</td>
+                            <td class="py-2 px-2 text-gray-500">{{ row.profile.account_type.name }}</td>
                             <td class="py-2 px-2 font-semibold
                                 {% if row.balance > 0 %}text-red-600{% elif row.balance < 0 %}text-green-600{% else %}text-gray-400{% endif %}">
                                 {% if row.balance > 0 %}

@@ -1,0 +1,93 @@
+{% extends 'staff/base.html' %}
+{% block title %}سجل حركات المخزون — Biozone{% endblock %}
+{% block content %}
+
+<div class="mb-4">
+    <a href="{% url 'staff:inventory' %}" class="text-blue-600 hover:underline text-sm">→ المخزون</a>
+</div>
+
+<h1 class="text-2xl font-bold text-gray-800 mb-6">سجل كل حركات المخزون</h1>
+
+<!-- فلاتر: بحث بالاسم/الكود/الباركود + نوع الحركة -->
+<form method="get" class="flex flex-col sm:flex-row gap-3 mb-4">
+    <input type="text" name="q" value="{{ search_q }}" autocomplete="off"
+           placeholder="ابحث بالاسم، الكود، أو الباركود..."
+           class="flex-1 border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-blue-400 bg-white shadow-sm">
+    <select name="type" onchange="this.form.submit()"
+            class="border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-blue-400 bg-white shadow-sm">
+        <option value="">كل الأنواع</option>
+        {% for value, label in movement_types %}
+        <option value="{{ value }}" {% if movement_type == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit"
+            class="bg-blue-600 hover:bg-blue-700 text-white text-sm px-5 py-2.5 rounded-lg transition">بحث</button>
+    {% if search_q or movement_type %}
+    <a href="{% url 'staff:inventory_movements' %}"
+       class="text-sm text-gray-400 hover:text-red-500 flex items-center px-2">✕ مسح</a>
+    {% endif %}
+</form>
+
+<div class="bg-white rounded-xl shadow overflow-x-auto">
+    <table class="w-full text-sm min-w-[720px]">
+        <thead class="bg-gray-50 text-gray-600">
+            <tr>
+                <th class="px-4 py-3 text-right">الصنف</th>
+                <th class="px-4 py-3 text-right">النوع</th>
+                <th class="px-4 py-3 text-right">الوحدة</th>
+                <th class="px-4 py-3 text-right">الكمية</th>
+                <th class="px-4 py-3 text-right">= بالقطعة</th>
+                <th class="px-4 py-3 text-right">ملاحظة</th>
+                <th class="px-4 py-3 text-right">بواسطة</th>
+                <th class="px-4 py-3 text-right">التاريخ</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            {% for movement in movements %}
+            <tr class="hover:bg-gray-50">
+                <td class="px-4 py-3 font-medium">
+                    <a href="{% url 'staff:inventory_detail' movement.inventory_id %}" class="hover:text-blue-600 hover:underline">
+                        {{ movement.inventory.product.display_name }}
+                    </a>
+                </td>
+                <td class="px-4 py-3">
+                    <span class="px-2 py-1 rounded-full text-xs
+                        {% if movement.movement_type == 'IN' %}bg-green-100 text-green-700
+                        {% elif movement.movement_type == 'OUT' %}bg-red-100 text-red-700
+                        {% elif movement.movement_type == 'OUT_RESERVED' %}bg-rose-100 text-rose-700
+                        {% elif movement.movement_type == 'RESERVE' %}bg-yellow-100 text-yellow-700
+                        {% else %}bg-gray-100 text-gray-700{% endif %}">
+                        {{ movement.get_movement_type_display }}
+                    </span>
+                </td>
+                <td class="px-4 py-3 text-gray-500">{{ movement.unit.name }}</td>
+                <td class="px-4 py-3 font-medium">{{ movement.quantity }}</td>
+                <td class="px-4 py-3 text-gray-500">{{ movement.stock_qty }}</td>
+                <td class="px-4 py-3 text-gray-500">{{ movement.note|default:"—" }}</td>
+                <td class="px-4 py-3">{{ movement.created_by.username|default:"—" }}</td>
+                <td class="px-4 py-3 text-gray-500">{{ movement.created_at|date:"Y-m-d H:i" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="8" class="px-4 py-8 text-center text-gray-400">لا يوجد حركات مطابقة</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if page_obj.paginator.num_pages > 1 %}
+<div class="flex items-center justify-center gap-2 mt-4 text-sm">
+    {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}{% if search_q %}&q={{ search_q|urlencode }}{% endif %}{% if movement_type %}&type={{ movement_type }}{% endif %}"
+       class="px-3 py-2 rounded-lg bg-white shadow-sm hover:bg-blue-50 text-gray-600">السابق</a>
+    {% endif %}
+    <span class="text-gray-500 px-2">صفحة {{ page_obj.number }} من {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}{% if search_q %}&q={{ search_q|urlencode }}{% endif %}{% if movement_type %}&type={{ movement_type }}{% endif %}"
+       class="px-3 py-2 rounded-lg bg-white shadow-sm hover:bg-blue-50 text-gray-600">التالي</a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}

@@ -28,7 +28,7 @@ class OrderAdmin(admin.ModelAdmin):
 
 @admin.register(SiteConfig)
 class SiteConfigAdmin(admin.ModelAdmin):
-    list_display = ('min_order_amount',)
+    list_display = ('min_order_amount', 'show_discounted_prices')
 
     def has_add_permission(self, request):
         # نمنع إضافة سطر جديد لو موجود واحد فعلاً (Singleton)

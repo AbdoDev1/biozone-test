@@ -1,5 +1,5 @@
 from django.urls import path
-from staff.views import dashboard, inventory, clients, products, orders, accounting, employees
+from staff.views import dashboard, inventory, clients, products, orders, accounting, employees, account_types
 
 app_name = 'staff'
 
@@ -11,6 +11,10 @@ urlpatterns = [
     path('employees/add/', employees.employee_add, name='employee_add'),
     path('employees/<int:pk>/edit/', employees.employee_edit, name='employee_edit'),
     path('employees/<int:pk>/toggle-active/', employees.employee_toggle_active, name='employee_toggle_active'),
+    path('account-types/', account_types.account_type_list, name='account_types'),
+    path('account-types/add/', account_types.account_type_add, name='account_type_add'),
+    path('account-types/<int:pk>/edit/', account_types.account_type_edit, name='account_type_edit'),
+    path('account-types/<int:pk>/discounts/', account_types.account_type_discounts, name='account_type_discounts'),
     path('inventory/', inventory.inventory_list, name='inventory'),
     path('inventory/<int:pk>/', inventory.inventory_detail, name='inventory_detail'),
     path('inventory/<int:pk>/movement/', inventory.add_movement, name='add_movement'),
@@ -25,7 +29,12 @@ urlpatterns = [
     path('products/<int:pk>/edit/', products.product_edit, name='product_edit'),
     path('products/<int:pk>/delete/', products.product_delete, name='product_delete'),
     path('products/import/', products.import_products, name='import_products'),
+    path('products/import/review/', products.import_products_review, name='import_products_review'),
+    path('products/import/confirm/', products.import_products_confirm, name='import_products_confirm'),
     path('products/template/', products.download_template, name='download_template'),
+    path('products/export/', products.export_products, name='export_products'),
+    path('products/export/select/', products.export_products_select, name='export_products_select'),
+    path('products/export/selected/', products.export_products_selected, name='export_products_selected'),
     path('orders/', orders.order_list, name='order_list'),
     path('orders/<int:pk>/', orders.order_detail, name='order_detail'),
     path('orders/<int:pk>/print/', orders.order_print, name='order_print'),

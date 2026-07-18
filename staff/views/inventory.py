@@ -3,6 +3,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.db.models import Q
 from inventory.models import Inventory, StockMovement
 from products.models import ProductUnit
 from staff.permissions import perm_required
@@ -16,12 +17,26 @@ def inventory_list(request):
         'product__category'
     ).prefetch_related('product__units').order_by('product__name_ar')
 
+    search_q = request.GET.get('q', '').strip()
+    if search_q:
+        # البحث بيغطي اسم الصنف (عربي/إنجليزي)، الكود الداخلي (BZ-00001)،
+        # والباركود — ده اللي بيسمح بالبحث المباشر بقارئ الباركود: القارئ
+        # بيكتب الرقم في خانة البحث ويبعت Enter تلقائيًا، فبيترجم لنفس طلب
+        # البحث العادي من غير أي كود إضافي.
+        items_qs = items_qs.filter(
+            Q(product__name_ar__icontains=search_q)
+            | Q(product__name_en__icontains=search_q)
+            | Q(product__code__icontains=search_q)
+            | Q(product__barcode__iexact=search_q)
+        )
+
     paginator = Paginator(items_qs, STAFF_LIST_PAGE_SIZE)
     page_obj = paginator.get_page(request.GET.get('page'))
 
     return render(request, 'staff/inventory/list.html', {
         'items': page_obj,
         'page_obj': page_obj,
+        'search_q': search_q,
     })
 
 

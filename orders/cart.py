@@ -1,6 +1,9 @@
 from products.models import ProductUnit
 
 
+MAX_ITEM_QUANTITY = 10_000  # سقف منطقي لمنع كمية غير منطقية (مثلاً مليار قطعة) من العالق في السلة
+
+
 class Cart:
     def __init__(self, request):
         self.session = request.session
@@ -30,7 +33,8 @@ class Cart:
         if unit_id not in self.cart:
             self.cart[unit_id] = {"quantity": 0}
 
-        self.cart[unit_id]["quantity"] += quantity
+        new_quantity = self.cart[unit_id]["quantity"] + quantity
+        self.cart[unit_id]["quantity"] = max(1, min(new_quantity, MAX_ITEM_QUANTITY))
         self.save()
 
     def set_quantity(self, unit_id, quantity):
@@ -44,7 +48,7 @@ class Cart:
         if not self._is_allowed_unit(unit):
             return
 
-        self.cart[unit_id] = {"quantity": quantity}
+        self.cart[unit_id] = {"quantity": min(quantity, MAX_ITEM_QUANTITY)}
         self.save()
 
     def increase(self, unit_id):
@@ -107,17 +111,22 @@ class Cart:
             if not self._is_allowed_unit(unit):
                 continue
 
-            unit_price = unit.get_price_for_client(self.client) if self.client else unit.unit_price
+            if self.client:
+                public_price, discount_percent, unit_price = unit.get_pricing_breakdown_for_client(self.client)
+            else:
+                public_price, discount_percent, unit_price = unit.unit_price, 0, unit.unit_price
             subtotal = unit_price * quantity
-            profile = getattr(self.client, 'client_profile', None)
-            is_wholesale = bool(profile and profile.is_wholesale)
 
             items.append({
                 "unit": unit,
                 "quantity": quantity,
+                "public_price": public_price,
+                "discount_percent": discount_percent,
                 "unit_price": unit_price,
                 "subtotal": subtotal,
-                "is_wholesale": is_wholesale,
+                # علم عام (مش مبني على نوع حساب معيّن) بيوضّح إن العميل بيشتري
+                # بالوحدة الكبرى (كرتونة) — يُستخدم بس لعرض شارة توضيحية بالسلة.
+                "is_large_unit": unit.size == ProductUnit.Size.LARGE,
             })
 
         return items

@@ -1,11 +1,14 @@
 from django.contrib import messages
 from django.core.exceptions import ValidationError
+from django.core.paginator import Paginator
 from django.db import transaction
 from django.shortcuts import render, redirect, get_object_or_404
 
 from orders.models import Order, OrderItem
-from invoices.models import Invoice
 from staff.permissions import perm_required
+
+STAFF_LIST_PAGE_SIZE = 30
+ITEMS_PER_PRINT_PAGE = 14  # لو الأصناف زادت عن كده، النسخة القابلة للطباعة بتتقسم لصفحات مرقّمة 1/ن، 2/ن...
 
 
 @perm_required('orders.view_order')
@@ -16,8 +19,12 @@ def order_list(request):
     if status:
         orders = orders.filter(status=status)
 
+    paginator = Paginator(orders, STAFF_LIST_PAGE_SIZE)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
     context = {
-        'orders': orders,
+        'orders': page_obj,
+        'page_obj': page_obj,
         'selected_status': status,
         'status_choices': Order.Status.choices,
     }
@@ -30,6 +37,9 @@ def order_print(request, pk):
     نسخة قابلة للطباعة من الطلب — لتسهيل المراجعة اليدوية على المخزن
     أثناء التحضير أو قبل اتخاذ قرار التأكيد/الرفض. بدون WeasyPrint،
     بنفس أسلوب invoices/print.html (window.print() من المتصفح).
+
+    لو عدد الأصناف أكتر من ITEMS_PER_PRINT_PAGE، بتتقسم لصفحات طباعة
+    منفصلة مرقّمة "1/ن"، "2/ن"...، والإجمالي بيظهر في آخر صفحة بس.
     """
     order = get_object_or_404(
         Order.objects.select_related('client', 'client__client_profile').prefetch_related(
@@ -37,7 +47,18 @@ def order_print(request, pk):
         ),
         pk=pk,
     )
-    return render(request, 'staff/orders/print.html', {'order': order})
+    all_items = list(order.items.all())
+    for idx, item in enumerate(all_items, start=1):
+        item.display_index = idx
+    item_pages = [
+        all_items[i:i + ITEMS_PER_PRINT_PAGE]
+        for i in range(0, len(all_items), ITEMS_PER_PRINT_PAGE)
+    ] or [[]]
+    return render(request, 'staff/orders/print.html', {
+        'order': order,
+        'item_pages': item_pages,
+        'item_count': len(all_items),
+    })
 
 
 @perm_required('orders.view_order')
@@ -108,7 +129,6 @@ def order_detail(request, pk):
                 try:
                     with transaction.atomic():
                         order.mark_delivered(actor=request.user)
-                        Invoice.issue_for_order(order, actor=request.user)
                     messages.success(request, f'تم تسليم الطلب #{order.pk} وإصدار الفاتورة.')
                 except ValidationError as e:
                     messages.error(request, f'تعذّر تسليم الطلب: {"، ".join(e.messages)}')

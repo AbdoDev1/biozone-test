@@ -21,54 +21,88 @@
 </div>
 {% endif %}
 
-<!-- تحميل القالب -->
+<!-- تحميل القالب / تصدير الأصناف الحالية -->
 <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
     <div>
         <p class="font-semibold text-blue-800 text-sm">قالب Excel الجاهز</p>
         <p class="text-blue-600 text-xs mt-1">حمّل القالب، ثم قم بتعبئته ورفعه مرة أخرى</p>
     </div>
-    <a href="{% url 'staff:download_template' %}"
-       class="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded-lg transition">
-        تحميل القالب
-    </a>
+    <div class="flex flex-wrap gap-2">
+        <a href="{% url 'staff:export_products_select' %}"
+           class="bg-white border border-blue-300 text-blue-700 hover:bg-blue-100 text-sm px-4 py-2 rounded-lg transition">
+            تصدير أصناف محددة
+        </a>
+        <a href="{% url 'staff:export_products' %}"
+           class="bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 text-sm px-4 py-2 rounded-lg transition">
+            تصدير كل الأصناف
+        </a>
+        <a href="{% url 'staff:download_template' %}"
+           class="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded-lg transition">
+            تحميل القالب
+        </a>
+    </div>
 </div>
+<p class="text-xs text-gray-500 -mt-3 mb-6">
+    لو هتحدّث أصناف موجودة بالفعل (خصوصًا لو محتمل تعدّل اسم الصنف)، الأفضل تستخدم
+    "تصدير الأصناف الحالية" بدل ما تكتب من الصفر — الملف هيجيلك فيه كود كل صنف جاهز،
+    وده بيضمن إن التحديث يحصل على نفس الصنف حتى لو غيّرت اسمه بالكامل.
+</p>
 
 <!-- الأعمدة -->
 <div class="bg-white rounded-xl shadow p-4 mb-6">
     <h2 class="font-bold text-gray-700 mb-3 text-sm">الأعمدة في الملف</h2>
+    <p class="text-xs text-gray-500 mb-3">
+        كل <strong>صف = وحدة واحدة</strong> (قطعة أو كرتونة)، مش صنف كامل. الصنف اللي له
+        وحدتين (قطعة + كرتونة) بيتكرر في صفين بنفس <code>code</code> (أو نفس الاسم بالظبط لو
+        الصنف جديد ومفيهوش كود لسه)، والصنف اللي له وحدة واحدة بس بياخد صف واحد.
+    </p>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
         <div class="flex items-center gap-2">
-            <span class="bg-red-100 text-red-600 px-2 py-0.5 rounded">مطلوب</span>
-            <span class="text-gray-600">1. name_ar — اسم المنتج بالعربي</span>
+            <span class="bg-gray-100 text-gray-500 px-2 py-0.5 rounded">اختياري</span>
+            <span class="text-gray-600">code — كود الصنف (سيبه فاضي للأصناف الجديدة)</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="bg-red-100 text-red-600 px-2 py-0.5 rounded">مطلوب للجديد</span>
+            <span class="text-gray-600">category_slug — كود القسم (اختياري عند التحديث فقط)</span>
         </div>
         <div class="flex items-center gap-2">
             <span class="bg-red-100 text-red-600 px-2 py-0.5 rounded">مطلوب</span>
-            <span class="text-gray-600">2. category_slug — كود القسم</span>
+            <span class="text-gray-600">name_ar — اسم الصنف بالعربي</span>
         </div>
         <div class="flex items-center gap-2">
             <span class="bg-red-100 text-red-600 px-2 py-0.5 rounded">مطلوب</span>
-            <span class="text-gray-600">3. large_unit_name — اسم الوحدة الكبرى (كرتونة)</span>
+            <span class="text-gray-600">unit_name — اسم الوحدة (قطعة، علبة، كرتونة...)</span>
         </div>
         <div class="flex items-center gap-2">
             <span class="bg-red-100 text-red-600 px-2 py-0.5 rounded">مطلوب</span>
-            <span class="text-gray-600">4. large_qty_in_small — كام قطعة جوه الكرتونة</span>
+            <span class="text-gray-600">qty_in_small — كام قطعة جوه الوحدة دي (1 لو هي نفسها الوحدة الصغرى)</span>
         </div>
         <div class="flex items-center gap-2">
             <span class="bg-red-100 text-red-600 px-2 py-0.5 rounded">مطلوب</span>
-            <span class="text-gray-600">5. large_unit_price — سعر الكرتونة</span>
+            <span class="text-gray-600">unit_price — سعر الجمهور لهذه الوحدة</span>
         </div>
         <div class="flex items-center gap-2">
-            <span class="bg-red-100 text-red-600 px-2 py-0.5 rounded">مطلوب</span>
-            <span class="text-gray-600">6. unit_name — اسم الوحدة الصغرى (قطعة)</span>
+            <span class="bg-gray-100 text-gray-500 px-2 py-0.5 rounded">اختياري (افتراضي 0)</span>
+            <span class="text-gray-600">quantity — كمية "وارد" هتتضاف فوق الرصيد الحالي (رصيد افتتاحي للجديد، أو تزويد للموجود)</span>
         </div>
         <div class="flex items-center gap-2">
-            <span class="bg-red-100 text-red-600 px-2 py-0.5 rounded">مطلوب</span>
-            <span class="text-gray-600">7. initial_stock — الكمية الافتتاحية بالقطعة</span>
+            <span class="bg-blue-100 text-blue-600 px-2 py-0.5 rounded">اختياري</span>
+            <span class="text-gray-600">discount:&lt;اسم نوع الحساب&gt; — نسبة الخصم (0-100) لهذا النوع، عمود لكل فئة</span>
         </div>
     </div>
     <p class="text-xs text-gray-500 mt-3">
-        سعر القطعة بيتحسب تلقائيًا دايمًا = <code>large_unit_price ÷ large_qty_in_small</code>.
-        مفيش عمود <code>unit_price</code> منفصل يتكتب في الملف.
+        أعمدة <code>discount:&lt;فئة&gt;</code> بتتولّد تلقائيًا في القالب/التصدير حسب أنواع الحسابات
+        الموجودة دلوقتي — تقدر تضيف أو تحذف عمود فئة كامل من الملف براحتك (لو النوع مش موجود
+        وقت الرفع، العمود هيتجاهل من غير ما يوقف الاستيراد). الخصم بيتحسب دايمًا على الوحدة
+        الصغرى (قطعة) لو الصنف عنده وحدتين — الكرتونة ساعتها بتاخد نفس نسبة القطعة تلقائيًا،
+        فسيب خانة الخصم في صف الكرتونة فاضية. لو الصنف عنده وحدة واحدة بس (كرتونة بدون قطعة)،
+        اكتب الخصم في صفها هي مباشرة. عمود فئة فاضي في صف الوحدة الأساسية = مفيش خصم لهذا
+        النوع (بيمسح أي خصم قديم مسجّل).
+    </p>
+    <p class="text-xs text-gray-500 mt-2">
+        المطابقة بتعتمد على: الكود (لو موجود) ← الاسم بعد تجاهل فروق المسافات/الأرقام/الحروف
+        الشكلية ← وإلا لو الاسم قريب جدًا من صنف موجود هيوقّفلك الصف في شاشة مراجعة قبل الحفظ
+        بدل ما يضيفه كصنف مكرر تلقائيًا.
     </p>
 </div>
 

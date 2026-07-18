@@ -26,6 +26,7 @@
             <th class="px-4 py-3 text-right">المنتج</th>
             <th class="px-4 py-3 text-right">السعر</th>
             <th class="px-4 py-3 text-right">الكمية</th>
+            <th class="px-4 py-3 text-right">الخصم</th>
             <th class="px-4 py-3 text-right">الإجمالي</th>
             <th class="px-4 py-3"></th>
           </tr>
@@ -37,8 +38,8 @@
               <p class="font-medium text-gray-800">{{ item.unit.product.name_ar }}</p>
               <p class="text-xs text-gray-400">{{ item.unit.name }}</p>
             </td>
-            <td class="px-4 py-3 text-blue-700 font-semibold">
-              {{ item.unit_price }} ج.م
+            <td class="px-4 py-3 text-gray-700 font-semibold">
+              {{ item.public_price }} ج.م
             </td>
             <td class="px-4 py-3">
               <form method="POST" action="{% url 'orders:cart_update' item.unit.pk %}" class="flex items-center gap-2">
@@ -48,6 +49,9 @@
                 <span class="text-[11px] text-gray-400">{{ item.unit.name }}</span>
                 <button type="submit" class="text-xs text-blue-600 hover:underline">تحديث</button>
               </form>
+            </td>
+            <td class="px-4 py-3 text-green-700 font-semibold">
+              {% if item.discount_percent %}{{ item.discount_percent }}%{% else %}—{% endif %}
             </td>
             <td class="px-4 py-3 font-bold text-gray-800">{{ item.subtotal }} ج.م</td>
             <td class="px-4 py-3">

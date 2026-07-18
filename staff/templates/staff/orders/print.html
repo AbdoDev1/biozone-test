@@ -9,6 +9,7 @@
         @media print {
             .no-print { display: none !important; }
             body { padding: 0 !important; }
+            .order-sheet:not(:last-child) { page-break-after: always; }
         }
     </style>
 </head>
@@ -17,25 +18,38 @@
     <!-- زرار الطباعة — بيختفي تلقائيًا وقت الطباعة الفعلية -->
     <div class="no-print max-w-2xl mx-auto mb-4 px-4 flex justify-between items-center">
         <a href="javascript:window.close();" class="text-sm text-gray-500 hover:underline">إغلاق</a>
+        {% if item_pages|length > 1 %}
+        <p class="text-sm text-gray-500">
+            الطلب مقسّم لـ {{ item_pages|length }} صفحات طباعة ({{ item_count }} صنف).
+        </p>
+        {% endif %}
         <button onclick="window.print()"
                 class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-medium">
             طباعة الطلب
         </button>
     </div>
 
-    <div class="max-w-2xl mx-auto bg-white shadow rounded-xl p-8">
+    {% for page_items in item_pages %}
+    <div class="order-sheet max-w-2xl mx-auto bg-white shadow rounded-xl p-8 {% if not forloop.last %}mb-8{% endif %}">
 
         <!-- Header -->
         <div class="text-center border-b border-gray-200 pb-4 mb-4">
             <h1 class="text-xl font-bold text-gray-800">Biozone للمستلزمات الطبية</h1>
             <p class="text-gray-500 text-sm mt-1">نسخة مخزن — للمراجعة اليدوية أثناء التحضير</p>
+            {% if item_pages|length > 1 %}
+            <p class="mt-2 inline-block bg-gray-800 text-white text-xs font-bold px-2 py-0.5 rounded">
+                صفحة {{ forloop.counter }}/{{ item_pages|length }}
+            </p>
+            {% endif %}
         </div>
 
         <!-- بيانات الطلب والعميل -->
         <div class="flex flex-col sm:flex-row sm:justify-between gap-3 text-sm mb-6">
             <div>
                 <p class="text-gray-500">رقم الطلب</p>
-                <p class="font-semibold text-gray-800">#{{ order.pk }}</p>
+                <p class="font-semibold text-gray-800">
+                    #{{ order.pk }}{% if item_pages|length > 1 %} ({{ forloop.counter }}/{{ item_pages|length }}){% endif %}
+                </p>
             </div>
             <div>
                 <p class="text-gray-500">التاريخ</p>
@@ -62,22 +76,22 @@
         </div>
         {% endif %}
 
-        <!-- جدول الأصناف -->
+        <!-- جدول الأصناف (أصناف الصفحة دي بس) -->
         <table class="w-full text-sm mb-4">
             <thead>
                 <tr class="text-right text-gray-500 border-b border-gray-200">
+                    <th class="py-2 w-10">م</th>
                     <th class="py-2">الصنف</th>
                     <th class="py-2">الوحدة</th>
                     <th class="py-2">الكمية المطلوبة</th>
-                    <th class="py-2">المتاح بالمخزن</th>
-                    <th class="py-2">السعر</th>
                     <th class="py-2">الإجمالي</th>
                     <th class="py-2 no-print">تجهيز</th>
                 </tr>
             </thead>
             <tbody>
-                {% for item in order.items.all %}
+                {% for item in page_items %}
                 <tr class="border-b border-gray-100 {% if item.is_amended %}bg-orange-50{% endif %}">
+                    <td class="py-2 text-gray-400">{{ item.display_index }}</td>
                     <td class="py-2">
                         {{ item.product_unit.product.display_name }}
                         {% if item.is_amended %}
@@ -86,12 +100,6 @@
                     </td>
                     <td class="py-2 text-gray-500">{{ item.product_unit.name }}</td>
                     <td class="py-2 font-medium">{{ item.quantity }}</td>
-                    <td class="py-2">
-                        {% with inv=item.product_unit.product.inventory %}
-                        {% if inv %}{% widthratio inv.available item.product_unit.qty_in_small 1 %} {{ item.product_unit.name }}{% else %}—{% endif %}
-                        {% endwith %}
-                    </td>
-                    <td class="py-2">{{ item.unit_price }} ج.م</td>
                     <td class="py-2 font-medium">{{ item.subtotal }} ج.م</td>
                     <td class="py-2 no-print">
                         <span class="inline-block w-4 h-4 border border-gray-400 rounded-sm"></span>
@@ -101,7 +109,8 @@
             </tbody>
         </table>
 
-        <!-- الإجمالي -->
+        {% if forloop.last %}
+        <!-- الإجمالي — بيظهر في آخر صفحة بس -->
         <div class="text-left pt-3 border-t border-gray-200">
             <span class="text-gray-500 text-sm">الإجمالي: </span>
             <span class="font-bold text-lg text-gray-800">{{ order.total }} ج.م</span>
@@ -119,8 +128,14 @@
             <p class="text-gray-500 mb-2">ملاحظات المخزن (يدوي):</p>
             <div class="h-16 border border-dashed border-gray-300 rounded-lg"></div>
         </div>
+        {% else %}
+        <div class="pt-3 border-t border-gray-200 text-center text-xs text-gray-500">
+            تكملة الأصناف في الصفحة التالية ({{ forloop.counter|add:1 }}/{{ item_pages|length }}) ←
+        </div>
+        {% endif %}
 
     </div>
+    {% endfor %}
 
 </body>
 </html>
