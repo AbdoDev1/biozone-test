@@ -103,7 +103,8 @@ class Order(models.Model):
                 note='تم إنشاء الطلب.',
                 created_by=actor,
             )
-            self._notify_new_order()
+            from orders.notifications import notify_new_order
+            notify_new_order(self)
         elif status_changed:
             OrderLog.objects.create(
                 order=self,
@@ -112,117 +113,12 @@ class Order(models.Model):
                 new_status=self.status,
                 created_by=actor,
             )
-            self._notify_status_change(actor)
+            # _old_status لسه بيحمل الحالة القديمة هنا (بنحدّثها في آخر
+            # سطر تحت) — orders/notifications.py::notify_status_change
+            # بيعتمد عليها لتمييز "العميل لغى قبل المراجعة" عن "رفض تعديل".
+            from orders.notifications import notify_status_change
+            notify_status_change(self, actor)
         self._old_status = self.status
-
-    def _notify_new_order(self):
-        """طلب جديد وصل — إشعار لكل موظف عنده صلاحية عرض الطلبات."""
-        from notifications.services import notify_staff_with_perm
-        from notifications.models import Notification
-        notify_staff_with_perm(
-            'orders.view_order',
-            kind=Notification.Kind.NEW_ORDER,
-            title=f'طلب جديد #{self.pk}',
-            message=f'وصل طلب جديد من العميل {self.client.username}.',
-            url_name='staff:order_detail',
-            url_kwargs={'pk': self.pk},
-        )
-
-    def _notify_status_change(self, actor):
-        """
-        تغيّرت حالة الطلب — بنبعت الإشعار المناسب حسب الحالة الجديدة:
-        - NEEDS_APPROVAL: المخزن عدّل الطلب وعايز موافقة العميل → إشعار للعميل.
-        - CONFIRMED: تم تأكيد الطلب → إشعار للعميل (إلا لو هو نفسه اللي أكده).
-        - REJECTED: تم رفض الطلب → إشعار للعميل (إلا لو هو نفسه اللي رفضه).
-        - DELIVERED: تم التسليم → إشعار للعميل.
-        ولو صاحب الحدث هو العميل نفسه (وافق/رفض تعديل)، بنبعت إشعار
-        للموظفين بدل ما نبعت للعميل حاجة هو عارفها أصلًا (حركة عميل).
-        """
-        from notifications.services import notify, notify_staff_with_perm
-        from notifications.models import Notification
-
-        client_is_actor = actor is not None and getattr(actor, 'pk', None) == self.client_id
-
-        if self.status == self.Status.NEEDS_APPROVAL:
-            notify(
-                self.client,
-                kind=Notification.Kind.ORDER_NEEDS_APPROVAL,
-                title=f'طلبك #{self.pk} يحتاج موافقتك',
-                # عام ومحايد الاتجاه عمدًا (مش "نقص الكمية" دايمًا) — المخزن
-                # ممكن يكون زوّد الكمية مش قللها بس. التفاصيل الدقيقة (صنف
-                # بصنف، وأي اتجاه) موجودة في صفحة تفاصيل الطلب نفسها.
-                message='المخزن عدّل كميات في طلبك، يرجى مراجعة التعديل والموافقة عليه أو رفضه.',
-                url_name='orders:order_detail',
-                url_kwargs={'pk': self.pk},
-            )
-
-        elif self.status == self.Status.CONFIRMED:
-            if client_is_actor:
-                notify_staff_with_perm(
-                    'orders.change_order',
-                    kind=Notification.Kind.CLIENT_APPROVED_AMENDMENT,
-                    title=f'العميل وافق على تعديل الطلب #{self.pk}',
-                    message=f'العميل {self.client.username} وافق على التعديل المقترح.',
-                    url_name='staff:order_detail',
-                    url_kwargs={'pk': self.pk},
-                    exclude_actor=actor,
-                )
-            else:
-                notify(
-                    self.client,
-                    kind=Notification.Kind.ORDER_CONFIRMED,
-                    title=f'تم تأكيد طلبك #{self.pk}',
-                    message='تم تأكيد طلبك وجاري تجهيزه.',
-                    url_name='orders:order_detail',
-                    url_kwargs={'pk': self.pk},
-                    exclude_actor=actor,
-                )
-
-        elif self.status == self.Status.REJECTED:
-            if client_is_actor:
-                if self._old_status == self.Status.PENDING:
-                    # العميل ألغى طلبه بنفسه قبل ما حد من المخزن يراجعه أصلًا —
-                    # مش رفض تعديل مقترح، فالرسالة لازم توضّح الفرق.
-                    notify_staff_with_perm(
-                        'orders.change_order',
-                        kind=Notification.Kind.CLIENT_REJECTED_AMENDMENT,
-                        title=f'العميل ألغى الطلب #{self.pk}',
-                        message=f'العميل {self.client.username} ألغى طلبه بنفسه قبل المراجعة، وتم فك الحجز.',
-                        url_name='staff:order_detail',
-                        url_kwargs={'pk': self.pk},
-                        exclude_actor=actor,
-                    )
-                else:
-                    notify_staff_with_perm(
-                        'orders.change_order',
-                        kind=Notification.Kind.CLIENT_REJECTED_AMENDMENT,
-                        title=f'العميل رفض تعديل الطلب #{self.pk}',
-                        message=f'العميل {self.client.username} رفض التعديل المقترح، وتم فك الحجز.',
-                        url_name='staff:order_detail',
-                        url_kwargs={'pk': self.pk},
-                        exclude_actor=actor,
-                    )
-            else:
-                notify(
-                    self.client,
-                    kind=Notification.Kind.ORDER_REJECTED,
-                    title=f'تم رفض طلبك #{self.pk}',
-                    message='نأسف، تم رفض طلبك. تواصل معانا لمزيد من التفاصيل.',
-                    url_name='orders:order_detail',
-                    url_kwargs={'pk': self.pk},
-                    exclude_actor=actor,
-                )
-
-        elif self.status == self.Status.DELIVERED:
-            notify(
-                self.client,
-                kind=Notification.Kind.ORDER_DELIVERED,
-                title=f'تم تسليم طلبك #{self.pk}',
-                message='تم تسليم طلبك بنجاح. تقدر تشوف الفاتورة من صفحة الطلب.',
-                url_name='orders:order_detail',
-                url_kwargs={'pk': self.pk},
-                exclude_actor=actor,
-            )
 
     # ---------- منطق سير العمل (المرحلة 8) ----------
 
@@ -234,37 +130,13 @@ class Order(models.Model):
 
     @transaction.atomic
     def reject(self, actor=None, reason=''):
-        """رفض الطلب (من المخزن أو من العميل) — بيفك كل الحجز المتبقي."""
-        from inventory.models import Inventory, StockMovement
+        """رفض الطلب (من المخزن أو من العميل) — الطلبات لا تحجز أي كمية من
+        المخزون أصلًا، فمفيش أي حجز يتفك هنا."""
         if self.status == self.Status.DELIVERED:
             raise ValueError('الطلب ده اتسلّم بالفعل، مينفعش يترفض.')
         if self.status == self.Status.REJECTED:
             raise ValueError('الطلب ده مرفوض بالفعل.')
 
-        items = list(self.items.select_related('product_unit').all())
-        product_ids = [item.product_unit.product_id for item in items]
-        locked_inventories = {
-            inv.product_id: inv
-            for inv in Inventory.objects.select_for_update().filter(product_id__in=product_ids)
-        }
-
-        for item in items:
-            inv = locked_inventories.get(item.product_unit.product_id)
-            if inv and inv.reserved > 0:
-                # الحجز اتسجّل بوحدة الصنف (item.product_unit) — بنفك بنفس
-                # الوحدة، بحد أقصى المتاح فعليًا محجوز (بالقطعة) محوّل لوحدة الصنف.
-                unit = item.product_unit
-                release_qty_units = min(item.quantity, inv.reserved // unit.qty_in_small)
-                if release_qty_units > 0:
-                    StockMovement.objects.create(
-                        inventory=inv,
-                        unit=unit,
-                        movement_type=StockMovement.MovementType.RELEASE,
-                        quantity=release_qty_units,
-                        note=f'فك حجز بسبب رفض الطلب #{self.pk}',
-                        created_by=actor,
-                    )
-                    inv.refresh_from_db()
         self._actor = actor
         self.status = self.Status.REJECTED
         if reason:
@@ -275,7 +147,13 @@ class Order(models.Model):
 
     @transaction.atomic
     def mark_delivered(self, actor=None):
-        """تسليم الطلب — بيحوّل الكمية المحجوزة لصادر فعلي من المخزون، وبيصدر الفاتورة تلقائيًا."""
+        """
+        تسليم الطلب — الطلبات مش بتحجز أي كمية وقت الإرسال، فالخصم الفعلي من
+        المخزون بيحصل هنا بس (لحظة التسليم): حركة "صادر (مباشر)" واحدة لكل
+        صنف. لو الكمية بقت غير متوفرة فعليًا وقت التسليم (اتباعت لعميل تاني
+        مثلاً في الفترة من إرسال الطلب لحد المراجعة)، الحركة هترفض تلقائيًا
+        (StockMovement.clean()) وهيرجع ValidationError للموظف.
+        """
         from inventory.models import Inventory, StockMovement
         items = list(self.items.select_related('product_unit').all())
         product_ids = [item.product_unit.product_id for item in items]
@@ -290,24 +168,14 @@ class Order(models.Model):
                 out_movement = StockMovement(
                     inventory=inv,
                     unit=item.product_unit,
-                    movement_type=StockMovement.MovementType.OUT_RESERVED,
+                    movement_type=StockMovement.MovementType.OUT,
                     quantity=item.quantity,
                     note=f'تسليم طلب #{self.pk}',
                     created_by=actor,
                 )
-                out_movement.full_clean()
+                # StockMovement.save() بقت بتنادي full_clean() تلقائيًا
+                # (راجع inventory/models.py)، فمفيش داعي نناديها هنا يدويًا.
                 out_movement.save()
-
-                release_movement = StockMovement(
-                    inventory=inv,
-                    unit=item.product_unit,
-                    movement_type=StockMovement.MovementType.RELEASE,
-                    quantity=item.quantity,
-                    note=f'فك حجز بعد تسليم طلب #{self.pk}',
-                    created_by=actor,
-                )
-                release_movement.full_clean()
-                release_movement.save()
         self._actor = actor
         self.status = self.Status.DELIVERED
         self.save()
@@ -318,38 +186,22 @@ class Order(models.Model):
     @transaction.atomic
     def amend_item_quantity(self, item, new_quantity, actor=None):
         """
-        المخزن بيعدّل كمية صنف في الطلب (لو الكمية المتاحة أقل من المطلوب).
-        بيفك/يزود الحجز حسب الفرق، وبيعيد حساب السعر حسب الكمية الجديدة.
+        المخزن بيعدّل كمية صنف في الطلب (لو الكمية المتاحة أقل من المطلوب، أو
+        لأي سبب تاني)، وبيعيد حساب السعر حسب الكمية الجديدة. التعديل هنا
+        بيغيّر بس بيانات الطلب — مفيش أي تأثير على المخزون (لا حجز ولا فك)،
+        لأن الخصم الفعلي بيحصل بس وقت التسليم (mark_delivered).
         """
-        from inventory.models import Inventory, StockMovement
+        from inventory.models import Inventory
         old_quantity = item.quantity
         diff = new_quantity - old_quantity
-        # الفرق بوحدة الصنف نفسها (كرتونة/قطعة) — المزود (StockMovement.save)
-        # هو اللي بيحوّلها لقطع بمعامل qty_in_small تلقائيًا.
         unit = item.product_unit
 
-        if diff != 0:
-            inv = Inventory.objects.select_for_update().get(product_id=unit.product_id)
-            if diff < 0:
-                StockMovement.objects.create(
-                    inventory=inv,
-                    unit=unit,
-                    movement_type=StockMovement.MovementType.RELEASE,
-                    quantity=abs(diff),
-                    note=f'فك حجز جزئي بسبب تعديل الكمية في طلب #{self.pk}',
-                    created_by=actor,
-                )
-            else:
-                if diff * unit.qty_in_small > inv.available:
-                    raise ValueError('الكمية المطلوبة أكبر من المتاح في المخزون.')
-                StockMovement.objects.create(
-                    inventory=inv,
-                    unit=unit,
-                    movement_type=StockMovement.MovementType.RESERVE,
-                    quantity=diff,
-                    note=f'حجز إضافي بسبب تعديل الكمية في طلب #{self.pk}',
-                    created_by=actor,
-                )
+        if diff > 0:
+            # فحص إرشادي بس (تنبيه للموظف) — مش قفل فعلي على المخزون.
+            inv = Inventory.objects.filter(product_id=unit.product_id).first()
+            available = inv.available if inv else 0
+            if diff * unit.qty_in_small > available:
+                raise ValueError('الكمية المطلوبة أكبر من المتاح حاليًا في المخزون.')
 
         item.quantity = new_quantity
         if new_quantity > 0:
@@ -385,7 +237,7 @@ class Order(models.Model):
         self.save()
 
     def client_reject_amendment(self, actor=None):
-        """العميل رفض التعديل — الطلب بالكامل يترفض ويتفك الحجز."""
+        """العميل رفض التعديل — الطلب بالكامل يترفض."""
         self.reject(actor=actor, reason='العميل رفض التعديل المقترح من المخزن.')
 
     def client_cancel(self, actor=None):

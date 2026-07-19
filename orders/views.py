@@ -8,7 +8,7 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.db import transaction
 from products.models import ProductUnit
-from inventory.models import Inventory, StockMovement
+from inventory.models import Inventory
 from .cart import Cart
 from .models import Order, OrderItem, SiteConfig
 
@@ -158,31 +158,32 @@ def checkout(request):
         return redirect('orders:cart')
 
     if request.method == 'POST':
+        # ملحوظة: الطلب هنا لا يحجز ولا يخصم أي كمية من المخزون — بيتسجّل بس
+        # في حالة "PENDING" لحد ما المخزن يراجعه ويأكده. الفحص تحت للكمية
+        # المتاحة هو تنبيه للعميل بس (تجربة استخدام)، مش قفل فعلي على
+        # المخزون؛ ممكن الكمية تتغيّر لحد ما المخزن يراجع الطلب فعليًا.
+        product_ids = [item['unit'].product_id for item in items]
+        inventories = {
+            inv.product_id: inv
+            for inv in Inventory.objects.filter(product_id__in=product_ids)
+        }
+
+        shortages = []
+        for item in items:
+            unit = item['unit']
+            stock_qty = item['quantity'] * unit.qty_in_small
+            item['stock_qty'] = stock_qty
+            inv = inventories.get(unit.product_id)
+            available = inv.available if inv else 0
+            if stock_qty > available:
+                shortages.append(f"{unit.product.display_name} ({unit.name}): متاح {available // unit.qty_in_small} {unit.name} فقط")
+
+        if shortages:
+            for s in shortages:
+                messages.error(request, f'الكمية غير متوفرة — {s}')
+            return redirect('orders:cart')
+
         with transaction.atomic():
-            product_ids = [item['unit'].product_id for item in items]
-            locked_inventories = {
-                inv.product_id: inv
-                for inv in Inventory.objects.select_for_update().filter(product_id__in=product_ids)
-            }
-
-            # الرصيد الحقيقي محفوظ بالقطعة دايمًا على مستوى المنتج (مش الوحدة).
-            # بنحوّل item['quantity'] (بوحدة الطلب: كرتونة للجملة أو قطعة
-            # للقطاعي) لـ stock_qty بالقطعة عن طريق qty_in_small قبل أي فحص أو حجز.
-            shortages = []
-            for item in items:
-                unit = item['unit']
-                stock_qty = item['quantity'] * unit.qty_in_small
-                item['stock_qty'] = stock_qty
-                inv = locked_inventories.get(unit.product_id)
-                available = inv.available if inv else 0
-                if stock_qty > available:
-                    shortages.append(f"{unit.product.display_name} ({unit.name}): متاح {available // unit.qty_in_small} {unit.name} فقط")
-
-            if shortages:
-                for s in shortages:
-                    messages.error(request, f'الكمية غير متوفرة — {s}')
-                return redirect('orders:cart')
-
             order = Order.objects.create(
                 client=request.user,
                 notes=request.POST.get('notes', ''),
@@ -195,15 +196,6 @@ def checkout(request):
                     public_price=item['public_price'],
                     discount_percent=item['discount_percent'],
                     unit_price=item['unit_price'],
-                )
-                inv = locked_inventories[item['unit'].product_id]
-                StockMovement.objects.create(
-                    inventory=inv,
-                    unit=item['unit'],
-                    movement_type=StockMovement.MovementType.RESERVE,
-                    quantity=item['quantity'],
-                    note=f'حجز لطلب #{order.pk}',
-                    created_by=request.user,
                 )
         cart.clear()
         messages.success(request, f'تم إرسال طلبك رقم #{order.pk} بنجاح!')
@@ -235,7 +227,7 @@ def order_cancel(request, pk):
     order = get_object_or_404(Order, pk=pk, client=request.user)
     try:
         order.client_cancel(actor=request.user)
-        messages.success(request, f'تم إلغاء طلبك #{order.pk}، وتم فك الحجز على أصنافه.')
+        messages.success(request, f'تم إلغاء طلبك #{order.pk}.')
     except ValueError as e:
         messages.error(request, str(e))
     return redirect('orders:order_detail', pk=order.pk)

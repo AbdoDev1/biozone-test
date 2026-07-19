@@ -48,8 +48,8 @@
         </div>
         <div>
             <p class="text-gray-500 text-sm">تنبيهات المخزون</p>
-            <p class="text-3xl font-bold text-red-500 mt-1">{{ low_stock|length }}</p>
-            <a href="{% url 'staff:inventory' %}" class="text-xs text-blue-600 hover:underline mt-2 block">عرض التنبيهات</a>
+            <p class="text-3xl font-bold text-red-500 mt-1">{{ low_stock_count }}</p>
+            <a href="{% url 'staff:inventory' %}?low=1" class="text-xs text-blue-600 hover:underline mt-2 block">عرض التنبيهات</a>
         </div>
     </div>
 </div>
@@ -131,6 +131,12 @@
         </tbody>
     </table>
     </div>
+    {% if low_stock_count > low_stock|length %}
+    <a href="{% url 'staff:inventory' %}?low=1"
+       class="mt-4 inline-block text-sm text-blue-600 hover:underline">
+        عرض كل الأصناف المنخفضة ({{ low_stock_count }}) ←
+    </a>
+    {% endif %}
 </div>
 {% endif %}
 

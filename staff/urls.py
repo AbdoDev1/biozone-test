@@ -18,6 +18,7 @@ urlpatterns = [
     path('inventory/', inventory.inventory_list, name='inventory'),
     path('inventory/<int:pk>/', inventory.inventory_detail, name='inventory_detail'),
     path('inventory/<int:pk>/movement/', inventory.add_movement, name='add_movement'),
+    path('inventory/<int:pk>/settings/', inventory.update_settings, name='inventory_update_settings'),
     path('clients/', clients.client_list, name='clients'),
     path('clients/<int:pk>/', clients.client_detail, name='client_detail'),
     path('clients/<int:pk>/approve/', clients.client_approve, name='client_approve'),

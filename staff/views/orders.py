@@ -123,7 +123,7 @@ def order_detail(request, pk):
             reason = request.POST.get('reason', '')
             try:
                 order.reject(actor=request.user, reason=reason)
-                messages.success(request, f'تم رفض الطلب #{order.pk} وفك الحجز.')
+                messages.success(request, f'تم رفض الطلب #{order.pk}.')
             except ValueError as e:
                 messages.error(request, str(e))
             return redirect('staff:order_detail', pk=order.pk)

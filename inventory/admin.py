@@ -20,7 +20,10 @@ class InventoryAdmin(admin.ModelAdmin):
     list_display = ('product', 'quantity', 'reserved', 'available', 'min_quantity', 'is_low')
     list_filter = ('product__category',)
     search_fields = ('product__name_ar', 'product__name_en')
-    readonly_fields = ('quantity', 'reserved', 'available', 'updated_at')
+    # min_quantity وis_available بقوا يتعدّلوا من صفحة تفاصيل المخزون في
+    # لوحة الموظفين (staff:inventory_detail) بدل الأدمن — راجع
+    # staff/views/inventory.py::update_settings.
+    readonly_fields = ('quantity', 'reserved', 'available', 'updated_at', 'min_quantity', 'is_available')
     inlines = [StockMovementInline]
 
 

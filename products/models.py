@@ -142,6 +142,21 @@ class Product(models.Model):
         wants_large = bool(account_type and account_type.default_unit_size == account_type.UnitSize.LARGE)
         return [units[-1]] if wants_large else [units[0]]
 
+    @property
+    def largest_unit(self):
+        """
+        أكبر وحدة بيع متاحة للمنتج (الوحدة الكبرى/الكرتونة لو موجودة، وإلا
+        الوحدة الوحيدة المتاحة). None لو المنتج مالوش أي وحدة أصلًا.
+        """
+        units = sorted(self.units.all(), key=lambda u: u.qty_in_small)
+        return units[-1] if units else None
+
+    @property
+    def smallest_unit(self):
+        """أصغر وحدة بيع متاحة للمنتج (القطعة عادةً). None لو مفيش وحدات."""
+        units = sorted(self.units.all(), key=lambda u: u.qty_in_small)
+        return units[0] if units else None
+
 
 class ProductUnit(models.Model):
     class Size(models.TextChoices):

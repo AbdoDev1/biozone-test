@@ -39,6 +39,38 @@ class Inventory(models.Model):
     def is_low(self):
         return self.available <= self.min_quantity
 
+    def _format_in_large_unit(self, pieces):
+        """
+        بيحوّل رصيد بالقطعة لعرض بالوحدة الكبرى (كرتونة مثلًا) + الباقي
+        بالوحدة الصغرى لو مش قسمة مضبوطة. لو المنتج مالوش وحدة كبرى أصلًا
+        (أو وحدة واحدة بس)، بيرجع الرصيد بالقطعة زي ما هو.
+        """
+        large = self.product.largest_unit
+        small = self.product.smallest_unit
+        small_name = small.name if small else 'قطعة'
+        if not large or large.qty_in_small <= 1:
+            return f'{pieces} {small_name}'
+        large_count, remainder = divmod(pieces, large.qty_in_small)
+        text = f'{large_count} {large.name}'
+        if remainder:
+            text += f' + {remainder} {small_name}'
+        return text
+
+    @property
+    def quantity_display(self):
+        """الرصيد الكلي معروضًا بالوحدة الكبرى — للاستخدام في تقرير المخزون."""
+        return self._format_in_large_unit(self.quantity)
+
+    @property
+    def reserved_display(self):
+        """المحجوز معروضًا بالوحدة الكبرى — للاستخدام في تقرير المخزون."""
+        return self._format_in_large_unit(self.reserved)
+
+    @property
+    def available_display(self):
+        """المتاح معروضًا بالوحدة الكبرى — للاستخدام في تقرير المخزون."""
+        return self._format_in_large_unit(self.available)
+
     def sync_availability(self):
         if self.available <= 0:
             self.is_available = False
@@ -115,6 +147,13 @@ class StockMovement(models.Model):
                 raise ValidationError('لا يمكن إلغاء حجز أكبر من الكمية المحجوزة فعليًا.')
 
     def save(self, *args, **kwargs):
+        # full_clean() تلقائي هنا (بنفس أسلوب AccountTransaction.save()) —
+        # قبل كده كانت الحماية (منع OUT أكبر من المتاح، إلخ) شغالة بس لو
+        # المكان اللي بينادي .create()/.save() فحص يدويًا الأول، فكانت الحماية
+        # الحقيقية معتمدة على "كل مطوّر يتذكر يفحص" مش على validation مركزي.
+        # دلوقتي أي إنشاء لحركة مخزون (حتى لو مسار جديد نسي الفحص اليدوي)
+        # هيتوقف تلقائيًا لو مخالف لقواعد clean() تحت.
+        self.full_clean()
         is_new = self.pk is None
         super().save(*args, **kwargs)
         if not is_new:

@@ -5,10 +5,17 @@
 
 <div class="mb-6">
     <h1 class="text-2xl font-bold text-gray-800">تقرير المخزون</h1>
+    {% if low_only %}
+    <p class="text-sm text-red-600 mt-1 flex items-center gap-2">
+        عرض الأصناف تحت الحد الأدنى بس
+        <a href="{% url 'staff:inventory' %}" class="text-xs text-gray-400 hover:text-blue-600 underline">(عرض كل المخزون)</a>
+    </p>
+    {% endif %}
 </div>
 
 <!-- شريط البحث: بالاسم أو الكود أو الباركود (اضغط في الخانة وامسح بالاسكانر مباشرة) -->
 <form method="get" class="mb-4">
+    {% if low_only %}<input type="hidden" name="low" value="1">{% endif %}
     <div class="relative max-w-md">
         <svg class="w-4 h-4 text-gray-400 absolute top-1/2 -translate-y-1/2 right-3 pointer-events-none"
              fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -24,7 +31,7 @@
         <span>مخصّص لقارئ الباركود: دوس في الخانة وامسح — القارئ بيدخل الرقم ويبعت تلقائيًا من غير ما تحتاج تدوس Enter.</span>
     </p>
     {% if search_q %}
-    <a href="{% url 'staff:inventory' %}" class="text-xs text-gray-400 hover:text-red-500 mt-1 inline-flex items-center gap-1"><svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>مسح البحث</a>
+    <a href="{% url 'staff:inventory' %}{% if low_only %}?low=1{% endif %}" class="text-xs text-gray-400 hover:text-red-500 mt-1 inline-flex items-center gap-1"><svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>مسح البحث</a>
     {% endif %}
 </form>
 
@@ -34,7 +41,7 @@
             <tr>
                 <th class="px-4 py-3 text-right sticky-col">المنتج</th>
                 <th class="px-4 py-3 text-right">الوحدات</th>
-                <th class="px-4 py-3 text-right">الرصيد (بالقطعة)</th>
+                <th class="px-4 py-3 text-right">الرصيد</th>
                 <th class="px-4 py-3 text-right">محجوز</th>
                 <th class="px-4 py-3 text-right">متاح</th>
                 <th class="px-4 py-3 text-right">الحالة</th>
@@ -50,9 +57,9 @@
                         {{ unit.name }}{% if unit.qty_in_small > 1 %} ({{ unit.qty_in_small }} قطعة){% endif %}{% if not forloop.last %} / {% endif %}
                     {% endfor %}
                 </td>
-                <td class="px-4 py-3">{{ item.quantity }}</td>
-                <td class="px-4 py-3 text-yellow-600">{{ item.reserved }}</td>
-                <td class="px-4 py-3 font-bold">{{ item.available }}</td>
+                <td class="px-4 py-3">{{ item.quantity_display }}</td>
+                <td class="px-4 py-3 text-yellow-600">{{ item.reserved_display }}</td>
+                <td class="px-4 py-3 font-bold">{{ item.available_display }}</td>
                 <td class="px-4 py-3">
                     {% if item.is_low %}
                     {% status_badge "منخفض" color="red" %}
@@ -79,12 +86,12 @@
 {% if page_obj.paginator.num_pages > 1 %}
 <div class="flex items-center justify-center gap-2 mt-4 text-sm">
     {% if page_obj.has_previous %}
-    <a href="?page={{ page_obj.previous_page_number }}{% if search_q %}&q={{ search_q|urlencode }}{% endif %}"
+    <a href="?page={{ page_obj.previous_page_number }}{% if search_q %}&q={{ search_q|urlencode }}{% endif %}{% if low_only %}&low=1{% endif %}"
        class="px-3 py-2 rounded-lg bg-white shadow-sm hover:bg-blue-50 text-gray-600">السابق</a>
     {% endif %}
     <span class="text-gray-500 px-2">صفحة {{ page_obj.number }} من {{ page_obj.paginator.num_pages }}</span>
     {% if page_obj.has_next %}
-    <a href="?page={{ page_obj.next_page_number }}{% if search_q %}&q={{ search_q|urlencode }}{% endif %}"
+    <a href="?page={{ page_obj.next_page_number }}{% if search_q %}&q={{ search_q|urlencode }}{% endif %}{% if low_only %}&low=1{% endif %}"
        class="px-3 py-2 rounded-lg bg-white shadow-sm hover:bg-blue-50 text-gray-600">التالي</a>
     {% endif %}
 </div>

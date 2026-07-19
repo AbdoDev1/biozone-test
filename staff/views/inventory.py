@@ -3,7 +3,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Q, F
 from inventory.models import Inventory, StockMovement
 from products.models import ProductUnit
 from staff.permissions import perm_required
@@ -30,6 +30,12 @@ def inventory_list(request):
             | Q(product__barcode__iexact=search_q)
         )
 
+    # فلتر "المخزون المنخفض بس" — ده اللي بتودّي له لوحة التحكم برابط
+    # "عرض الكل" بدل ما تجيب كل الأصناف المنخفضة في صفحة واحدة من غير حد.
+    low_only = request.GET.get('low') == '1'
+    if low_only:
+        items_qs = items_qs.filter(quantity__lte=F('reserved') + F('min_quantity'))
+
     paginator = Paginator(items_qs, STAFF_LIST_PAGE_SIZE)
     page_obj = paginator.get_page(request.GET.get('page'))
 
@@ -37,6 +43,7 @@ def inventory_list(request):
         'items': page_obj,
         'page_obj': page_obj,
         'search_q': search_q,
+        'low_only': low_only,
     })
 
 
@@ -51,6 +58,30 @@ def inventory_detail(request, pk):
         'movements': movements,
         'units': units,
     })
+
+
+@perm_required('inventory.change_inventory')
+def update_settings(request, pk):
+    """
+    تعديل الحد الأدنى للصنف (min_quantity) وإتاحة ظهوره في المتجر
+    (is_available) — كان ده بيتعدّل من لوحة أدمن دجانجو، ودلوقتي منقول
+    لصفحة تفاصيل المخزون نفسها (المخزون فقط، مش أي موديل تاني).
+    """
+    item = get_object_or_404(Inventory, pk=pk)
+    if request.method == 'POST':
+        try:
+            min_quantity = int(request.POST.get('min_quantity', item.min_quantity))
+            if min_quantity < 0:
+                raise ValueError
+        except (TypeError, ValueError):
+            messages.error(request, 'الحد الأدنى يجب أن يكون رقمًا صحيحًا غير سالب.')
+            return redirect('staff:inventory_detail', pk=pk)
+
+        item.min_quantity = min_quantity
+        item.is_available = request.POST.get('is_available') == 'on'
+        item.save(update_fields=['min_quantity', 'is_available'])
+        messages.success(request, 'تم تحديث إعدادات الصنف بنجاح.')
+    return redirect('staff:inventory_detail', pk=pk)
 
 
 @perm_required('inventory.add_stockmovement')
@@ -98,14 +129,15 @@ def add_movement(request, pk):
                 note=note,
                 created_by=request.user,
             )
+            # StockMovement.save() بقت بتنادي full_clean() تلقائيًا (راجع
+            # inventory/models.py)، فبنمسك ValidationError من هنا مباشرة
+            # بدل ما ننادي full_clean() يدويًا قبلها.
             try:
-                movement.full_clean()
+                movement.save()
             except ValidationError as e:
                 for err in e.messages:
                     messages.error(request, err)
                 return redirect('staff:inventory_detail', pk=pk)
-
-            movement.save()
 
         messages.success(request, 'تم تسجيل الحركة بنجاح')
         return redirect('staff:inventory_detail', pk=pk)
