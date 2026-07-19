@@ -1,23 +1,20 @@
 {% extends 'staff/base.html' %}
+{% load staff_ui %}
 {% block title %}المنتجات — Biozone{% endblock %}
 {% block content %}
 
 <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
     <h1 class="text-2xl font-bold text-gray-800">المنتجات</h1>
     <div class="flex flex-col sm:flex-row gap-2">
-        <a href="{% url 'staff:product_add' %}"
-           class="bg-green-600 hover:bg-green-700 text-white text-sm px-4 py-2 rounded-lg transition">
-            + إضافة منتج
-        </a>
-        <a href="{% url 'staff:import_products' %}"
-           class="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded-lg transition">
-            استيراد من Excel
-        </a>
+        {% url 'staff:product_add' as product_add_url %}
+        {% btn "+ إضافة منتج" href=product_add_url variant="success" %}
+        {% url 'staff:import_products' as import_products_url %}
+        {% btn "استيراد من Excel" href=import_products_url %}
     </div>
 </div>
 
 <!-- بحث وفلتر -->
-<form method="GET" class="bg-white rounded-xl shadow p-4 mb-6 flex flex-col sm:flex-row gap-3 sm:items-end">
+<form method="GET" class="bg-white rounded-2xl shadow-sm p-4 mb-6 flex flex-col sm:flex-row gap-3 sm:items-end">
     <div class="flex-1">
         <label class="text-xs text-gray-500 mb-1 block">بحث</label>
         <input type="text" name="q" value="{{ search_q }}"
@@ -43,11 +40,11 @@
 </form>
 
 <!-- جدول المنتجات -->
-<div class="bg-white rounded-xl shadow overflow-x-auto">
+<div class="bg-white rounded-2xl shadow-sm overflow-x-auto">
     <table class="w-full text-sm min-w-[640px]">
         <thead class="bg-gray-50 text-gray-600 border-b border-gray-200">
             <tr>
-                <th class="px-4 py-3 text-right">المنتج</th>
+                <th class="px-4 py-3 text-right sticky-col">المنتج</th>
                 <th class="px-4 py-3 text-right">القسم</th>
                 <th class="px-4 py-3 text-right">الشركة</th>
                 <th class="px-4 py-3 text-right">سعر القطعة</th>
@@ -59,7 +56,7 @@
         <tbody class="divide-y divide-gray-100">
             {% for product in products %}
             <tr class="hover:bg-gray-50 transition">
-                <td class="px-4 py-3">
+                <td class="px-4 py-3 sticky-col">
                     <div class="flex items-center gap-3">
                         {% if product.image %}
                             <img src="{{ product.image.url }}" class="w-10 h-10 rounded-lg object-cover">

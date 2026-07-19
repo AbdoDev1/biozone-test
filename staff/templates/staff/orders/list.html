@@ -1,4 +1,5 @@
 {% extends 'staff/base.html' %}
+{% load staff_ui %}
 {% block title %}الطلبات — Biozone{% endblock %}
 {% block content %}
 
@@ -7,7 +8,7 @@
 </div>
 
 <!-- فلتر الحالة -->
-<div class="bg-white rounded-xl shadow p-4 mb-6 flex flex-wrap gap-2 text-sm">
+<div class="bg-white rounded-2xl shadow-sm p-4 mb-6 flex flex-wrap gap-2 text-sm">
     <a href="{% url 'staff:order_list' %}"
        class="px-3 py-1.5 rounded-lg {% if not selected_status %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %}">
         الكل
@@ -20,11 +21,11 @@
     {% endfor %}
 </div>
 
-<div class="bg-white rounded-xl shadow overflow-x-auto">
+<div class="bg-white rounded-2xl shadow-sm overflow-x-auto">
     <table class="w-full text-sm min-w-[640px]">
         <thead class="bg-gray-50 text-gray-600">
             <tr>
-                <th class="px-4 py-3 text-right">رقم الطلب</th>
+                <th class="px-4 py-3 text-right sticky-col">رقم الطلب</th>
                 <th class="px-4 py-3 text-right">العميل</th>
                 <th class="px-4 py-3 text-right">الإجمالي</th>
                 <th class="px-4 py-3 text-right">الحالة</th>
@@ -35,24 +36,17 @@
         <tbody class="divide-y divide-gray-100">
             {% for order in orders %}
             <tr class="hover:bg-gray-50">
-                <td class="px-4 py-3 font-medium">#{{ order.pk }}</td>
+                <td class="px-4 py-3 font-medium sticky-col">#{{ order.pk }}</td>
                 <td class="px-4 py-3">{{ order.client.username }}</td>
                 <td class="px-4 py-3 font-semibold text-blue-700">{{ order.total }} ج.م</td>
                 <td class="px-4 py-3">
-                    <span class="px-2 py-1 rounded-full text-xs
-                        {% if order.status == 'PENDING' %}bg-yellow-100 text-yellow-700
-                        {% elif order.status == 'NEEDS_APPROVAL' %}bg-orange-100 text-orange-700
-                        {% elif order.status == 'CONFIRMED' %}bg-green-100 text-green-700
-                        {% elif order.status == 'REJECTED' %}bg-red-100 text-red-600
-                        {% else %}bg-blue-100 text-blue-700{% endif %}">
-                        {{ order.get_status_display }}
-                    </span>
+                    {% status_badge order.get_status_display group="order_status" key=order.status %}
                 </td>
                 <td class="px-4 py-3 text-gray-500">{{ order.created_at|date:"Y-m-d H:i" }}</td>
                 <td class="px-4 py-3">
                     <a href="{% url 'staff:order_detail' order.pk %}" class="text-blue-600 hover:underline text-xs">عرض</a>
                     {% if order.status in 'PENDING,NEEDS_APPROVAL,CONFIRMED' %}
-                    <a href="{% url 'staff:order_print' order.pk %}" target="_blank" class="text-gray-500 hover:underline text-xs mr-2">🖨️ طباعة</a>
+                    <a href="{% url 'staff:order_print' order.pk %}" target="_blank" class="text-gray-500 hover:underline text-xs mr-2 inline-flex items-center gap-1"><svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M6.34 18H4.5A2.25 2.25 0 012.25 15.75V9.377c0-.996.61-1.89 1.534-2.256l.847-.336M17.66 18h1.84a2.25 2.25 0 002.25-2.25v-6.373c0-.996-.61-1.89-1.534-2.256l-4.94-1.96m-9.94 1.96l4.94-1.96m5 0v-.815a2.25 2.25 0 00-1.183-1.981l-1.5-.815a2.25 2.25 0 00-2.134 0l-1.5.815a2.25 2.25 0 00-1.183 1.98v.816m5 0h-5M6.34 18l.529 4.752c.062.559.53.983 1.09.983h8.084c.559 0 1.028-.424 1.09-.983L17.66 18M6.34 18h11.32"/></svg>طباعة</a>
                     {% endif %}
                 </td>
             </tr>

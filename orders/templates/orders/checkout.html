@@ -30,16 +30,19 @@
       </div>
     </div>
 
-    <form method="POST" class="bg-white rounded-2xl shadow-sm p-6">
+    <form method="POST" class="bg-white rounded-2xl shadow-sm p-6"
+          x-data="{ submitting: false }"
+          @submit="submitting = true">
       {% csrf_token %}
       <label class="block mb-4">
         <span class="text-sm font-medium text-gray-700 mb-1 block">ملاحظات (اختياري)</span>
         <textarea name="notes" rows="3" placeholder="أي تعليمات خاصة بالطلب..."
                   class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-blue-400"></textarea>
       </label>
-      <button type="submit"
-              class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition">
-        تأكيد الطلب
+      <button type="submit" :disabled="submitting"
+              class="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl transition">
+        <span x-show="!submitting">تأكيد الطلب</span>
+        <span x-show="submitting" x-cloak>جارِ تأكيد الطلب...</span>
       </button>
     </form>
 </div>

@@ -1,10 +1,15 @@
 {% extends 'staff/base.html' %}
 {% block title %}{{ title }} — Biozone{% endblock %}
-{% block content %}
+{% block breadcrumbs %}
+{% load staff_ui %}
+<nav class="flex items-center text-sm text-gray-500 mb-4">
+    {% crumb "الرئيسية" "staff:dashboard" %}
+    {% crumb "أنواع الحسابات" "staff:account_types" %}
+    {% crumb title %}
+</nav>
+{% endblock %}
 
-<div class="mb-4">
-    <a href="{% url 'staff:account_types' %}" class="text-blue-600 hover:underline text-sm">→ أنواع الحسابات</a>
-</div>
+{% block content %}
 
 <div class="max-w-xl mx-auto bg-white rounded-2xl shadow p-6 md:p-8">
     <h1 class="text-xl font-bold text-gray-800 mb-6">{{ title }}</h1>
@@ -42,10 +47,11 @@
         </label>
 
         <div class="flex flex-col sm:flex-row gap-3 pt-2">
-            <button type="submit"
-                    class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-xl transition">
-                {% if is_edit %}حفظ التعديلات{% else %}إضافة نوع الحساب{% endif %}
-            </button>
+            {% if is_edit %}
+            {% btn "حفظ التعديلات" type="submit" size="lg" rounded="xl" %}
+            {% else %}
+            {% btn "إضافة نوع الحساب" type="submit" size="lg" rounded="xl" %}
+            {% endif %}
             <a href="{% url 'staff:account_types' %}"
                class="text-center border border-gray-200 text-gray-600 px-6 py-3 rounded-xl hover:bg-gray-50 transition">
                 إلغاء

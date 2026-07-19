@@ -1,10 +1,16 @@
+{% load static %}
+{% load staff_ui %}
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>تسجيل دخول الموظفين — Biozone</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><rect width=%2224%22 height=%2224%22 rx=%226%22 fill=%22%231d4ed8%22/><text x=%2212%22 y=%2217%22 font-size=%2214%22 font-family=%22sans-serif%22 font-weight=%22bold%22 fill=%22white%22 text-anchor=%22middle%22>B</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
+    <style>body { font-family: 'Cairo', system-ui, sans-serif; }</style>
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center">
     <div class="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md">
@@ -29,10 +35,7 @@
                 <input type="password" name="password"
                        class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
-            <button type="submit"
-                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition">
-                تسجيل الدخول
-            </button>
+            {% btn "تسجيل الدخول" type="submit" full_width=True %}
         </form>
         <p class="text-center text-xs text-gray-400 mt-6">
             هل أنت عميل؟ <a href="{% url 'accounts:login' %}" class="text-blue-600 hover:underline">سجّل الدخول من هنا</a>

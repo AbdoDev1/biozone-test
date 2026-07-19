@@ -1,4 +1,5 @@
 {% extends 'staff/base.html' %}
+{% load staff_ui %}
 {% block title %}العملاء — Biozone{% endblock %}
 {% block content %}
 
@@ -8,7 +9,7 @@
 <div class="mb-8">
     <h2 class="text-lg font-semibold text-yellow-600 mb-3">طلبات التسجيل ({{ pending|length }})</h2>
     {% if pending %}
-    <div class="bg-white rounded-xl shadow overflow-hidden">
+    <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
         <table class="w-full text-sm">
             <thead class="bg-gray-50 text-gray-600">
                 <tr>
@@ -31,8 +32,30 @@
                     <td class="px-4 py-3 flex gap-2">
                         <a href="{% url 'staff:client_approve' profile.pk %}"
                            class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-lg text-xs">موافقة</a>
-                        <a href="{% url 'staff:client_reject' profile.pk %}"
-                           class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-xs">رفض</a>
+
+                        <div x-data="{ open: false }" class="inline-block">
+                            <button type="button" @click="open = true"
+                                    class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-xs">رفض</button>
+
+                            <div x-show="open" x-cloak
+                                 class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+                                <div x-show="open" x-transition @click.outside="open = false"
+                                     class="bg-white rounded-2xl shadow-lg p-6 w-full max-w-sm text-center">
+                                    <p class="text-gray-800 font-bold mb-1">تأكيد رفض الحساب</p>
+                                    <p class="text-sm text-gray-500 mb-5">
+                                        هل أنت متأكد من رفض حساب
+                                        <span class="font-bold text-red-600">{{ profile.business_name }}</span>؟
+                                        الإجراء ده مينفعش يترجع فيه من غير مراجعة الطلب تاني.
+                                    </p>
+                                    <form method="POST" action="{% url 'staff:client_reject' profile.pk %}"
+                                          class="flex gap-3 justify-center">
+                                        {% csrf_token %}
+                                        {% btn "نعم، رفض" type="submit" variant="danger" size="sm" %}
+                                        {% btn "إلغاء" type="button" variant="secondary" size="sm" extra_attrs='@click="open = false"' %}
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
                     </td>
                 </tr>
                 {% endfor %}
@@ -48,7 +71,7 @@
 <div class="mb-8" id="active-clients">
     <h2 class="text-lg font-semibold text-green-600 mb-3">العملاء النشطين ({{ total_active }})</h2>
     {% if active %}
-    <div class="bg-white rounded-xl shadow overflow-hidden">
+    <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
         <table class="w-full text-sm">
             <thead class="bg-gray-50 text-gray-600">
                 <tr>
@@ -94,7 +117,7 @@
 {% if rejected %}
 <div>
     <h2 class="text-lg font-semibold text-red-500 mb-3">المرفوضين ({{ rejected|length }})</h2>
-    <div class="bg-white rounded-xl shadow overflow-hidden">
+    <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
         <table class="w-full text-sm">
             <thead class="bg-gray-50 text-gray-600">
                 <tr>

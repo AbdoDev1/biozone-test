@@ -1,0 +1,34 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* عام: كان قبل كده مكرر جوه <style> في كل base.html */
+[x-cloak] {
+    display: none !important;
+}
+
+body {
+    font-family: 'Cairo', system-ui, sans-serif;
+}
+
+/*
+ العمود الأول الثابت (Sticky) للجداول الطويلة اللي بتتلف أفقيًا على الموبايل،
+ عشان اسم الصنف/العميل/المنتج ميضيعش السياق وقت الـ scroll.
+ الاستخدام: لف الجدول بـ <div class="overflow-x-auto">، وحط class="sticky-col"
+ على أول <th> وأول <td> في كل صف.
+ الصفحة RTL فالعمود الأول بصريًا على اليمين، فالتثبيت بـ right بدل left.
+*/
+.sticky-col {
+    position: sticky;
+    right: 0;
+    z-index: 1;
+    background-color: inherit;
+}
+
+table .sticky-col {
+    background-color: white;
+}
+
+thead .sticky-col {
+    background-color: rgb(249 250 251); /* نفس bg-gray-50 المستخدمة في رؤوس الجداول */
+}

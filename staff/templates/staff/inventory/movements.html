@@ -1,10 +1,15 @@
 {% extends 'staff/base.html' %}
 {% block title %}سجل حركات المخزون — Biozone{% endblock %}
-{% block content %}
+{% block breadcrumbs %}
+{% load staff_ui %}
+<nav class="flex items-center text-sm text-gray-500 mb-4">
+    {% crumb "الرئيسية" "staff:dashboard" %}
+    {% crumb "المخزون" "staff:inventory" %}
+    {% crumb "سجل الحركات" %}
+</nav>
+{% endblock %}
 
-<div class="mb-4">
-    <a href="{% url 'staff:inventory' %}" class="text-blue-600 hover:underline text-sm">→ المخزون</a>
-</div>
+{% block content %}
 
 <h1 class="text-2xl font-bold text-gray-800 mb-6">سجل كل حركات المخزون</h1>
 
@@ -24,15 +29,15 @@
             class="bg-blue-600 hover:bg-blue-700 text-white text-sm px-5 py-2.5 rounded-lg transition">بحث</button>
     {% if search_q or movement_type %}
     <a href="{% url 'staff:inventory_movements' %}"
-       class="text-sm text-gray-400 hover:text-red-500 flex items-center px-2">✕ مسح</a>
+       class="text-sm text-gray-400 hover:text-red-500 flex items-center gap-1 px-2"><svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>مسح</a>
     {% endif %}
 </form>
 
-<div class="bg-white rounded-xl shadow overflow-x-auto">
+<div class="bg-white rounded-2xl shadow-sm overflow-x-auto">
     <table class="w-full text-sm min-w-[720px]">
         <thead class="bg-gray-50 text-gray-600">
             <tr>
-                <th class="px-4 py-3 text-right">الصنف</th>
+                <th class="px-4 py-3 text-right sticky-col">الصنف</th>
                 <th class="px-4 py-3 text-right">النوع</th>
                 <th class="px-4 py-3 text-right">الوحدة</th>
                 <th class="px-4 py-3 text-right">الكمية</th>
@@ -45,20 +50,13 @@
         <tbody class="divide-y divide-gray-100">
             {% for movement in movements %}
             <tr class="hover:bg-gray-50">
-                <td class="px-4 py-3 font-medium">
+                <td class="px-4 py-3 font-medium sticky-col">
                     <a href="{% url 'staff:inventory_detail' movement.inventory_id %}" class="hover:text-blue-600 hover:underline">
                         {{ movement.inventory.product.display_name }}
                     </a>
                 </td>
                 <td class="px-4 py-3">
-                    <span class="px-2 py-1 rounded-full text-xs
-                        {% if movement.movement_type == 'IN' %}bg-green-100 text-green-700
-                        {% elif movement.movement_type == 'OUT' %}bg-red-100 text-red-700
-                        {% elif movement.movement_type == 'OUT_RESERVED' %}bg-rose-100 text-rose-700
-                        {% elif movement.movement_type == 'RESERVE' %}bg-yellow-100 text-yellow-700
-                        {% else %}bg-gray-100 text-gray-700{% endif %}">
-                        {{ movement.get_movement_type_display }}
-                    </span>
+                    {% status_badge movement.get_movement_type_display group="movement_type" key=movement.movement_type %}
                 </td>
                 <td class="px-4 py-3 text-gray-500">{{ movement.unit.name }}</td>
                 <td class="px-4 py-3 font-medium">{{ movement.quantity }}</td>

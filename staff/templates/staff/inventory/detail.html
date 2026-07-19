@@ -1,21 +1,26 @@
 {% extends 'staff/base.html' %}
 {% block title %}{{ item.product.display_name }} — المخزون{% endblock %}
+{% block breadcrumbs %}
+{% load staff_ui %}
+<nav class="flex items-center text-sm text-gray-500 mb-4">
+    {% crumb "الرئيسية" "staff:dashboard" %}
+    {% crumb "المخزون" "staff:inventory" %}
+    {% crumb item.product.display_name %}
+</nav>
+{% endblock %}
+
 {% block content %}
 
-<div class="mb-4">
-    <a href="{% url 'staff:inventory' %}" class="text-blue-600 hover:underline text-sm">→ المخزون</a>
-</div>
-
 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-    <div class="bg-white rounded-xl shadow p-6">
+    <div class="bg-white rounded-2xl shadow-sm p-6">
         <p class="text-gray-500 text-sm">الرصيد الكلي (بالقطعة)</p>
         <p class="text-3xl font-bold text-gray-800 mt-1">{{ item.quantity }}</p>
     </div>
-    <div class="bg-white rounded-xl shadow p-6">
+    <div class="bg-white rounded-2xl shadow-sm p-6">
         <p class="text-gray-500 text-sm">المحجوز</p>
         <p class="text-3xl font-bold text-yellow-500 mt-1">{{ item.reserved }}</p>
     </div>
-    <div class="bg-white rounded-xl shadow p-6">
+    <div class="bg-white rounded-2xl shadow-sm p-6">
         <p class="text-gray-500 text-sm">المتاح</p>
         <p class="text-3xl font-bold {% if item.is_low %}text-red-500{% else %}text-green-500{% endif %} mt-1">
             {{ item.available }}
@@ -24,7 +29,7 @@
 </div>
 
 <!-- الوحدات المتاحة لهذا المنتج -->
-<div class="bg-white rounded-xl shadow p-6 mb-6">
+<div class="bg-white rounded-2xl shadow-sm p-6 mb-6">
     <h2 class="font-semibold text-gray-700 mb-4">بيانات الصنف</h2>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm mb-4">
         <div>
@@ -54,7 +59,7 @@
 </div>
 
 <!-- إضافة حركة -->
-<div class="bg-white rounded-xl shadow p-6 mb-6">
+<div class="bg-white rounded-2xl shadow-sm p-6 mb-6">
     <h2 class="font-semibold text-gray-700 mb-4">تسجيل حركة</h2>
     <form method="post" action="{% url 'staff:add_movement' item.pk %}" class="grid grid-cols-1 md:grid-cols-5 gap-4">
         {% csrf_token %}
@@ -97,7 +102,7 @@
 </div>
 
 <!-- آخر الحركات -->
-<div class="bg-white rounded-xl shadow overflow-hidden">
+<div class="bg-white rounded-2xl shadow-sm overflow-hidden">
     <div class="p-4 border-b">
         <h2 class="font-semibold text-gray-700">آخر الحركات</h2>
     </div>
@@ -105,7 +110,7 @@
     <table class="w-full text-sm min-w-[640px]">
         <thead class="bg-gray-50 text-gray-600">
             <tr>
-                <th class="px-4 py-3 text-right">النوع</th>
+                <th class="px-4 py-3 text-right sticky-col">النوع</th>
                 <th class="px-4 py-3 text-right">الوحدة</th>
                 <th class="px-4 py-3 text-right">الكمية</th>
                 <th class="px-4 py-3 text-right">= بالقطعة</th>
@@ -117,15 +122,8 @@
         <tbody class="divide-y divide-gray-100">
             {% for movement in movements %}
             <tr class="hover:bg-gray-50">
-                <td class="px-4 py-3">
-                    <span class="px-2 py-1 rounded-full text-xs
-                        {% if movement.movement_type == 'IN' %}bg-green-100 text-green-700
-                        {% elif movement.movement_type == 'OUT' %}bg-red-100 text-red-700
-                        {% elif movement.movement_type == 'OUT_RESERVED' %}bg-rose-100 text-rose-700
-                        {% elif movement.movement_type == 'RESERVE' %}bg-yellow-100 text-yellow-700
-                        {% else %}bg-gray-100 text-gray-700{% endif %}">
-                        {{ movement.get_movement_type_display }}
-                    </span>
+                <td class="px-4 py-3 sticky-col">
+                    {% status_badge movement.get_movement_type_display group="movement_type" key=movement.movement_type %}
                 </td>
                 <td class="px-4 py-3 text-gray-500">{{ movement.unit.name }}</td>
                 <td class="px-4 py-3 font-medium">{{ movement.quantity }}</td>

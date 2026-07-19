@@ -1,10 +1,15 @@
 {% extends 'staff/base.html' %}
 {% block title %}{% if profile.user.status == 'ACTIVE' %}صلاحيات {{ profile.business_name }}{% else %}تفعيل حساب {{ profile.business_name }}{% endif %} — Biozone{% endblock %}
-{% block content %}
+{% block breadcrumbs %}
+{% load staff_ui %}
+<nav class="flex items-center text-sm text-gray-500 mb-4">
+    {% crumb "الرئيسية" "staff:dashboard" %}
+    {% crumb "إدارة حسابات العملاء" "staff:clients" %}
+    {% crumb profile.business_name %}
+</nav>
+{% endblock %}
 
-<div class="mb-4">
-    <a href="{% url 'staff:clients' %}" class="text-blue-600 hover:underline text-sm">→ إدارة حسابات العملاء</a>
-</div>
+{% block content %}
 
 <div class="max-w-xl mx-auto bg-white rounded-2xl shadow p-6 md:p-8">
 
@@ -34,10 +39,11 @@
         </div>
 
         <div class="flex flex-col sm:flex-row gap-3 pt-2">
-            <button type="submit"
-                    class="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-3 rounded-xl transition">
-                {% if profile.user.status == 'ACTIVE' %}حفظ الصلاحيات{% else %}تفعيل الحساب{% endif %}
-            </button>
+            {% if profile.user.status == 'ACTIVE' %}
+            {% btn "حفظ الصلاحيات" type="submit" variant="success" size="lg" rounded="xl" %}
+            {% else %}
+            {% btn "تفعيل الحساب" type="submit" variant="success" size="lg" rounded="xl" %}
+            {% endif %}
             <a href="{% url 'staff:clients' %}"
                class="text-center border border-gray-200 text-gray-600 px-6 py-3 rounded-xl hover:bg-gray-50 transition">
                 إلغاء

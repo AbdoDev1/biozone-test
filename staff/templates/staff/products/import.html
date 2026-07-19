@@ -1,5 +1,14 @@
 {% extends 'staff/base.html' %}
 {% block title %}استيراد منتجات — Biozone{% endblock %}
+{% block breadcrumbs %}
+{% load staff_ui %}
+<nav class="flex items-center text-sm text-gray-500 mb-4">
+    {% crumb "الرئيسية" "staff:dashboard" %}
+    {% crumb "المنتجات" "staff:product_list" %}
+    {% crumb "استيراد" %}
+</nav>
+{% endblock %}
+
 {% block content %}
 
 <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
@@ -36,10 +45,8 @@
            class="bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 text-sm px-4 py-2 rounded-lg transition">
             تصدير كل الأصناف
         </a>
-        <a href="{% url 'staff:download_template' %}"
-           class="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded-lg transition">
-            تحميل القالب
-        </a>
+        {% url 'staff:download_template' as download_template_url %}
+        {% btn "تحميل القالب" href=download_template_url %}
     </div>
 </div>
 <p class="text-xs text-gray-500 -mt-3 mb-6">
@@ -49,7 +56,7 @@
 </p>
 
 <!-- الأعمدة -->
-<div class="bg-white rounded-xl shadow p-4 mb-6">
+<div class="bg-white rounded-2xl shadow-sm p-4 mb-6">
     <h2 class="font-bold text-gray-700 mb-3 text-sm">الأعمدة في الملف</h2>
     <p class="text-xs text-gray-500 mb-3">
         كل <strong>صف = وحدة واحدة</strong> (قطعة أو كرتونة)، مش صنف كامل. الصنف اللي له
@@ -107,7 +114,7 @@
 </div>
 
 <!-- فورم الرفع -->
-<div class="bg-white rounded-xl shadow p-6">
+<div class="bg-white rounded-2xl shadow-sm p-6">
     <form method="POST" enctype="multipart/form-data">
         {% csrf_token %}
         <label class="block mb-4">
@@ -117,10 +124,7 @@
                           file:ml-4 file:py-2 file:px-4 file:rounded-lg file:border-0
                           file:bg-blue-50 file:text-blue-700 file:font-medium hover:file:bg-blue-100">
         </label>
-        <button type="submit"
-                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition">
-            رفع واستيراد
-        </button>
+        {% btn "رفع واستيراد" type="submit" size="lg" rounded="xl" full_width=True %}
     </form>
 </div>
 

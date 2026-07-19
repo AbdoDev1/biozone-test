@@ -1,13 +1,12 @@
 {% extends 'staff/base.html' %}
+{% load staff_ui %}
 {% block title %}أنواع الحسابات — Biozone{% endblock %}
 {% block content %}
 
 <div class="flex justify-between items-center mb-6">
     <h1 class="text-2xl font-bold text-gray-800">أنواع الحسابات وقوائم الخصومات</h1>
-    <a href="{% url 'staff:account_type_add' %}"
-       class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg text-sm">
-        + إضافة نوع حساب
-    </a>
+    {% url 'staff:account_type_add' as account_type_add_url %}
+    {% btn "+ إضافة نوع حساب" href=account_type_add_url %}
 </div>
 
 <p class="text-sm text-gray-500 mb-6">
@@ -16,7 +15,7 @@
     بكل صنف. لا يوجد خصم عام على الحساب — كل صنف له نسبة خصمه المستقلة لهذا النوع.
 </p>
 
-<div class="bg-white rounded-xl shadow overflow-hidden">
+<div class="bg-white rounded-2xl shadow-sm overflow-hidden">
     <table class="w-full text-sm">
         <thead class="bg-gray-50 text-gray-600">
             <tr>
@@ -35,9 +34,9 @@
                 <td class="px-4 py-3 text-gray-500">{{ type.client_profiles.count }}</td>
                 <td class="px-4 py-3">
                     {% if type.is_active %}
-                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">نشط</span>
+                    {% status_badge "نشط" color="green" %}
                     {% else %}
-                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-500">موقوف</span>
+                    {% status_badge "موقوف" color="gray" %}
                     {% endif %}
                 </td>
                 <td class="px-4 py-3 flex flex-wrap gap-3">

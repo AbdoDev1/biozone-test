@@ -12,7 +12,7 @@
     {% if cart_items %}
     {% if below_min %}
     <div class="bg-amber-50 border border-amber-200 text-amber-800 rounded-2xl px-5 py-4 mb-6 text-sm flex items-center gap-2">
-      <span>⚠️</span>
+      <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
       <span>
         الحد الأدنى لإجمالي الطلب هو <strong>{{ min_order_amount }} ج.م</strong>.
         يلزم إضافة <strong>{{ remaining_to_min }} ج.م</strong> أخرى لإتمام الطلب.
@@ -45,6 +45,7 @@
               <form method="POST" action="{% url 'orders:cart_update' item.unit.pk %}" class="flex items-center gap-2">
                 {% csrf_token %}
                 <input type="number" name="quantity" value="{{ item.quantity }}" min="1"
+                       onchange="this.form.requestSubmit()"
                        class="w-16 border border-gray-200 rounded-lg px-2 py-1 text-center text-sm outline-none focus:border-blue-400">
                 <span class="text-[11px] text-gray-400">{{ item.unit.name }}</span>
                 <button type="submit" class="text-xs text-blue-600 hover:underline">تحديث</button>
@@ -92,7 +93,7 @@
 
     {% else %}
     <div class="text-center py-20 text-gray-400">
-      <p class="text-5xl mb-4">🛒</p>
+      <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 1.994-4.457 2.781-6.987a1.125 1.125 0 00-1.087-1.437H5.106M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z"/></svg>
       <p class="text-xl mb-4">سلة المشتريات فارغة</p>
       <a href="{% url 'store:home' %}" class="text-blue-600 hover:underline text-sm">تصفح المنتجات الآن</a>
     </div>

@@ -1,4 +1,5 @@
 {% extends 'staff/base.html' %}
+{% load staff_ui %}
 {% block title %}الحسابات — Biozone{% endblock %}
 {% block content %}
 
@@ -48,15 +49,16 @@
         <div x-show="tab === 'overview'" class="p-4 md:p-6">
             <div class="flex justify-end mb-4">
                 <a href="{% url 'staff:accounting_export' %}"
-                   class="text-sm bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded-lg transition">
-                    ⬇ تصدير Excel
+                   class="text-sm bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded-lg transition inline-flex items-center gap-1.5">
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
+                    تصدير Excel
                 </a>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-sm">
                     <thead>
                         <tr class="text-right text-gray-500 border-b">
-                            <th class="py-2 px-2">العميل</th>
+                            <th class="py-2 px-2 sticky-col">العميل</th>
                             <th class="py-2 px-2">نوع الحساب</th>
                             <th class="py-2 px-2">الرصيد</th>
                             <th class="py-2 px-2"></th>
@@ -65,7 +67,7 @@
                     <tbody>
                         {% for row in rows %}
                         <tr class="border-b last:border-0 hover:bg-gray-50">
-                            <td class="py-2 px-2 font-medium">{{ row.profile.business_name }}</td>
+                            <td class="py-2 px-2 font-medium sticky-col">{{ row.profile.business_name }}</td>
                             <td class="py-2 px-2 text-gray-500">{{ row.profile.account_type.name }}</td>
                             <td class="py-2 px-2 font-semibold
                                 {% if row.balance > 0 %}text-red-600{% elif row.balance < 0 %}text-green-600{% else %}text-gray-400{% endif %}">
@@ -103,7 +105,7 @@
                 <table class="w-full text-xs sm:text-sm">
                     <thead class="bg-gray-50 text-gray-600">
                         <tr>
-                            <th class="px-3 py-2 text-right">التاريخ</th>
+                            <th class="px-3 py-2 text-right sticky-col">التاريخ</th>
                             <th class="px-3 py-2 text-right">العميل</th>
                             <th class="px-3 py-2 text-right">النوع</th>
                             <th class="px-3 py-2 text-right">تفاصيل</th>
@@ -114,15 +116,10 @@
                     <tbody class="divide-y divide-gray-100">
                         {% for tx in recent_transactions %}
                         <tr>
-                            <td class="px-3 py-2 text-gray-500">{{ tx.created_at|date:"Y-m-d H:i" }}</td>
+                            <td class="px-3 py-2 text-gray-500 sticky-col">{{ tx.created_at|date:"Y-m-d H:i" }}</td>
                             <td class="px-3 py-2 font-medium">{{ tx.client.client_profile.business_name|default:tx.client.username }}</td>
                             <td class="px-3 py-2">
-                                <span class="px-2 py-0.5 rounded-full text-xs
-                                    {% if tx.kind == 'INVOICE' %}bg-blue-100 text-blue-700
-                                    {% elif tx.kind == 'PAYMENT' %}bg-green-100 text-green-700
-                                    {% else %}bg-orange-100 text-orange-700{% endif %}">
-                                    {{ tx.get_kind_display }}
-                                </span>
+                                {% status_badge tx.get_kind_display group="tx_kind" key=tx.kind %}
                             </td>
                             <td class="px-3 py-2 text-gray-500">
                                 {% if tx.invoice %}{{ tx.invoice.invoice_number }}{% endif %}
@@ -181,9 +178,7 @@
                         <input type="text" name="note"
                                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400">
                     </div>
-                    <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white text-sm py-2 rounded-lg">
-                        تسجيل الدفعة
-                    </button>
+                    {% btn "تسجيل الدفعة" type="submit" variant="success" full_width=True %}
                 </form>
 
                 <form method="post" action="{% url 'staff:accounting_quick_entry' %}"
@@ -218,9 +213,7 @@
                         <input type="text" name="note" required
                                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400">
                     </div>
-                    <button type="submit" class="w-full bg-orange-500 hover:bg-orange-600 text-white text-sm py-2 rounded-lg">
-                        تسجيل التسوية
-                    </button>
+                    {% btn "تسجيل التسوية" type="submit" variant="warning" full_width=True %}
                 </form>
 
             </div>

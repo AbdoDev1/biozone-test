@@ -25,20 +25,25 @@
 
       {% if order.status == 'NEEDS_APPROVAL' %}
       <div class="bg-orange-50 border border-orange-200 text-orange-800 rounded-xl p-4 mb-6 text-sm">
-        <p class="font-bold mb-2">⚠️ تم تعديل طلبك من قِبل المخزن بسبب نقص في الكمية المتاحة</p>
+        <p class="font-bold mb-2 flex items-center gap-1.5">
+          <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
+          تم تعديل طلبك من قِبل المخزن بسبب نقص في الكمية المتاحة
+        </p>
         <p class="mb-3">كان الإجمالي السابق <strong>{{ order.original_total }} ج.م</strong>، وأصبح بعد التعديل <strong>{{ order.total }} ج.م</strong>. يرجى مراجعة التفاصيل أدناه وتحديد موافقتك.</p>
         <div class="flex flex-col sm:flex-row gap-3">
           <form method="POST" action="{% url 'orders:order_approve_amendment' order.pk %}">
             {% csrf_token %}
-            <button type="submit" class="bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-5 py-2 rounded-lg transition">
-              ✓ موافق على التعديل
+            <button type="submit" class="bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-5 py-2 rounded-lg transition inline-flex items-center gap-1.5">
+              <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+              موافق على التعديل
             </button>
           </form>
           <form method="POST" action="{% url 'orders:order_reject_amendment' order.pk %}"
                 onsubmit="return confirm('هل أنت متأكد من رفض التعديل؟ سيتم رفض الطلب بالكامل.');">
             {% csrf_token %}
-            <button type="submit" class="bg-white border border-red-300 text-red-600 text-sm font-semibold px-5 py-2 rounded-lg hover:bg-red-50 transition">
-              ✕ رفض التعديل
+            <button type="submit" class="bg-white border border-red-300 text-red-600 text-sm font-semibold px-5 py-2 rounded-lg hover:bg-red-50 transition inline-flex items-center gap-1.5">
+              <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+              رفض التعديل
             </button>
           </form>
         </div>

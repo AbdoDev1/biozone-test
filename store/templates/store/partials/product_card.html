@@ -11,12 +11,21 @@
     {% if unit %}
       {% if inv and inv.is_available %}
         {% if inv.is_low %}
-          <span class="inline-flex items-center bg-orange-100 text-orange-700 text-[10px] font-semibold px-2 py-0.5 rounded-full">⚠ كمية محدودة</span>
+          <span class="inline-flex items-center gap-1 bg-orange-100 text-orange-700 text-[10px] font-semibold px-2 py-0.5 rounded-full">
+            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
+            كمية محدودة
+          </span>
         {% else %}
-          <span class="inline-flex items-center bg-green-100 text-green-700 text-[10px] font-semibold px-2 py-0.5 rounded-full">✓ متوفر</span>
+          <span class="inline-flex items-center gap-1 bg-green-100 text-green-700 text-[10px] font-semibold px-2 py-0.5 rounded-full">
+            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+            متوفر
+          </span>
         {% endif %}
       {% else %}
-        <span class="inline-flex items-center bg-gray-100 text-gray-500 text-[10px] font-semibold px-2 py-0.5 rounded-full">✕ غير متوفر</span>
+        <span class="inline-flex items-center gap-1 bg-gray-100 text-gray-500 text-[10px] font-semibold px-2 py-0.5 rounded-full">
+          <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+          غير متوفر
+        </span>
       {% endif %}
     {% endif %}
   </div>
@@ -58,7 +67,7 @@
       </p>
       {% if site_config.show_discounted_prices %}
         {% with price=unit|price_for_client:request.user %}
-          <p class="text-green-700 font-bold text-sm mb-2">{{ price }} ج.م <span class="text-gray-400 font-normal text-xs">سعر المخزن</span></p>
+          <p class="text-green-700 font-bold text-sm mb-2">{{ price }} ج.م <span class="text-gray-400 font-normal text-xs">سعرك بعد الخصم</span></p>
         {% endwith %}
       {% endif %}
 

@@ -73,7 +73,7 @@ hx-on:cartUpdated="htmx.ajax('GET','{% url 'orders:cart_badge' %}',{target:'#car
                   <p class="text-gray-800 font-bold text-lg">{{ unit.unit_price }} ج.م</p>
                   {% if site_config.show_discounted_prices %}
                     {% with price=unit|price_for_client:request.user %}
-                      <p class="text-green-700 font-bold text-sm">{{ price }} ج.م <span class="text-gray-400 font-normal text-xs">سعر المخزن</span></p>
+                      <p class="text-green-700 font-bold text-sm">{{ price }} ج.م <span class="text-gray-400 font-normal text-xs">سعرك بعد الخصم</span></p>
                     {% endwith %}
                   {% endif %}
                 </div>

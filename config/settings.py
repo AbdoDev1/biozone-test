@@ -185,6 +185,9 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+# مجلد static/ على مستوى المشروع بيحتوي على tailwind.css المبني (من frontend/input.css
+# عن طريق tailwind.config.js) — مش تابع لأي app بعينها، فلازم يتحدد صراحة هنا.
+STATICFILES_DIRS = [BASE_DIR / 'static']
 
 # WhiteNoise: بيقدّم الملفات الثابتة مباشرة من Django/gunicorn، ده بديل
 # nginx على منصات زي Render اللي مبتدعمش حاوية nginx منفصلة. الميزة إن

@@ -1,10 +1,15 @@
 {% extends 'staff/base.html' %}
 {% block title %}{{ profile.business_name }} — Biozone{% endblock %}
-{% block content %}
+{% block breadcrumbs %}
+{% load staff_ui %}
+<nav class="flex items-center text-sm text-gray-500 mb-4">
+    {% crumb "الرئيسية" "staff:dashboard" %}
+    {% crumb "العملاء" "staff:clients" %}
+    {% crumb profile.business_name %}
+</nav>
+{% endblock %}
 
-<div class="mb-4">
-    <a href="{% url 'staff:clients' %}" class="text-blue-600 hover:underline text-sm">→ العملاء</a>
-</div>
+{% block content %}
 
 <div x-data="{ tab: 'info' }" class="max-w-4xl">
 
@@ -14,12 +19,7 @@
                 <h1 class="text-2xl font-bold text-gray-800">{{ profile.business_name }}</h1>
                 <p class="text-gray-500 text-sm mt-1">{{ profile.account_type.name }}</p>
             </div>
-            <span class="px-3 py-1 rounded-full text-xs font-semibold w-fit
-                {% if profile.user.status == 'ACTIVE' %}bg-green-100 text-green-700
-                {% elif profile.user.status == 'PENDING' %}bg-yellow-100 text-yellow-700
-                {% else %}bg-red-100 text-red-700{% endif %}">
-                {{ profile.user.get_status_display }}
-            </span>
+            {% status_badge profile.user.get_status_display group="user_status" key=profile.user.status size="md" %}
         </div>
 
         {% if profile.user.status == 'PENDING' %}
@@ -95,9 +95,7 @@
             <div class="flex flex-col sm:flex-row gap-1 sm:gap-4 items-start">
                 <span class="text-gray-500 sm:w-32">نوع الحساب</span>
                 <span>
-                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
-                        {{ profile.account_type.name }}
-                    </span>
+                    {% status_badge profile.account_type.name color="blue" %}
                     <a href="{% url 'staff:client_approve' profile.pk %}" class="text-xs text-blue-600 hover:underline mr-2">تعديل</a>
                 </span>
             </div>
@@ -110,7 +108,7 @@
                 <table class="w-full text-sm">
                     <thead>
                         <tr class="text-right text-gray-500 border-b">
-                            <th class="py-2 px-2">رقم الطلب</th>
+                            <th class="py-2 px-2 sticky-col">رقم الطلب</th>
                             <th class="py-2 px-2">التاريخ</th>
                             <th class="py-2 px-2">الحالة</th>
                             <th class="py-2 px-2">الإجمالي</th>
@@ -120,16 +118,10 @@
                     <tbody>
                         {% for order in orders %}
                         <tr class="border-b last:border-0 hover:bg-gray-50">
-                            <td class="py-2 px-2 font-medium">#{{ order.pk }}</td>
+                            <td class="py-2 px-2 font-medium sticky-col">#{{ order.pk }}</td>
                             <td class="py-2 px-2 text-gray-500">{{ order.created_at|date:"Y-m-d" }}</td>
                             <td class="py-2 px-2">
-                                <span class="px-2 py-0.5 rounded-full text-xs font-semibold
-                                    {% if order.status == 'DELIVERED' %}bg-green-100 text-green-700
-                                    {% elif order.status == 'CONFIRMED' %}bg-blue-100 text-blue-700
-                                    {% elif order.status == 'REJECTED' %}bg-red-100 text-red-700
-                                    {% else %}bg-yellow-100 text-yellow-700{% endif %}">
-                                    {{ order.get_status_display }}
-                                </span>
+                                {% status_badge order.get_status_display group="order_status" key=order.status %}
                             </td>
                             <td class="py-2 px-2 font-medium">{{ order.total }} ج.م</td>
                             <td class="py-2 px-2">
@@ -222,7 +214,7 @@
                 <table class="w-full text-xs sm:text-sm">
                     <thead class="bg-gray-50 text-gray-600">
                         <tr>
-                            <th class="px-3 py-2 text-right">التاريخ</th>
+                            <th class="px-3 py-2 text-right sticky-col">التاريخ</th>
                             <th class="px-3 py-2 text-right">النوع</th>
                             <th class="px-3 py-2 text-right">تفاصيل</th>
                             <th class="px-3 py-2 text-right">المبلغ</th>
@@ -232,14 +224,9 @@
                     <tbody class="divide-y divide-gray-100">
                         {% for row in statement %}
                         <tr>
-                            <td class="px-3 py-2 text-gray-500">{{ row.tx.created_at|date:"Y-m-d" }}</td>
+                            <td class="px-3 py-2 text-gray-500 sticky-col">{{ row.tx.created_at|date:"Y-m-d" }}</td>
                             <td class="px-3 py-2">
-                                <span class="px-2 py-0.5 rounded-full text-xs
-                                    {% if row.tx.kind == 'INVOICE' %}bg-blue-100 text-blue-700
-                                    {% elif row.tx.kind == 'PAYMENT' %}bg-green-100 text-green-700
-                                    {% else %}bg-orange-100 text-orange-700{% endif %}">
-                                    {{ row.tx.get_kind_display }}
-                                </span>
+                                {% status_badge row.tx.get_kind_display group="tx_kind" key=row.tx.kind %}
                             </td>
                             <td class="px-3 py-2 text-gray-500">
                                 {% if row.tx.invoice %}{{ row.tx.invoice.invoice_number }}{% endif %}
@@ -284,9 +271,7 @@
                         <input type="text" name="note"
                                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400">
                     </div>
-                    <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white text-sm py-2 rounded-lg">
-                        تسجيل الدفعة
-                    </button>
+                    {% btn "تسجيل الدفعة" type="submit" variant="success" full_width=True %}
                 </form>
 
                 <form method="post" action="{% url 'staff:client_add_adjustment' profile.pk %}"

@@ -1,0 +1,11 @@
+{% if href %}
+<a href="{{ href }}" class="{{ classes }}"{% if onclick %} onclick="{{ onclick }}"{% endif %}{% if extra_attrs %} {{ extra_attrs }}{% endif %}>
+    {% if icon %}{{ icon }}{% endif %}
+    {{ text }}
+</a>
+{% else %}
+<button type="{{ type }}" class="{{ classes }}"{% if onclick %} onclick="{{ onclick }}"{% endif %}{% if extra_attrs %} {{ extra_attrs }}{% endif %}>
+    {% if icon %}{{ icon }}{% endif %}
+    {{ text }}
+</button>
+{% endif %}

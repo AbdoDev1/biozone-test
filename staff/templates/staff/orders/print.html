@@ -1,10 +1,12 @@
+{% load static %}
+{% load staff_ui %}
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>طلب #{{ order.pk }} — طباعة</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
     <style>
         @media print {
             .no-print { display: none !important; }
@@ -23,10 +25,7 @@
             الطلب مقسّم لـ {{ item_pages|length }} صفحات طباعة ({{ item_count }} صنف).
         </p>
         {% endif %}
-        <button onclick="window.print()"
-                class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-medium">
-            طباعة الطلب
-        </button>
+        {% btn "طباعة الطلب" onclick="window.print()" icon="printer" %}
     </div>
 
     {% for page_items in item_pages %}
@@ -71,8 +70,9 @@
         </div>
 
         {% if order.is_amended %}
-        <div class="border border-orange-300 bg-orange-50 text-orange-800 text-sm rounded-lg px-3 py-2 mb-4">
-            ⏳ هذا الطلب معدَّل الكميات وبانتظار موافقة العميل — الكميات أدناه هي الكميات المعدَّلة.
+        <div class="border border-orange-300 bg-orange-50 text-orange-800 text-sm rounded-lg px-3 py-2 mb-4 flex items-center gap-2">
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <span>هذا الطلب معدَّل الكميات وبانتظار موافقة العميل — الكميات أدناه هي الكميات المعدَّلة.</span>
         </div>
         {% endif %}
 

@@ -1,0 +1,13 @@
+{
+  "name": "biozone-store-frontend",
+  "private": true,
+  "version": "1.0.0",
+  "description": "بناء Tailwind CSS للمشروع (استبدال CDN بملف مبني ومصغّر). لا علاقة له بأي تطبيق Node — المشروع Django بالكامل.",
+  "scripts": {
+    "build:css": "tailwindcss -i ./frontend/input.css -o ./static/css/tailwind.css --minify",
+    "watch:css": "tailwindcss -i ./frontend/input.css -o ./static/css/tailwind.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.19"
+  }
+}
