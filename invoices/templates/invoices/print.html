@@ -32,10 +32,12 @@
         {% else %}
         <span></span>
         {% endif %}
-        <button onclick="window.print()"
-                class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-medium">
-            طباعة الفاتورة
-        </button>
+        <div class="flex items-center gap-3">
+            <button onclick="window.print()"
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-medium">
+                طباعة الفاتورة
+            </button>
+        </div>
     </div>
 
     {% for page_items in item_pages %}

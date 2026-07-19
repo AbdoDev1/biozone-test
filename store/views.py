@@ -1,7 +1,10 @@
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
+from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404
+from django.template.loader import render_to_string
 from products.models import Category, Product, ProductUnit
+from products.matching import normalize_name
 from products.new_arrivals import new_arrivals_queryset, NEW_ARRIVALS_WINDOW_DAYS
 from inventory.models import Inventory
 from django.db.models import Q
@@ -15,7 +18,7 @@ def store_home(request):
     categories = Category.objects.filter(is_active=True)
     selected_category = request.GET.get('category', '')
     selected_manufacturer = request.GET.get('manufacturer', '')
-    search_q = request.GET.get('q', '')
+    search_q = request.GET.get('q', '').strip()
 
     # منتجات "الوارد" بتظهر في مكانها (صفحة/شريط الوارد) بس، مش هنا كمان —
     # عشان الصنف ميبقاش ظاهر في مكانين. لما يخرج من الوارد (كمية أو وقت،
@@ -24,7 +27,11 @@ def store_home(request):
         Product.objects.filter(is_active=True)
         .exclude(pk__in=new_arrivals_queryset().values('pk'))
         .select_related('category', 'inventory')
-        .prefetch_related('units')
+        # 'units__discounts' (مش 'units' بس) — لأن كارت المنتج بيحسب السعر
+        # بعد الخصم لكل صنف لو site_config.show_discounted_prices مفعّل،
+        # وده بيوصل لـ unit.discounts.all() لكل وحدة. من غير الـ prefetch
+        # ده، كل منتج في الصفحة (24) كان بيعمل استعلام إضافي منفصل (N+1).
+        .prefetch_related('units__discounts')
     )
 
     if selected_category:
@@ -32,10 +39,12 @@ def store_home(request):
     if selected_manufacturer:
         products = products.filter(manufacturer=selected_manufacturer)
     if search_q:
-       products = products.filter(
-    Q(name_ar__icontains=search_q) |
-    Q(name_en__icontains=search_q)
-)
+        normalized_q = normalize_name(search_q)
+        products = products.filter(
+            Q(name_ar__icontains=search_q)
+            | Q(name_en__icontains=search_q)
+            | Q(name_key__icontains=normalized_q)
+        )
     manufacturers = Product.objects.filter(is_active=True)\
                            .exclude(manufacturer='')\
                            .values_list('manufacturer', flat=True)\
@@ -58,16 +67,29 @@ def store_home(request):
         'grid_url': 'store:home',
     }
 
-    # لو طلب HTMX يرجع partial بس (تحديث الشبكة فقط عند الفلترة) — من غير
-    # ما نحسب معاينة "الوارد" في كل مرة، هي مش موجودة في الـ partial أصلًا.
-    if request.headers.get('HX-Request'):
-        return render(request, 'store/partials/product_grid.html', context)
-
     # شريط "الوارد الجديد" — خاص بالعملاء المسجّلين فقط، مش بيظهر لأي زائر
     # غير مسجّل حتى لو الصفحة نفسها عامة. نفس منتجات المتجر بالظبط، بس
     # معروضة هنا كمان كمعاينة (مفيش نسخ بيانات، مجرد استعلام تاني).
-    if request.user.is_authenticated:
+    # بيظهر بس في أول صفحة من الصفحة الرئيسية (من غير بحث أو فلتر أو تنقل
+    # لصفحة تانية)، عشان ميظهرش مع نتائج بحث العميل عن منتج معيّن، أو
+    # نتائج فلترة فئة/شركة، أو صفحات لاحقة من نفس القائمة.
+    is_filtered_view = bool(search_q or selected_category or selected_manufacturer)
+    show_new_arrivals = (
+        request.user.is_authenticated
+        and not is_filtered_view
+        and page_obj.number == 1
+    )
+    if show_new_arrivals:
         context['new_arrivals_preview'] = new_arrivals_queryset()[:NEW_ARRIVALS_PREVIEW_COUNT]
+
+    # لو طلب HTMX (بحث/فلترة/تنقل صفحات)، بنرجّع الشبكة كـ partial، وكمان
+    # نسخة محدّثة من شريط "الوارد الجديد" كـ out-of-band swap — عشان الشريط
+    # ده برّه #product-grid (اللي هو الـ hx-target الوحيد)، ولو سبناه من
+    # غيره كان هيفضل ظاهر زي ما هو حتى لو العميل بيبحث أو بيتنقل لصفحة تانية.
+    if request.headers.get('HX-Request'):
+        grid_html = render_to_string('store/partials/product_grid.html', context, request=request)
+        oob_html = render_to_string('store/partials/new_arrivals_block_oob.html', context, request=request)
+        return HttpResponse(grid_html + oob_html)
 
     return render(request, 'store/home.html', context)
 

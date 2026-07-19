@@ -20,7 +20,10 @@ def _clients_with_balance():
     balances = dict(
         AccountTransaction.objects.values('client_id').annotate(total=Sum('amount')).values_list('client_id', 'total')
     )
-    profiles = ClientProfile.objects.filter(user__status='ACTIVE').select_related('user')
+    # select_related('account_type') كمان (مش user بس) — عرض المديونيات
+    # وتصدير الإكسل بيوصلوا لـ profile.account_type.name لكل عميل، فمن غيرها
+    # كانت هتبقى N+1 (استعلام إضافي منفصل لكل عميل نشط).
+    profiles = ClientProfile.objects.filter(user__status='ACTIVE').select_related('user', 'account_type')
     rows = []
     for profile in profiles:
         balance = balances.get(profile.user_id) or Decimal('0')

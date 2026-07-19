@@ -83,13 +83,24 @@ function notificationBell(initialUnread) {
         async markAllRead() {
             const token = this.$el.querySelector('[name=csrfmiddlewaretoken]').value;
             try {
-                await fetch("{% url 'notifications:mark_all_read' %}", {
+                const res = await fetch("{% url 'notifications:mark_all_read' %}", {
                     method: 'POST',
                     headers: { 'X-CSRFToken': token, 'X-Requested-With': 'XMLHttpRequest' },
                 });
-                this.items = this.items.map(n => ({ ...n, is_read: true }));
-                this.unreadCount = 0;
-            } catch (e) {}
+                if (!res.ok) {
+                    // الطلب فشل فعليًا (مثلاً CSRF منتهي أو خطأ سيرفر) — منعملش
+                    // تحديث وهمي للواجهة، ونسيب العداد الحقيقي زي ما هو عشان
+                    // ميختفيش العداد وهو أصلاً لسه فيه إشعارات غير مقروءة.
+                    return;
+                }
+                // بعد النجاح، بنجيب الحالة الحقيقية من السيرفر بدل ما نفترض
+                // إن كل الإشعارات المعروضة (8 بس) هي كل الإشعارات الموجودة —
+                // ده بالظبط اللي كان بيسبب رجوع العداد لما الإشعارات تتراكم
+                // فوق الـ 8 المعروضة في القائمة.
+                await this.refresh();
+            } catch (e) {
+                // فشل شبكة — العداد الحقيقي هيرجع يتصحح لوحده في الـ poll الجاي
+            }
         },
     };
 }

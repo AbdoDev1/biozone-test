@@ -41,6 +41,8 @@ def new_arrivals_queryset():
             inventory__quantity__gt=F('inventory__min_quantity'),
         )
         .select_related('category', 'inventory')
-        .prefetch_related('units')
+        # راجع نفس الملحوظة في store/views.store_home: 'units__discounts'
+        # عشان سعر ما بعد الخصم في كارت المنتج ميعملش استعلام لكل صنف.
+        .prefetch_related('units__discounts')
         .order_by('-new_arrival_at')
     )

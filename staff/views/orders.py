@@ -68,6 +68,12 @@ def order_detail(request, pk):
         pk=pk,
     )
 
+    # أول ما الموظف/الأدمن يفتح تفاصيل الطلب، بيتحدد "متفتح" فورًا — بيُستخدم
+    # في عداد "طلبات لسه ماتفتحتش" على الصفحة الرئيسية للوحة التحكم.
+    if not order.viewed_by_staff:
+        order.viewed_by_staff = True
+        order.save(update_fields=['viewed_by_staff'])
+
     if request.method == 'POST':
         # الإجراءات دي بتعدّل حالة الطلب فعليًا (تأكيد/رفض/تسليم/تعديل كمية)
         # فمحتاجة صلاحية "تعديل" مش "عرض" بس.

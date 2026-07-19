@@ -145,18 +145,27 @@ def client_add_adjustment(request, pk):
 def client_approve(request, pk):
     profile = get_object_or_404(ClientProfile, pk=pk)
     account_types = AccountType.objects.filter(is_active=True)
+    # نوع الحساب بيتحكم في الأسعار والخصومات المطبّقة على العميل، فتغييره
+    # قرار مالي حساس. أي موظف عنده صلاحية "تعديل بيانات العميل" العامة
+    # يقدر يوافق/يرفض، لكن تغيير نوع الحساب نفسه محصور على الأدمن فقط.
+    can_change_account_type = request.user.role == User.Role.ADMIN
 
     if request.method == 'POST':
-        account_type_id = request.POST.get('account_type')
-        account_type = account_types.filter(pk=account_type_id).first()
-        if not account_type:
-            messages.error(request, 'يجب اختيار نوع حساب صالح.')
-            return render(request, 'staff/clients/approve.html', {
-                'profile': profile,
-                'account_types': account_types,
-            })
-
-        profile.account_type = account_type
+        if can_change_account_type:
+            account_type_id = request.POST.get('account_type')
+            account_type = account_types.filter(pk=account_type_id).first()
+            if not account_type:
+                messages.error(request, 'يجب اختيار نوع حساب صالح.')
+                return render(request, 'staff/clients/approve.html', {
+                    'profile': profile,
+                    'account_types': account_types,
+                    'can_change_account_type': can_change_account_type,
+                })
+            profile.account_type = account_type
+        elif request.POST.get('account_type') and request.POST.get('account_type') != str(profile.account_type_id):
+            # موظف مش أدمن حاول يغيّر نوع الحساب — بنتجاهل القيمة المرسلة
+            # ونسيب نوع الحساب زي ما هو، ونبلغه إنه محتاج يرجع للأدمن.
+            messages.warning(request, 'تغيير نوع الحساب متاح للأدمن فقط. تم تجاهل هذا التغيير وتنفيذ باقي الإجراء.')
 
         user = profile.user
         user.status = User.Status.ACTIVE
@@ -170,6 +179,7 @@ def client_approve(request, pk):
     return render(request, 'staff/clients/approve.html', {
         'profile': profile,
         'account_types': account_types,
+        'can_change_account_type': can_change_account_type,
     })
 
 

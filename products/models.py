@@ -5,6 +5,7 @@ from django.core.validators import FileExtensionValidator
 from django.utils import timezone
 
 from .matching import normalize_name
+from .validators import validate_image_size
 
 
 class Category(models.Model):
@@ -13,7 +14,7 @@ class Category(models.Model):
         upload_to='categories/',
         blank=True,
         null=True,
-        validators=[FileExtensionValidator(['jpg', 'jpeg', 'png', 'webp'])]
+        validators=[FileExtensionValidator(['jpg', 'jpeg', 'png', 'webp']), validate_image_size]
     )
     slug = models.SlugField(unique=True, allow_unicode=True)
     is_active = models.BooleanField(default=True)
@@ -61,7 +62,7 @@ class Product(models.Model):
         upload_to='products/',
         blank=True,
         null=True,
-        validators=[FileExtensionValidator(['jpg', 'jpeg', 'png', 'webp'])]
+        validators=[FileExtensionValidator(['jpg', 'jpeg', 'png', 'webp']), validate_image_size]
     )
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)

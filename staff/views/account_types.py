@@ -4,12 +4,13 @@ from urllib.parse import urlencode
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Q
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 
 from accounts.models import AccountType
 from products.models import Product, ProductUnit, UnitDiscount
+from products.matching import normalize_name
 from staff.permissions import admin_required
 
 DISCOUNTS_PAGE_SIZE = 20
@@ -97,7 +98,7 @@ def account_type_edit(request, pk):
 @admin_required
 def account_type_discounts(request, pk):
     account_type = get_object_or_404(AccountType, pk=pk)
-    search_q = request.GET.get('q', '')
+    search_q = request.GET.get('q', '').strip()
 
     products_qs = Product.objects.filter(is_active=True).select_related('category').prefetch_related(
         Prefetch(
@@ -113,7 +114,10 @@ def account_type_discounts(request, pk):
     ).order_by('name_ar')
 
     if search_q:
-        products_qs = products_qs.filter(name_ar__icontains=search_q)
+        normalized_q = normalize_name(search_q)
+        products_qs = products_qs.filter(
+            Q(name_ar__icontains=search_q) | Q(name_key__icontains=normalized_q)
+        )
 
     if request.method == 'POST':
         with transaction.atomic():

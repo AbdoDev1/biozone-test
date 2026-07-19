@@ -55,6 +55,12 @@
 {% endif %}
 
 <!-- جدول الأصناف + تعديل الكميات -->
+{% if order.status == 'PENDING' %}
+<p class="text-xs text-gray-500 mb-2">
+    تقدر تزوّد أو تقلّل كمية أي صنف في خانة "الكمية المطلوبة" — أي تغيير
+    (بالزيادة أو النقص) هيتبعت للعميل تلقائيًا للموافقة عليه قبل ما الطلب يتأكد.
+</p>
+{% endif %}
 <form method="post" class="bg-white rounded-2xl shadow-sm overflow-hidden mb-6">
     {% csrf_token %}
     <input type="hidden" name="action" value="update_quantities">
@@ -77,8 +83,9 @@
                     <p class="font-medium text-gray-800">{{ item.product_unit.product.display_name }}</p>
                     <p class="text-xs text-gray-400">{{ item.product_unit.name }}</p>
                     {% if item.is_amended %}
-                    <p class="text-xs text-orange-600 mt-1">
-                        الكمية السابقة: {{ item.original_quantity }} وحدة × {{ item.original_unit_price }} ج.م
+                    <p class="text-xs mt-1 {% if item.amendment_direction == 'increase' %}text-green-700{% else %}text-orange-600{% endif %}">
+                        {% if item.amendment_direction == 'increase' %}▲ اتزودت من{% elif item.amendment_direction == 'decrease' %}▼ اتقللت من{% else %}الكمية السابقة:{% endif %}
+                        {{ item.original_quantity }} وحدة × {{ item.original_unit_price }} ج.م
                     </p>
                     {% endif %}
                 </td>

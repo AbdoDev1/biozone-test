@@ -2,7 +2,24 @@
 {% block title %}الرئيسية — Biozone{% endblock %}
 {% block content %}
 
-<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    {% if perms.orders.view_order %}
+    <div class="bg-white rounded-2xl shadow-sm p-6 flex items-start gap-4 relative">
+        <div class="w-11 h-11 rounded-xl bg-green-50 text-green-600 flex items-center justify-center shrink-0">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 14.25l6-6m4.5-3.493V21.75l-3.75-1.5-3.75 1.5-3.75-1.5-3.75 1.5V4.757c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0c1.1.128 1.907 1.077 1.907 2.185zM9.75 9h.008v.008H9.75V9zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm4.875 4.5h.008v.008h-.008V13.5zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>
+        </div>
+        <div>
+            <p class="text-gray-500 text-sm">الطلبات النشطة</p>
+            <p class="text-3xl font-bold text-green-600 mt-1">{{ active_orders_count }}</p>
+            <a href="{% url 'staff:order_list' %}" class="text-xs text-blue-600 hover:underline mt-2 block">عرض كل الطلبات</a>
+        </div>
+        {% if unopened_orders_count %}
+        <span class="absolute -top-2 -left-2 bg-red-500 text-white text-[11px] font-bold rounded-full min-w-[22px] h-[22px] flex items-center justify-center px-1.5" title="طلبات لسه ماتفتحتش">
+            {{ unopened_orders_count }}
+        </span>
+        {% endif %}
+    </div>
+    {% endif %}
     <div class="bg-white rounded-2xl shadow-sm p-6 flex items-start gap-4">
         <div class="w-11 h-11 rounded-xl bg-yellow-50 text-yellow-500 flex items-center justify-center shrink-0">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.331 0-4.512-.645-6.374-1.766z"/></svg>
@@ -37,6 +54,47 @@
     </div>
 </div>
 
+{% if perms.orders.view_order and recent_orders %}
+<div class="bg-white rounded-2xl shadow-sm p-6 mb-8">
+    <div class="flex items-center justify-between mb-4">
+        <h2 class="flex items-center gap-2 text-lg font-semibold text-green-700">
+            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 14.25l6-6m4.5-3.493V21.75l-3.75-1.5-3.75 1.5-3.75-1.5-3.75 1.5V4.757c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0c1.1.128 1.907 1.077 1.907 2.185z"/></svg>
+            أحدث الطلبات
+        </h2>
+        <a href="{% url 'staff:order_list' %}" class="text-xs text-blue-600 hover:underline">عرض الكل</a>
+    </div>
+    <div class="overflow-x-auto">
+    <table class="w-full text-sm min-w-[480px]">
+        <thead class="bg-gray-50 text-gray-600">
+            <tr>
+                <th class="px-4 py-2 text-right">الطلب</th>
+                <th class="px-4 py-2 text-right">العميل</th>
+                <th class="px-4 py-2 text-right">الحالة</th>
+                <th class="px-4 py-2 text-right"></th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            {% for order in recent_orders %}
+            <tr class="{% if not order.viewed_by_staff %}bg-green-50/60 font-semibold{% endif %}">
+                <td class="px-4 py-2">
+                    #{{ order.pk }}
+                    {% if not order.viewed_by_staff %}
+                    <span class="inline-block bg-red-500 text-white text-[10px] rounded-full px-1.5 py-0.5 align-middle">جديد</span>
+                    {% endif %}
+                </td>
+                <td class="px-4 py-2">{{ order.client.get_full_name|default:order.client.username }}</td>
+                <td class="px-4 py-2">{{ order.get_status_display }}</td>
+                <td class="px-4 py-2">
+                    <a href="{% url 'staff:order_detail' order.pk %}" class="text-blue-600 hover:underline text-xs">فتح الطلب</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+{% endif %}
+
 {% if low_stock %}
 <div class="bg-white rounded-2xl shadow-sm p-6">
     <h2 class="flex items-center gap-2 text-lg font-semibold text-red-600 mb-4">
@@ -51,6 +109,7 @@
                 <th class="px-4 py-2 text-right">الرصيد</th>
                 <th class="px-4 py-2 text-right">المتاح</th>
                 <th class="px-4 py-2 text-right">الحد الأدنى</th>
+                <th class="px-4 py-2 text-right"></th>
             </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
@@ -60,6 +119,13 @@
                 <td class="px-4 py-2">{{ item.quantity }} قطعة</td>
                 <td class="px-4 py-2 font-bold text-red-600">{{ item.available }}</td>
                 <td class="px-4 py-2">{{ item.min_quantity }}</td>
+                <td class="px-4 py-2 whitespace-nowrap">
+                    {% if perms.inventory.add_stockmovement %}
+                    <a href="{% url 'staff:inventory_detail' item.pk %}" class="text-blue-600 hover:underline text-xs font-semibold">توريد / تسوية الرصيد</a>
+                    {% else %}
+                    <a href="{% url 'staff:inventory_detail' item.pk %}" class="text-blue-600 hover:underline text-xs">عرض التفاصيل</a>
+                    {% endif %}
+                </td>
             </tr>
             {% endfor %}
         </tbody>

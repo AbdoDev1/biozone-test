@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.db import models
 from inventory.models import Inventory
 from accounts.models import ClientProfile
+from orders.models import Order
 
 
 def staff_login(request):
@@ -44,9 +45,21 @@ def dashboard(request):
     ).filter(quantity__lte=models.F('reserved') + models.F('min_quantity'))
     pending_clients = ClientProfile.objects.filter(user__status='PENDING').count()
 
+    # الطلبات النشطة (لسه مش متسلّمة ولا مرفوضة) — دي اللي محتاجة انتباه الموظف.
+    # الطلبات "لسه ماتفتحتش" هي اللي ما حدش من الموظفين فتح تفاصيلها لحد دلوقتي
+    # (viewed_by_staff=False)، بغض النظر عن حالتها.
+    active_orders = Order.objects.exclude(
+        status__in=[Order.Status.DELIVERED, Order.Status.REJECTED]
+    )
+    unopened_orders_count = active_orders.filter(viewed_by_staff=False).count()
+    recent_orders = active_orders.select_related('client').order_by('-created_at')[:6]
+
     context = {
         'total_products': total_products,
         'low_stock': low_stock,
         'pending_clients': pending_clients,
+        'recent_orders': recent_orders,
+        'unopened_orders_count': unopened_orders_count,
+        'active_orders_count': active_orders.count(),
     }
     return render(request, 'staff/dashboard.html', context)

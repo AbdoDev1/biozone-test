@@ -4,7 +4,7 @@ from django.core.paginator import Paginator
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.db import IntegrityError, transaction
-from django.db.models import ProtectedError
+from django.db.models import ProtectedError, Q
 from accounts.models import AccountType
 from products.models import Product, ProductUnit, Category, UnitDiscount
 from products.forms import ProductForm, ProductUnitForm, ProductUnitFormSet
@@ -17,6 +17,13 @@ import openpyxl
 
 STAFF_LIST_PAGE_SIZE = 30
 IMPORT_SESSION_KEY = 'product_import_batch'
+# حماية من ملف إكسل ضخم بالغلط (أو مقصود): الدفعة بالكامل بتتخزن مؤقتًا في
+# الـ session (قاعدة البيانات) بين شاشة المراجعة وشاشة التأكيد، فملف بعشرات
+# الآلاف من الصفوف كان بيعمل صف session ضخم ويشغل الـ worker وقت طويل في
+# طلب واحد. الحدين دول سقف منطقي لأي استيراد حقيقي (لو المخزن عنده كتالوج
+# أكبر فعلاً، يقسّم الملف على أكتر من دفعة).
+IMPORT_MAX_FILE_SIZE_MB = 5
+IMPORT_MAX_ROWS = 3000
 
 
 @perm_required('products.view_product')
@@ -24,11 +31,26 @@ def product_list(request):
     products = Product.objects.select_related('category', 'inventory').prefetch_related('units').all()
     categories = Category.objects.filter(is_active=True)
     selected_category = request.GET.get('category', '')
-    search_q = request.GET.get('q', '')
+    # .strip() هي أهم سطر هنا: من غيرها، مسافة زيادة قبل/بعد النص المكتوب
+    # (تاب على الشيفت بالغلط، أو نسخ/لصق) كانت بتخلي name_ar__icontains
+    # مايلاقيش أي نتيجة رغم إن الصنف موجود فعلاً بنفس الاسم بالظبط.
+    search_q = request.GET.get('q', '').strip()
     if selected_category:
         products = products.filter(category__slug=selected_category)
     if search_q:
-        products = products.filter(name_ar__icontains=search_q)
+        # البحث بقى بيغطي: اسم الصنف (عربي/إنجليزي)، النسخة المُطبَّعة من
+        # الاسم (name_key — بتتحمّل فراغات إضافية جوه الاسم نفسه وفروق
+        # الحروف المتشابهة زي ا/أ/إ)، الباركود، وكود الصنف الداخلي (BZ-...).
+        # قبل كده كان بس name_ar__icontains، فمسح باركود في خانة البحث
+        # (بالاسكانر) ما كانش بيرجّع أي نتيجة خالص.
+        normalized_q = normalize_name(search_q)
+        products = products.filter(
+            Q(name_ar__icontains=search_q)
+            | Q(name_key__icontains=normalized_q)
+            | Q(name_en__icontains=search_q)
+            | Q(barcode__iexact=search_q)
+            | Q(code__iexact=search_q)
+        )
 
     paginator = Paginator(products, STAFF_LIST_PAGE_SIZE)
     page_obj = paginator.get_page(request.GET.get('page'))
@@ -440,6 +462,13 @@ def import_products(request):
         if not excel_file.name.endswith('.xlsx'):
             messages.error(request, 'يجب أن يكون الملف بصيغة .xlsx')
             return redirect('staff:import_products')
+        if excel_file.size > IMPORT_MAX_FILE_SIZE_MB * 1024 * 1024:
+            messages.error(
+                request,
+                f'حجم الملف أكبر من الحد المسموح ({IMPORT_MAX_FILE_SIZE_MB} ميجا). '
+                f'يرجى تقسيم الملف على أكتر من دفعة استيراد.'
+            )
+            return redirect('staff:import_products')
         try:
             wb = openpyxl.load_workbook(excel_file, read_only=True, data_only=True)
             ws = wb.active
@@ -461,9 +490,13 @@ def import_products(request):
             existing_by_name_key = {p.name_key: p for p in all_products if p.name_key}
 
             unit_rows, errors = [], []
+            too_many_rows = False
             for row_num, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
                 if not any(row):
                     continue
+                if row_num - 1 > IMPORT_MAX_ROWS:
+                    too_many_rows = True
+                    break
                 try:
                     row_data, error = _parse_unit_row(row_num, row, idx, account_types_by_col)
                 except Exception as e:
@@ -475,6 +508,13 @@ def import_products(request):
                 unit_rows.append(row_data)
 
             wb.close()
+
+            if too_many_rows:
+                messages.error(
+                    request,
+                    f'الملف فيه أكتر من {IMPORT_MAX_ROWS} صف. يرجى تقسيمه على أكتر من دفعة استيراد.'
+                )
+                return redirect('staff:import_products')
 
             products_data, group_errors = _group_unit_rows(unit_rows)
             errors.extend(group_errors)

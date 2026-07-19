@@ -5,6 +5,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 from django.db import transaction
 from products.models import ProductUnit
 from inventory.models import Inventory, StockMovement
@@ -30,16 +31,25 @@ def client_required(view_func):
 
 
 @client_required
+@require_POST
 def cart_add(request, unit_id):
+    unit = get_object_or_404(ProductUnit, pk=unit_id)
     cart = Cart(request)
     try:
         quantity = int(request.POST.get("quantity", 1))
     except (TypeError, ValueError):
         quantity = 1
-    cart.add(unit_id, quantity)
+    added = cart.add(unit_id, quantity)
 
     if request.headers.get("HX-Request"):
-        unit = get_object_or_404(ProductUnit, pk=unit_id)
+        if not added:
+            # الصنف غير متاح حاليًا (نفدت الكمية، أو الوحدة مش مسموحة لنوع
+            # حساب العميل) — نرجّع الزر بحالته الأصلية بدل ما نضيفه فعليًا.
+            return render(request, "orders/partials/add_button.html", {
+                "unit": unit,
+                "in_cart": False,
+                "unavailable": True,
+            })
         # نرجع الزر المحدّث (أخضر) + نحرك event لتحديث الـ badge
         response = render(request, "orders/partials/add_button.html", {
             "unit": unit,
@@ -48,6 +58,8 @@ def cart_add(request, unit_id):
         response['HX-Trigger'] = json.dumps({'cartUpdated': {'count': len(cart)}})
         return response
 
+    if not added:
+        messages.error(request, 'هذا الصنف غير متوفر حاليًا في المخزون.')
     return redirect(request.POST.get("next", "store:home"))
 
 
@@ -57,19 +69,23 @@ def cart_badge(request):
 
 
 @client_required
+@require_POST
 def cart_update(request, unit_id):
     cart = Cart(request)
     try:
         quantity = int(request.POST.get("quantity", 1))
     except (TypeError, ValueError):
         quantity = 1
-    cart.set_quantity(unit_id, quantity)
+    added = cart.set_quantity(unit_id, quantity)
+    if not added and not request.headers.get("HX-Request"):
+        messages.error(request, 'هذا الصنف غير متوفر حاليًا في المخزون.')
     if request.headers.get("HX-Request"):
         return cart_controls(request, unit_id)
     return redirect("orders:cart")
 
 
 @client_required
+@require_POST
 def cart_remove(request, unit_id):
     cart = Cart(request)
     cart.remove(unit_id)
@@ -94,6 +110,7 @@ def cart_view(request):
 
 
 @client_required
+@require_POST
 def cart_plus(request, unit_id):
     cart = Cart(request)
     cart.increase(unit_id)
@@ -101,6 +118,7 @@ def cart_plus(request, unit_id):
 
 
 @client_required
+@require_POST
 def cart_minus(request, unit_id):
     cart = Cart(request)
     cart.decrease(unit_id)
@@ -207,6 +225,23 @@ def order_detail(request, pk):
 
 
 @client_required
+@require_POST
+def order_cancel(request, pk):
+    """
+    العميل بيلغي طلبه بنفسه — متاح بس لسه الطلب "في الانتظار" (لسه محدش
+    من المخزن فتحه). لو الطلب دخل أي مرحلة تانية، بنرفض ونوجّه العميل
+    للتواصل المباشر مع المخزن.
+    """
+    order = get_object_or_404(Order, pk=pk, client=request.user)
+    try:
+        order.client_cancel(actor=request.user)
+        messages.success(request, f'تم إلغاء طلبك #{order.pk}، وتم فك الحجز على أصنافه.')
+    except ValueError as e:
+        messages.error(request, str(e))
+    return redirect('orders:order_detail', pk=order.pk)
+
+
+@client_required
 def order_list(request):
     orders_qs = Order.objects.filter(client=request.user).prefetch_related('items')
     paginator = Paginator(orders_qs, 20)
@@ -215,6 +250,7 @@ def order_list(request):
 
 
 @client_required
+@require_POST
 def order_approve_amendment(request, pk):
     order = get_object_or_404(Order, pk=pk, client=request.user)
     if order.status != Order.Status.NEEDS_APPROVAL:
@@ -226,6 +262,7 @@ def order_approve_amendment(request, pk):
 
 
 @client_required
+@require_POST
 def order_reject_amendment(request, pk):
     order = get_object_or_404(Order, pk=pk, client=request.user)
     if order.status != Order.Status.NEEDS_APPROVAL:

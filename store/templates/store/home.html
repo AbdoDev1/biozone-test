@@ -46,26 +46,9 @@ hx-on:cartUpdated="htmx.ajax('GET','{% url 'orders:cart_badge' %}',{target:'#car
     </div>
 </div>
 
-{% if new_arrivals_preview %}
-<div class="max-w-7xl mx-auto px-4 pt-8">
-    <div class="bg-white rounded-2xl shadow-sm p-5">
-        <a href="{% url 'store:new_arrivals' %}" class="flex items-center justify-between mb-4 group">
-            <h2 class="text-lg font-bold text-gray-800 group-hover:text-blue-600 transition">
-                🆕 الوارد الجديد
-                {% if new_arrivals_count %}<span class="text-sm font-normal text-gray-400">({{ new_arrivals_count }} صنف)</span>{% endif %}
-            </h2>
-            <span class="text-sm text-blue-600 group-hover:underline whitespace-nowrap">عرض الكل ←</span>
-        </a>
-        <div class="flex gap-4 overflow-x-auto pb-2 -mx-1 px-1">
-            {% for product in new_arrivals_preview %}
-            <div class="w-40 shrink-0">
-                {% include 'store/partials/product_card.html' %}
-            </div>
-            {% endfor %}
-        </div>
-    </div>
+<div id="new-arrivals-preview">
+    {% include 'store/partials/new_arrivals_block.html' %}
 </div>
-{% endif %}
 
 <div class="max-w-7xl mx-auto px-4 py-8 flex flex-col md:flex-row gap-6">
 

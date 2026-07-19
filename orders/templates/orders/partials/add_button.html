@@ -1,6 +1,12 @@
 {# يتغير لونه بعد الإضافة. hx-target="this" + hx-swap="outerHTML" عشان يستبدل نفسه #}
 {# دلوقتي فيه خانة عدد لكل المنتجات (مش بس القابلة للتجزئة) — نفس نمط الكرتونة/القطعة #}
-{% if in_cart %}
+{% with inv=unit.product.inventory %}
+{% if unavailable or not inv or not inv.is_available %}
+  <button disabled type="button"
+          class="mt-2 w-full bg-gray-100 text-gray-400 text-xs py-2 rounded-lg cursor-not-allowed">
+    غير متوفر حالياً
+  </button>
+{% elif in_cart %}
   <form hx-post="{% url 'orders:cart_add' unit.pk %}"
         hx-target="this"
         hx-swap="outerHTML"
@@ -29,3 +35,4 @@
     </button>
   </form>
 {% endif %}
+{% endwith %}

@@ -61,6 +61,10 @@ class Order(models.Model):
     notes       = models.TextField(blank=True)
     created_at  = models.DateTimeField(auto_now_add=True)
     updated_at  = models.DateTimeField(auto_now=True)
+    # بيتحدد True أول ما أي موظف/أدمن يفتح صفحة تفاصيل الطلب (staff:order_detail).
+    # بيُستخدم في الصفحة الرئيسية للوحة التحكم لعرض عدد الطلبات "لسه ماتفتحتش"،
+    # عشان الموظف يعرف بسرعة إيه الجديد من غير ما يفوّته وسط باقي الطلبات.
+    viewed_by_staff = models.BooleanField(default=False, db_index=True)
 
     class Meta:
         verbose_name = 'طلب'
@@ -144,6 +148,9 @@ class Order(models.Model):
                 self.client,
                 kind=Notification.Kind.ORDER_NEEDS_APPROVAL,
                 title=f'طلبك #{self.pk} يحتاج موافقتك',
+                # عام ومحايد الاتجاه عمدًا (مش "نقص الكمية" دايمًا) — المخزن
+                # ممكن يكون زوّد الكمية مش قللها بس. التفاصيل الدقيقة (صنف
+                # بصنف، وأي اتجاه) موجودة في صفحة تفاصيل الطلب نفسها.
                 message='المخزن عدّل كميات في طلبك، يرجى مراجعة التعديل والموافقة عليه أو رفضه.',
                 url_name='orders:order_detail',
                 url_kwargs={'pk': self.pk},
@@ -173,15 +180,28 @@ class Order(models.Model):
 
         elif self.status == self.Status.REJECTED:
             if client_is_actor:
-                notify_staff_with_perm(
-                    'orders.change_order',
-                    kind=Notification.Kind.CLIENT_REJECTED_AMENDMENT,
-                    title=f'العميل رفض تعديل الطلب #{self.pk}',
-                    message=f'العميل {self.client.username} رفض التعديل المقترح، وتم فك الحجز.',
-                    url_name='staff:order_detail',
-                    url_kwargs={'pk': self.pk},
-                    exclude_actor=actor,
-                )
+                if self._old_status == self.Status.PENDING:
+                    # العميل ألغى طلبه بنفسه قبل ما حد من المخزن يراجعه أصلًا —
+                    # مش رفض تعديل مقترح، فالرسالة لازم توضّح الفرق.
+                    notify_staff_with_perm(
+                        'orders.change_order',
+                        kind=Notification.Kind.CLIENT_REJECTED_AMENDMENT,
+                        title=f'العميل ألغى الطلب #{self.pk}',
+                        message=f'العميل {self.client.username} ألغى طلبه بنفسه قبل المراجعة، وتم فك الحجز.',
+                        url_name='staff:order_detail',
+                        url_kwargs={'pk': self.pk},
+                        exclude_actor=actor,
+                    )
+                else:
+                    notify_staff_with_perm(
+                        'orders.change_order',
+                        kind=Notification.Kind.CLIENT_REJECTED_AMENDMENT,
+                        title=f'العميل رفض تعديل الطلب #{self.pk}',
+                        message=f'العميل {self.client.username} رفض التعديل المقترح، وتم فك الحجز.',
+                        url_name='staff:order_detail',
+                        url_kwargs={'pk': self.pk},
+                        exclude_actor=actor,
+                    )
             else:
                 notify(
                     self.client,
@@ -337,12 +357,13 @@ class Order(models.Model):
             item.unit_price = new_subtotal / new_quantity
         item.save()
 
+        direction_word = 'بالزيادة' if new_quantity > old_quantity else 'بالنقص'
         OrderLog.objects.create(
             order=self,
             event=OrderLog.Event.NOTE,
             note=(
                 f'تم تعديل كمية "{item.product_unit.product.display_name} — '
-                f'{item.product_unit.name}" من {old_quantity} إلى {new_quantity}.'
+                f'{item.product_unit.name}" {direction_word} من {old_quantity} إلى {new_quantity}.'
             ),
             created_by=actor,
         )
@@ -366,6 +387,17 @@ class Order(models.Model):
     def client_reject_amendment(self, actor=None):
         """العميل رفض التعديل — الطلب بالكامل يترفض ويتفك الحجز."""
         self.reject(actor=actor, reason='العميل رفض التعديل المقترح من المخزن.')
+
+    def client_cancel(self, actor=None):
+        """
+        العميل بيلغي طلبه بنفسه — متاح بس لسه الطلب PENDING (لسه محدش من
+        المخزن فتحه أو بدأ يراجعه/يعدّله). لو الطلب دخل أي مرحلة تانية
+        (تعديل بانتظار الموافقة، تأكيد، تسليم)، الإلغاء الذاتي مش متاح
+        والعميل لازم يتواصل مع المخزن مباشرة.
+        """
+        if self.status != self.Status.PENDING:
+            raise ValueError('هذا الطلب لم يعد قابلاً للإلغاء الذاتي — تواصل مع المخزن مباشرة.')
+        self.reject(actor=actor, reason='ألغى العميل الطلب بنفسه قبل مراجعته.')
 
 
 class OrderItem(models.Model):
@@ -423,6 +455,27 @@ class OrderItem(models.Model):
         ) or (
             self.original_unit_price is not None and self.unit_price != self.original_unit_price
         )
+
+    @property
+    def quantity_diff(self):
+        """الفرق بين الكمية الحالية والأصلية (موجب = زيادة، سالب = نقص، صفر = مفيش تغيير في الكمية)."""
+        if self.original_quantity is None:
+            return 0
+        return self.quantity - self.original_quantity
+
+    @property
+    def amendment_direction(self):
+        """
+        'increase' لو المخزن زوّد الكمية، 'decrease' لو قلّلها، None لو مفيش
+        تعديل على الكمية أصلًا (مفيد للتمبليت عشان يوضّح للعميل والمخزن
+        بوضوح اتجاه التعديل، مش بس إنه "اتغيّر").
+        """
+        diff = self.quantity_diff
+        if diff > 0:
+            return 'increase'
+        if diff < 0:
+            return 'decrease'
+        return None
 
 
 class OrderLog(models.Model):
