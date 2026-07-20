@@ -64,7 +64,7 @@ class ProductUnitForm(forms.ModelForm):
 
     class Meta:
         model = ProductUnit
-        fields = ['size', 'name', 'qty_in_small', 'unit_price']
+        fields = ['size', 'name', 'qty_in_small', 'unit_price', 'cost_price']
         widgets = {
             'size': forms.Select(attrs={
                 'class': 'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400'
@@ -80,12 +80,17 @@ class ProductUnitForm(forms.ModelForm):
                 'class': 'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400',
                 'placeholder': 'اتركه فارغًا ليُحسب تلقائيًا من سعر الكرتونة'
             }),
+            'cost_price': forms.NumberInput(attrs={
+                'class': 'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400',
+                'placeholder': 'اختياري — لحساب الربح في التقارير'
+            }),
         }
         labels = {
             'size': 'الحجم',
             'name': 'اسم الوحدة',
             'qty_in_small': 'الكمية في الوحدة الصغرى',
             'unit_price': 'سعر القطعة',
+            'cost_price': 'سعر التكلفة',
         }
 
     def __init__(self, *args, **kwargs):
@@ -96,6 +101,7 @@ class ProductUnitForm(forms.ModelForm):
         # BaseProductUnitFormSet.clean() تحت اللي بيرفض الحفظ برسالة واضحة لو
         # فضل السعر مجهول فعلًا (مفيش كرتونة نحسب منها).
         self.fields['unit_price'].required = False
+        self.fields['cost_price'].required = False
 
     def validate_unique(self):
         # بنعطّل هنا التحقق التلقائي من unique_together (product, size) لأن

@@ -158,6 +158,14 @@
                             <p class="text-red-500 text-xs mt-1">{{ unit_form.qty_in_small.errors.0 }}</p>
                         {% endif %}
                     </div>
+                    <div>
+                        <label class="text-sm font-medium text-gray-700 mb-1 block">{{ unit_form.cost_price.label }}</label>
+                        {{ unit_form.cost_price }}
+                        <p class="text-[11px] text-gray-400 mt-1">اختياري — يُستخدم لحساب الربح في قسم التقارير</p>
+                        {% if unit_form.cost_price.errors %}
+                            <p class="text-red-500 text-xs mt-1">{{ unit_form.cost_price.errors.0 }}</p>
+                        {% endif %}
+                    </div>
                     {% if not unit_form.instance.pk %}
                     <div>
                         <label class="text-sm font-medium text-gray-700 mb-1 block">{{ unit_form.initial_stock.label }}</label>
@@ -204,6 +212,11 @@
                         <label class="text-sm font-medium text-gray-700 mb-1 block">الكمية في الوحدة الصغرى</label>
                         {{ formset.empty_form.qty_in_small }}
                         <p class="text-[11px] text-gray-400 mt-1">القطعة = 1، والكرتونة = عدد القطع التي تحتويها</p>
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium text-gray-700 mb-1 block">سعر التكلفة</label>
+                        {{ formset.empty_form.cost_price }}
+                        <p class="text-[11px] text-gray-400 mt-1">اختياري — يُستخدم لحساب الربح في قسم التقارير</p>
                     </div>
                     <div>
                         <label class="text-sm font-medium text-gray-700 mb-1 block">الكمية الابتدائية</label>

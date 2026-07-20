@@ -3,7 +3,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.db.models import Q, F
+from django.db.models import Q
 from inventory.models import Inventory, StockMovement
 from products.models import ProductUnit
 from staff.permissions import perm_required
@@ -34,7 +34,7 @@ def inventory_list(request):
     # "عرض الكل" بدل ما تجيب كل الأصناف المنخفضة في صفحة واحدة من غير حد.
     low_only = request.GET.get('low') == '1'
     if low_only:
-        items_qs = items_qs.filter(quantity__lte=F('reserved') + F('min_quantity'))
+        items_qs = items_qs.low_stock()
 
     paginator = Paginator(items_qs, STAFF_LIST_PAGE_SIZE)
     page_obj = paginator.get_page(request.GET.get('page'))

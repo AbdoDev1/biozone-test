@@ -1,0 +1,86 @@
+{% load staff_ui %}
+{# ============================================================
+   شريط الفلاتر الموحّد لكل صفحات قسم التقارير.
+   بيتوقع الـ context التالي (بيوفره ReportFilters.filter_context()):
+   period_choices, selected_period, date_from, date_to,
+   employees, selected_employee, clients, selected_client,
+   categories, selected_category, products, selected_product
+   ============================================================ #}
+<form method="get" class="no-print bg-white rounded-2xl shadow-sm p-4 md:p-5 mb-6"
+      x-data="{ period: '{{ selected_period }}' }">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+        <div>
+            <label class="text-xs font-medium text-gray-500 mb-1 block">الفترة الزمنية</label>
+            <select name="period" x-model="period"
+                    class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400">
+                {% for key, label in period_choices %}
+                <option value="{{ key }}" {% if key == selected_period %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div x-show="period === 'custom'" x-cloak>
+            <label class="text-xs font-medium text-gray-500 mb-1 block">من تاريخ</label>
+            <input type="date" name="date_from" value="{{ date_from }}"
+                   class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400">
+        </div>
+        <div x-show="period === 'custom'" x-cloak>
+            <label class="text-xs font-medium text-gray-500 mb-1 block">إلى تاريخ</label>
+            <input type="date" name="date_to" value="{{ date_to }}"
+                   class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400">
+        </div>
+        <div>
+            <label class="text-xs font-medium text-gray-500 mb-1 block">الموظف</label>
+            <select name="employee"
+                    class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400">
+                <option value="">كل الموظفين</option>
+                {% for emp in employees %}
+                <option value="{{ emp.id }}" {% if selected_employee == emp.id|stringformat:'s' %}selected{% endif %}>{{ emp.username }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-gray-500 mb-1 block">العميل</label>
+            <select name="client"
+                    class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400">
+                <option value="">كل العملاء</option>
+                {% for c in clients %}
+                <option value="{{ c.id }}" {% if selected_client == c.id|stringformat:'s' %}selected{% endif %}>{{ c.client_profile.business_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="text-xs font-medium text-gray-500 mb-1 block">القسم</label>
+            <select name="category"
+                    class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400">
+                <option value="">كل الأقسام</option>
+                {% for cat in categories %}
+                <option value="{{ cat.id }}" {% if selected_category == cat.id|stringformat:'s' %}selected{% endif %}>{{ cat.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="sm:col-span-2 lg:col-span-2">
+            <label class="text-xs font-medium text-gray-500 mb-1 block">المنتج</label>
+            <select name="product"
+                    class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400">
+                <option value="">كل المنتجات</option>
+                {% for p in products %}
+                <option value="{{ p.id }}" {% if selected_product == p.id|stringformat:'s' %}selected{% endif %}>{{ p.display_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    <div class="flex flex-wrap gap-2 mt-4">
+        {% btn "تطبيق الفلاتر" type="submit" variant="primary" size="sm" icon="check" %}
+        <a href="{{ request.path }}" class="text-sm text-gray-400 hover:text-gray-600 self-center">إعادة تعيين</a>
+        <div class="mr-auto flex gap-2">
+            <button type="button" onclick="window.print()"
+                    class="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg transition inline-flex items-center gap-1.5">
+                طباعة / PDF
+            </button>
+            <button type="submit" name="export" value="excel"
+                    class="text-sm bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded-lg transition inline-flex items-center gap-1.5">
+                تصدير Excel
+            </button>
+        </div>
+    </div>
+</form>

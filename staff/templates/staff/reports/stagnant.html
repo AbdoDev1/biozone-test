@@ -1,0 +1,98 @@
+{% extends 'staff/base.html' %}
+{% load staff_ui %}
+{% block title %}المنتجات الراكدة — Biozone{% endblock %}
+{% block breadcrumbs %}
+<nav class="text-sm mb-4">{% crumb "التقارير" "staff:reports_dashboard" %}{% crumb "منتجات راكدة" %}</nav>
+{% endblock %}
+{% block content %}
+<div class="max-w-6xl print-area">
+    <div class="mb-4">
+        <h1 class="text-2xl font-bold text-gray-800">تقرير المنتجات الراكدة</h1>
+        <p class="text-gray-500 text-sm mt-1">منتجات لها رصيد في المخزون لكن لم تُبع خلال المدة المحددة — تساعد في التخلص من المخزون الراكد.</p>
+    </div>
+
+    <form method="get" class="no-print bg-white rounded-2xl shadow-sm p-4 md:p-5 mb-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div>
+                <label class="text-xs font-medium text-gray-500 mb-1 block">لم تُبع منذ</label>
+                <select name="days" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400">
+                    <option value="30" {% if days == 30 %}selected{% endif %}>30 يومًا</option>
+                    <option value="60" {% if days == 60 %}selected{% endif %}>60 يومًا</option>
+                    <option value="90" {% if days == 90 %}selected{% endif %}>90 يومًا</option>
+                    <option value="{{ days }}" {% if days != 30 and days != 60 and days != 90 %}selected{% endif %}>{{ days }} يومًا (مخصص)</option>
+                </select>
+            </div>
+            <div>
+                <label class="text-xs font-medium text-gray-500 mb-1 block">أو حدّد عدد أيام مخصص</label>
+                <input type="number" name="days_custom" min="1" max="3650" placeholder="مثال: 45"
+                       class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400">
+            </div>
+            <div>
+                <label class="text-xs font-medium text-gray-500 mb-1 block">القسم</label>
+                <select name="category" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400">
+                    <option value="">كل الأقسام</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.id }}" {% if selected_category == cat.id|stringformat:'s' %}selected{% endif %}>{{ cat.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="text-xs font-medium text-gray-500 mb-1 block">المنتج</label>
+                <select name="product" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400">
+                    <option value="">كل المنتجات</option>
+                    {% for p in products %}
+                    <option value="{{ p.id }}" {% if selected_product == p.id|stringformat:'s' %}selected{% endif %}>{{ p.display_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="flex flex-wrap gap-2 mt-4">
+            {% btn "تطبيق الفلاتر" type="submit" variant="primary" size="sm" icon="check" %}
+            <a href="{{ request.path }}" class="text-sm text-gray-400 hover:text-gray-600 self-center">إعادة تعيين</a>
+            <div class="mr-auto flex gap-2">
+                <button type="button" onclick="window.print()"
+                        class="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg transition">طباعة / PDF</button>
+                <button type="submit" name="export" value="excel"
+                        class="text-sm bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded-lg transition">تصدير Excel</button>
+            </div>
+        </div>
+    </form>
+
+    <div class="bg-white rounded-2xl shadow overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-right text-gray-500 border-b">
+                        <th class="py-2 px-3">كود الصنف</th>
+                        <th class="py-2 px-3">المنتج</th>
+                        <th class="py-2 px-3 no-print">القسم</th>
+                        <th class="py-2 px-3">الرصيد الحالي</th>
+                        <th class="py-2 px-3">آخر عملية بيع</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in rows %}
+                    <tr class="border-b last:border-0 hover:bg-gray-50">
+                        <td class="py-2 px-3 text-gray-500">{{ r.product.code }}</td>
+                        <td class="py-2 px-3 font-medium">{{ r.product.display_name }}</td>
+                        <td class="py-2 px-3 text-gray-500 no-print">{{ r.product.category.name|default:'—' }}</td>
+                        <td class="py-2 px-3">{{ r.inventory.quantity_display }}</td>
+                        <td class="py-2 px-3 text-gray-500">{{ r.last_sale|date:'Y-m-d'|default:'لم يُبع من قبل' }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5" class="py-8 text-center text-gray-400">لا توجد منتجات راكدة ضمن هذه الفلاتر 🎉</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if page_obj.paginator.num_pages > 1 %}
+        <div class="no-print flex justify-center gap-2 py-4 border-t">
+            {% for num in page_obj.paginator.page_range %}
+            <a href="?{{ request.GET|without_page }}&page={{ num }}"
+               class="px-3 py-1 rounded-lg text-sm {% if num == page_obj.number %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-600{% endif %}">{{ num }}</a>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

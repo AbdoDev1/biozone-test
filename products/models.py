@@ -181,9 +181,19 @@ class ProductUnit(models.Model):
         ),
     )
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
+    # سعر التكلفة (الشراء) لنفس هذه الوحدة بالظبط (نفس مستوى unit_price —
+    # مش بالضرورة بالقطعة). اختياري (افتراضي صفر) عشان مايكسرش أي منتج قديم
+    # مسجّل قبل إضافة الحقل ده؛ لو اتسيب صفر، تقارير الربح (reports app)
+    # هتحسب ربح = 100% من الإيراد لهذا الصنف لحد ما يتسجّل سعر تكلفته الحقيقي.
+    cost_price = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0,
+        verbose_name='سعر التكلفة',
+        help_text='سعر شراء هذه الوحدة (يُستخدم في حساب الربح بتقارير المبيعات). اتركه صفرًا لو غير معروف حاليًا.',
+    )
 
     class Meta:
         verbose_name = 'وحدة'
+
         verbose_name_plural = 'الوحدات'
         constraints = [
             models.UniqueConstraint(

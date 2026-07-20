@@ -121,6 +121,19 @@ def btn(text, href=None, variant='primary', size='md', full_width=False,
     }
 
 
+@register.filter
+def without_page(querydict):
+    """
+    بترجع نسخة urlencoded من QueryDict الفلاتر الحالية من غير مفتاح 'page' —
+    عشان روابط الصفحات (pagination) في تقارير قسم reports تقدر تضيف page=N
+    بتاعها من غير ما يتكرر المفتاح أو يتعارض مع رقم صفحة سابق في الرابط.
+    الاستخدام: <a href="?{{ request.GET|without_page }}&page={{ n }}">
+    """
+    qd = querydict.copy()
+    qd.pop('page', None)
+    return qd.urlencode()
+
+
 @register.simple_tag(takes_context=True)
 def crumb(context, label, url_name=None, *url_args):
     """

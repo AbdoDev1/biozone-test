@@ -4,11 +4,11 @@ from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.db.models import Sum
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponse
 
 from accounts.models import User, ClientProfile
 from accounting.models import AccountTransaction
 from staff.permissions import perm_required
+from staff.excel_utils import build_simple_workbook, workbook_response
 
 
 def _clients_with_balance():
@@ -121,31 +121,15 @@ def accounting_quick_entry(request):
 
 @perm_required('accounting.view_accounttransaction')
 def accounting_export(request):
-    import openpyxl
-    from openpyxl.utils import get_column_letter
-
     rows = _clients_with_balance()
-
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = 'المديونيات'
-    headers = ['اسم النشاط', 'نوع الحساب', 'الهاتف', 'الرصيد (ج.م)']
-    ws.append(headers)
-    for row in rows:
-        profile = row['profile']
-        ws.append([
-            profile.business_name,
-            profile.account_type.name,
-            profile.phone,
-            float(row['balance']),
-        ])
-    for col in ws.columns:
-        letter = get_column_letter(col[0].column)
-        ws.column_dimensions[letter].width = 24
-
-    response = HttpResponse(
-        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    data_rows = [
+        [row['profile'].business_name, row['profile'].account_type.name, row['profile'].phone, float(row['balance'])]
+        for row in rows
+    ]
+    wb = build_simple_workbook(
+        sheet_title='المديونيات',
+        headers=['اسم النشاط', 'نوع الحساب', 'الهاتف', 'الرصيد (ج.م)'],
+        rows=data_rows,
+        column_width=24,
     )
-    response['Content-Disposition'] = 'attachment; filename="biozone_accounts_receivable.xlsx"'
-    wb.save(response)
-    return response
+    return workbook_response(wb, 'biozone_accounts_receivable.xlsx')

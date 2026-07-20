@@ -13,6 +13,7 @@ from products.matching import normalize_name, find_similar_products
 from products.new_arrivals import NEW_ARRIVALS_WINDOW_DAYS
 from inventory.models import Inventory, StockMovement
 from staff.permissions import perm_required
+from staff.excel_utils import workbook_response
 import openpyxl
 
 STAFF_LIST_PAGE_SIZE = 30
@@ -732,17 +733,13 @@ def _build_products_export_workbook(products):
 
 
 def _products_xlsx_response(wb, filename):
-    from django.http import HttpResponse
-    import io
-    buffer = io.BytesIO()
-    wb.save(buffer)
-    buffer.seek(0)
-    response = HttpResponse(
-        buffer.getvalue(),
-        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    )
-    response['Content-Disposition'] = f'attachment; filename="{filename}"'
-    return response
+    """
+    Alias رفيع فوق staff.excel_utils.workbook_response — كان قبل كده منطق
+    مستقل هنا بس اتكرر بالظبط في accounting.py وreports.py، فاتلمّ في مكان
+    واحد مشترك (staff/excel_utils.py) واتسابت هنا كـ alias بنفس الاسم عشان
+    مانضطرش نغيّر كل استدعاء ليها تحت في نفس الملف.
+    """
+    return workbook_response(wb, filename)
 
 
 @perm_required('products.view_product')

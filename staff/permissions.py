@@ -88,6 +88,13 @@ PERMISSION_SECTIONS = [
         ],
     },
     {
+        'key': 'reports',
+        'label': '📊 التقارير',
+        'perms': [
+            ('staff', 'reports', 'view', 'عرض قسم التقارير والتحليلات'),
+        ],
+    },
+    {
         'key': 'clients',
         'label': '👥 حسابات العملاء',
         'perms': [

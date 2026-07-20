@@ -3,7 +3,7 @@ from django.contrib import messages
 from django.contrib.auth.hashers import make_password
 from django.shortcuts import render, redirect, get_object_or_404
 
-from accounts.models import User
+from accounts.models import User, Employee
 from staff.permissions import admin_required, grouped_permission_fields, permissions_queryset_from_codenames
 
 
@@ -51,9 +51,7 @@ class EmployeeCreateForm(EmployeeForm):
 
 @admin_required
 def employee_list(request):
-    employees = User.objects.filter(
-        role__in=[User.Role.ADMIN, User.Role.WAREHOUSE]
-    ).order_by('-date_joined')
+    employees = Employee.objects.all().order_by('-date_joined')
     return render(request, 'staff/employees/list.html', {'employees': employees})
 
 

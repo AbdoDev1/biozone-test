@@ -1,0 +1,89 @@
+{% extends 'staff/base.html' %}
+{% load staff_ui %}
+{% block title %}تقرير الأرباح — Biozone{% endblock %}
+{% block breadcrumbs %}
+<nav class="text-sm mb-4">{% crumb "التقارير" "staff:reports_dashboard" %}{% crumb "الأرباح" %}</nav>
+{% endblock %}
+{% block content %}
+<div class="max-w-6xl print-area">
+    <div class="mb-4">
+        <h1 class="text-2xl font-bold text-gray-800">تقرير الأرباح</h1>
+        <p class="text-gray-500 text-sm mt-1">
+            الإيرادات وتكلفة البضاعة المباعة والربح الإجمالي حسب الفترة المختارة.
+            <span class="text-gray-400">(الربح هنا إجمالي = الإيراد − تكلفة الشراء المسجّلة لكل منتج، ولا يشمل مصروفات تشغيل عامة لأن النظام لا يتتبعها حاليًا.)</span>
+        </p>
+    </div>
+
+    {% include 'staff/reports/_filters.html' %}
+
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white rounded-2xl shadow-sm p-5">
+            <p class="text-xs text-gray-500 mb-1">إجمالي الإيرادات</p>
+            <p class="text-xl font-bold text-gray-800">{{ totals.revenue|floatformat:2 }} ج.م</p>
+        </div>
+        <div class="bg-white rounded-2xl shadow-sm p-5">
+            <p class="text-xs text-gray-500 mb-1">تكلفة البضاعة المباعة</p>
+            <p class="text-xl font-bold text-gray-800">{{ totals.cost|floatformat:2 }} ج.م</p>
+        </div>
+        <div class="bg-white rounded-2xl shadow-sm p-5">
+            <p class="text-xs text-gray-500 mb-1">الربح الإجمالي</p>
+            <p class="text-xl font-bold {% if totals.profit >= 0 %}text-green-600{% else %}text-red-600{% endif %}">{{ totals.profit|floatformat:2 }} ج.م</p>
+        </div>
+        <div class="bg-white rounded-2xl shadow-sm p-5">
+            <p class="text-xs text-gray-500 mb-1">هامش الربح</p>
+            <p class="text-xl font-bold text-gray-800">{{ totals.margin_percent|floatformat:1 }}%</p>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm p-5 mb-6">
+        <h2 class="font-bold text-gray-700 mb-1">الأرباح الشهرية (آخر 12 شهر)</h2>
+        <p class="text-xs text-gray-400 mb-3">هذا الرسم يعرض الاتجاه العام دائمًا لآخر 12 شهر، بغض النظر عن فلاتر الفترة أعلاه.</p>
+        <canvas id="profitChart" height="90"></canvas>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-right text-gray-500 border-b">
+                        <th class="py-2 px-3">الشهر</th>
+                        <th class="py-2 px-3">الإيرادات</th>
+                        <th class="py-2 px-3">التكلفة</th>
+                        <th class="py-2 px-3">الربح</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in monthly_series %}
+                    <tr class="border-b last:border-0 hover:bg-gray-50">
+                        <td class="py-2 px-3 font-medium">{{ m.label }}</td>
+                        <td class="py-2 px-3">{{ m.revenue|floatformat:2 }} ج.م</td>
+                        <td class="py-2 px-3 text-gray-500">{{ m.cost|floatformat:2 }} ج.م</td>
+                        <td class="py-2 px-3 font-semibold {% if m.profit >= 0 %}text-green-600{% else %}text-red-600{% endif %}">{{ m.profit|floatformat:2 }} ج.م</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script>
+    const labels = [{% for m in monthly_series %}"{{ m.label }}",{% endfor %}];
+    const revenue = [{% for m in monthly_series %}{{ m.revenue|floatformat:2 }},{% endfor %}];
+    const cost = [{% for m in monthly_series %}{{ m.cost|floatformat:2 }},{% endfor %}];
+    const profit = [{% for m in monthly_series %}{{ m.profit|floatformat:2 }},{% endfor %}];
+    new Chart(document.getElementById('profitChart'), {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                { label: 'الإيرادات', data: revenue, backgroundColor: '#2563eb' },
+                { label: 'التكلفة', data: cost, backgroundColor: '#f97316' },
+                { label: 'الربح', data: profit, backgroundColor: '#16a34a' },
+            ]
+        },
+        options: { scales: { y: { beginAtZero: true } } }
+    });
+</script>
+{% endblock %}

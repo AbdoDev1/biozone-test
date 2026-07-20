@@ -1,0 +1,80 @@
+{% extends 'staff/base.html' %}
+{% load staff_ui %}
+{% block title %}تقرير المنتجات المباعة — Biozone{% endblock %}
+{% block breadcrumbs %}
+<nav class="text-sm mb-4">{% crumb "التقارير" "staff:reports_dashboard" %}{% crumb "المنتجات المباعة" %}</nav>
+{% endblock %}
+{% block content %}
+<div class="max-w-6xl print-area">
+    <div class="mb-4">
+        <h1 class="text-2xl font-bold text-gray-800">تقرير المنتجات المباعة</h1>
+        <p class="text-gray-500 text-sm mt-1">الكمية والإيراد والربح لكل منتج — رتّب حسب الأكثر ربحًا أو الأكثر مبيعًا وليس فقط الأعلى إيرادًا.</p>
+    </div>
+
+    {% include 'staff/reports/_filters.html' %}
+
+    <div class="flex gap-2 mb-4 no-print">
+        <a href="?{{ request.GET|without_page }}&sort=revenue" class="px-3 py-1.5 rounded-lg text-sm {% if sort == 'revenue' %}bg-blue-600 text-white{% else %}bg-white text-gray-600 shadow-sm{% endif %}">الأعلى إيرادًا</a>
+        <a href="?{{ request.GET|without_page }}&sort=qty" class="px-3 py-1.5 rounded-lg text-sm {% if sort == 'qty' %}bg-blue-600 text-white{% else %}bg-white text-gray-600 shadow-sm{% endif %}">الأكثر مبيعًا (كمية)</a>
+        <a href="?{{ request.GET|without_page }}&sort=profit" class="px-3 py-1.5 rounded-lg text-sm {% if sort == 'profit' %}bg-blue-600 text-white{% else %}bg-white text-gray-600 shadow-sm{% endif %}">الأعلى ربحًا</a>
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white rounded-2xl shadow-sm p-5">
+            <p class="text-xs text-gray-500 mb-1">إجمالي الكمية المباعة</p>
+            <p class="text-xl font-bold text-gray-800">{{ totals.qty }}</p>
+        </div>
+        <div class="bg-white rounded-2xl shadow-sm p-5">
+            <p class="text-xs text-gray-500 mb-1">إجمالي الإيراد</p>
+            <p class="text-xl font-bold text-gray-800">{{ totals.revenue|floatformat:2 }} ج.م</p>
+        </div>
+        <div class="bg-white rounded-2xl shadow-sm p-5">
+            <p class="text-xs text-gray-500 mb-1">إجمالي الربح</p>
+            <p class="text-xl font-bold {% if totals.profit >= 0 %}text-green-600{% else %}text-red-600{% endif %}">{{ totals.profit|floatformat:2 }} ج.م</p>
+        </div>
+        <div class="bg-white rounded-2xl shadow-sm p-5">
+            <p class="text-xs text-gray-500 mb-1">هامش الربح</p>
+            <p class="text-xl font-bold text-gray-800">{{ totals.margin_percent|floatformat:1 }}%</p>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-right text-gray-500 border-b">
+                        <th class="py-2 px-3">المنتج</th>
+                        <th class="py-2 px-3 no-print">القسم</th>
+                        <th class="py-2 px-3">الكمية</th>
+                        <th class="py-2 px-3">الإيراد</th>
+                        <th class="py-2 px-3">الربح</th>
+                        <th class="py-2 px-3">نسبة المساهمة</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in rows %}
+                    <tr class="border-b last:border-0 hover:bg-gray-50">
+                        <td class="py-2 px-3 font-medium">{{ r.display_name }}</td>
+                        <td class="py-2 px-3 text-gray-500 no-print">{{ r.product_unit__product__category__name|default:'—' }}</td>
+                        <td class="py-2 px-3">{{ r.total_qty }}</td>
+                        <td class="py-2 px-3 font-semibold">{{ r.total_revenue|floatformat:2 }} ج.م</td>
+                        <td class="py-2 px-3 {% if r.total_profit >= 0 %}text-green-600{% else %}text-red-600{% endif %}">{{ r.total_profit|floatformat:2 }} ج.م</td>
+                        <td class="py-2 px-3 text-gray-500">{{ r.share_percent|floatformat:1 }}%</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" class="py-8 text-center text-gray-400">لا توجد مبيعات في هذه الفترة</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if page_obj.paginator.num_pages > 1 %}
+        <div class="no-print flex justify-center gap-2 py-4 border-t">
+            {% for num in page_obj.paginator.page_range %}
+            <a href="?{{ request.GET|without_page }}&page={{ num }}"
+               class="px-3 py-1 rounded-lg text-sm {% if num == page_obj.number %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-600{% endif %}">{{ num }}</a>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

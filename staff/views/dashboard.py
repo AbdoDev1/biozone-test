@@ -2,7 +2,6 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db import models
 from inventory.models import Inventory
 from accounts.models import ClientProfile
 from accounts.security import is_login_blocked, record_failed_login, reset_login_attempts
@@ -65,9 +64,9 @@ def dashboard(request):
     # DASHBOARD_LOW_STOCK_LIMIT بس، والعدد الحقيقي بييجي من .count()
     # منفصل (مش من len() على queryset كامل)، ولو حابب تشوف الباقي فيه
     # رابط لصفحة المخزون كاملة (مرقّمة) فلترة "منخفض بس".
-    low_stock_qs = Inventory.objects.select_related(
+    low_stock_qs = Inventory.objects.low_stock().select_related(
         'product'
-    ).filter(quantity__lte=models.F('reserved') + models.F('min_quantity')).order_by('quantity')
+    ).order_by('quantity')
     low_stock_count = low_stock_qs.count()
     low_stock = low_stock_qs[:DASHBOARD_LOW_STOCK_LIMIT]
     pending_clients = ClientProfile.objects.filter(user__status='PENDING').count()

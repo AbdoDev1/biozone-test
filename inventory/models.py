@@ -3,12 +3,31 @@ from django.utils import timezone
 from products.models import Product, ProductUnit
 
 
+class InventoryQuerySet(models.QuerySet):
+    def low_stock(self):
+        """
+        فلتر على مستوى قاعدة البيانات بنفس شرط الخاصية is_low بالظبط
+        (المتاح <= الحد الأدنى، أي quantity - reserved <= min_quantity).
+        الفرق إن is_low بيتحسب على مستوى الـ instance (بعد ما السجل يترجع من
+        القاعدة)، أما الميثود دي بتسمح نفلتر/نعدّ في القاعدة نفسها (queryset)
+        بدل ما نجيب كل المخزون ونفلتره في بايثون. اتعمل QuerySet method (مش
+        Manager عادي) عشان تفضل قابلة للتسلسل (chainable) فوق فلاتر تانية،
+        زي البحث في صفحة المخزون (staff/views/inventory.py?q=...&low=1).
+        مستخدمة في اللوحة الرئيسية (staff/views/dashboard.py)، صفحة المخزون،
+        ولوحة مؤشرات التقارير (staff/views/reports.py) — كانت العبارة دي
+        متكررة يدويًا في التلات أماكن قبل كده.
+        """
+        return self.filter(quantity__lte=models.F('reserved') + models.F('min_quantity'))
+
+
 class Inventory(models.Model):
     """
     رصيد واحد لكل منتج (مش لكل وحدة) — المرجع الوحيد للحقيقة، ومحفوظ دايمًا
     بالقطعة (أصغر وحدة). أي وحدة تانية للمنتج (كرتونة مثلاً) هي مجرد "طريقة
     عرض/بيع" بمعامل تحويل (ProductUnit.qty_in_small)، مش رصيد منفصل.
     """
+    objects = InventoryQuerySet.as_manager()
+
     product = models.OneToOneField(
         Product,
         on_delete=models.CASCADE,
