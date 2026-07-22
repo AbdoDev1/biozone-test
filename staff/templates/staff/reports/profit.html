@@ -67,7 +67,6 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script>
     const labels = [{% for m in monthly_series %}"{{ m.label }}",{% endfor %}];
     const revenue = [{% for m in monthly_series %}{{ m.revenue|floatformat:2 }},{% endfor %}];

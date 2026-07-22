@@ -17,6 +17,16 @@
          كامل، من غير ما نلمس أي view أو منطق سيرفر. -->
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Chart.js: اتنقل هنا مركزيًا (بدل ما يتكرر جوه كل صفحة تقرير) عشان
+         مشكلة حقيقية سببها hx-boost: أي <script src> بيتحقن ديناميكيًا وقت
+         استبدال الـ body (بعد أي تنقل boosted) بيتحمّل async تلقائيًا من
+         المتصفح، فسكريبت الرسم البياني اللي بعده كان ممكن يتنفذ قبل ما
+         Chart.js يخلص تحميل ويرمي "Chart is not defined" — بس لما توصل
+         للصفحة عن طريق ضغطة رابط، مش عن طريق refresh يدوي. htmx بيدمج
+         الـ head (مش بيستبدله) وبيلاحظ إن نفس الـ src موجود فمش بيعيد
+         تحميله/تنفيذه تاني، فالتحميل هنا مرة واحدة بيضمن إن المكتبة
+         جاهزة قبل أي سكريبت رسم بياني في أي صفحة. -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
     <script>
         // htmx بيحتاج يبعت CSRF token في header يدويًا لأي POST مُعمول
         // boost (زي فورم تسجيل الخروج)، لأنه مش فورم عادي بيتقرا من

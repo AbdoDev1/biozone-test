@@ -134,7 +134,6 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script>
     const dailyLabels = [{% for d in daily_series %}"{{ d.date|date:'d/m' }}",{% endfor %}];
     const dailyTotals = [{% for d in daily_series %}{{ d.total|floatformat:2 }},{% endfor %}];
