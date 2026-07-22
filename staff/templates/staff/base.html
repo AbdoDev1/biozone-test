@@ -50,11 +50,65 @@
         // مثلًا) هتستبدل المحتوى فورًا زي أي وقت من غير أي انيميشن — مفيش
         // كسر أو تعطل، بس مفيش الأنيميشن الإضافي دي بالذات.
         htmx.config.globalViewTransitions = true;
+        // منع أي transition (زي عرض/هامش السايدبار اللي أصلاً بيتحرك بنعومة
+        // 300ms لما المستخدم يفتح/يقفل السايدبار يدويًا) من الاشتغال في
+        // نفس لحظة تنقل الـ htmx: بعد كل boosted swap، Alpine بيعيد بناء
+        // x-data من الصفر على المحتوى الجديد، وده بيخلي المتصفح يرسم فريم
+        // وسيط قبل ما class العرض يتطبّق، فالـ transition الأصلي بتاع
+        // السايدبار كان بيتفعّل هو كمان فوق فيد الصفحة — إحساس بحركتين
+        // مع بعض (انزلاق واضح من اليمين للشمال + فيد) بدل فيد بس. الحل:
+        // نلغي كل الـ transitions مؤقتًا من أول ما الطلب يتبعت لحد ما
+        // الاستقرار (settle) يخلص، وترجع الحركة اليدوية (زرار الفتح/القفل)
+        // سلسة زي ما هي لأنها مش بتعدي على أي htmx swap.
+        document.body.addEventListener('htmx:beforeRequest', () => {
+            document.body.classList.add('htmx-swap-nofx');
+        });
+        document.body.addEventListener('htmx:afterSettle', () => {
+            requestAnimationFrame(() => {
+                document.body.classList.remove('htmx-swap-nofx');
+            });
+        });
+        // شريط تحميل رفيع فوق الصفحة (زي يوتيوب) بيظهر فورًا وقت الضغط على أي
+        // رابط ويكبر تدريجيًا لحد ما الرد يوصل، عشان تبقى في إشارة بصرية
+        // فورية إن حاجة بتحصل من لحظة الضغط، مش بس فيد في الآخر.
+        const pageProgress = document.getElementById('page-progress');
+        document.body.addEventListener('htmx:beforeRequest', () => {
+            pageProgress.style.transition = 'none';
+            pageProgress.style.transform = 'scaleX(0)';
+            pageProgress.style.opacity = '1';
+            void pageProgress.offsetWidth; // إجبار إعادة رسم قبل التحريك
+            pageProgress.style.transition = 'transform 4s cubic-bezier(0.1,0.4,0.1,1)';
+            pageProgress.style.transform = 'scaleX(0.85)';
+        });
+        document.body.addEventListener('htmx:afterSettle', () => {
+            pageProgress.style.transition = 'transform 0.2s ease-out';
+            pageProgress.style.transform = 'scaleX(1)';
+            setTimeout(() => {
+                pageProgress.style.transition = 'opacity 0.3s ease-out';
+                pageProgress.style.opacity = '0';
+            }, 150);
+        });
     </script>
     <style>
         ::view-transition-old(root),
         ::view-transition-new(root) {
-            animation-duration: 0.15s;
+            animation-duration: 0.12s;
+        }
+        body.htmx-swap-nofx,
+        body.htmx-swap-nofx *:not(#page-progress) {
+            transition: none !important;
+        }
+        #page-progress {
+            transform: scaleX(0);
+            transform-origin: left;
+        }
+        /* تظليل فوري لأي رابط سايدبار بمجرد الضغط عليه (لحد ما الصفحة الجديدة
+           توصل)، عشان الإحساس بالاستجابة يبقى فوري من لحظة الضغط نفسها، مش
+           بس بعد ما التحميل يخلص. htmx بيضيف class="htmx-request" تلقائيًا
+           على العنصر اللي عمل الطلب (الرابط نفسه هنا، طالما مفيش hx-indicator
+           محدد) طول ما الطلب شغّال. */
+        nav a.htmx-request {
+            background-color: #eff6ff;
         }
         /* طباعة موحّدة لكل صفحات لوحة الموظفين: أي عنصر عليه class="no-print"
            (التوب بار، السايدبار، الفلاتر، الأزرار) بيختفي وقت الطباعة، وplant
@@ -69,6 +123,7 @@
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen" hx-boost="true" x-data="{ sidebarOpen: window.innerWidth >= 768 }">
+<div id="page-progress" class="fixed top-0 inset-x-0 h-0.5 bg-blue-600 z-[9999]"></div>
 <!-- Topbar -->
 <header class="fixed top-0 right-0 left-0 h-14 bg-white shadow z-30 flex items-center px-4 gap-4">
     <button @click="sidebarOpen = !sidebarOpen" class="text-gray-500 hover:text-gray-800">

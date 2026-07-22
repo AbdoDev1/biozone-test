@@ -21,48 +21,49 @@
         </div>
     </div>
 
-    <!-- بطاقات المؤشرات -->
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 my-6">
+    <!-- المؤشرات الرئيسية: أهم 4 أرقام بس، بارزة وبخط أكبر -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-6 mb-4">
         <div class="bg-white rounded-2xl shadow-sm p-5">
             <p class="text-xs text-gray-500 mb-1">مبيعات اليوم</p>
-            <p class="text-xl font-bold text-gray-800">{{ today_summary.total|floatformat:2 }} ج.م</p>
+            <p class="text-2xl font-bold text-gray-800">{{ today_summary.total|floatformat:2 }} <span class="text-sm font-normal text-gray-400">ج.م</span></p>
             <p class="text-[11px] text-gray-400 mt-1">{{ today_summary.count }} فاتورة</p>
         </div>
         <div class="bg-white rounded-2xl shadow-sm p-5">
             <p class="text-xs text-gray-500 mb-1">مبيعات الشهر</p>
-            <p class="text-xl font-bold text-gray-800">{{ month_summary.total|floatformat:2 }} ج.م</p>
+            <p class="text-2xl font-bold text-gray-800">{{ month_summary.total|floatformat:2 }} <span class="text-sm font-normal text-gray-400">ج.م</span></p>
             <p class="text-[11px] text-gray-400 mt-1">{{ month_summary.count }} فاتورة</p>
         </div>
         <div class="bg-white rounded-2xl shadow-sm p-5">
-            <p class="text-xs text-gray-500 mb-1">متوسط قيمة الفاتورة (الشهر)</p>
-            <p class="text-xl font-bold text-gray-800">{{ month_summary.avg|floatformat:2 }} ج.م</p>
-        </div>
-        <div class="bg-white rounded-2xl shadow-sm p-5">
             <p class="text-xs text-gray-500 mb-1">صافي الربح (الشهر)</p>
-            <p class="text-xl font-bold {% if month_profit.profit >= 0 %}text-green-600{% else %}text-red-600{% endif %}">{{ month_profit.profit|floatformat:2 }} ج.م</p>
+            <p class="text-2xl font-bold {% if month_profit.profit >= 0 %}text-green-600{% else %}text-red-600{% endif %}">{{ month_profit.profit|floatformat:2 }} <span class="text-sm font-normal text-gray-400">ج.م</span></p>
             <p class="text-[11px] text-gray-400 mt-1">هامش {{ month_profit.margin_percent|floatformat:1 }}%</p>
         </div>
         <div class="bg-white rounded-2xl shadow-sm p-5">
             <p class="text-xs text-gray-500 mb-1">قيمة المخزون الحالية</p>
-            <p class="text-xl font-bold text-gray-800">{{ stock_value|floatformat:2 }} ج.م</p>
+            <p class="text-2xl font-bold text-gray-800">{{ stock_value|floatformat:2 }} <span class="text-sm font-normal text-gray-400">ج.م</span></p>
+            <p class="text-[11px] text-gray-400 mt-1">{{ total_products }} منتج</p>
         </div>
-        <div class="bg-white rounded-2xl shadow-sm p-5">
-            <p class="text-xs text-gray-500 mb-1">إجمالي العملاء</p>
-            <p class="text-xl font-bold text-gray-800">{{ total_customers }}</p>
+    </div>
+
+    <!-- مؤشرات ثانوية: شريط واحد مختصر بدل 5 بطاقات منفصلة -->
+    <div class="bg-white rounded-2xl shadow-sm px-5 py-3 mb-6 flex flex-wrap">
+        <div class="flex-1 min-w-[150px] px-2 py-1">
+            <p class="text-[11px] text-gray-400">متوسط الفاتورة (الشهر)</p>
+            <p class="text-sm font-bold text-gray-700 mt-0.5">{{ month_summary.avg|floatformat:2 }} ج.م</p>
         </div>
-        <div class="bg-white rounded-2xl shadow-sm p-5">
-            <p class="text-xs text-gray-500 mb-1">العملاء النشطون</p>
-            <p class="text-xl font-bold text-gray-800">{{ active_customers }}</p>
-            <p class="text-[11px] text-gray-400 mt-1">اشتروا على الأقل مرة</p>
+        <div class="flex-1 min-w-[150px] px-2 py-1 border-r border-gray-100">
+            <p class="text-[11px] text-gray-400">العملاء</p>
+            <p class="text-sm font-bold text-gray-700 mt-0.5">{{ total_customers }} <span class="text-gray-400 font-normal">({{ active_customers }} نشط)</span></p>
         </div>
-        <div class="bg-white rounded-2xl shadow-sm p-5">
-            <p class="text-xs text-gray-500 mb-1">عدد المنتجات</p>
-            <p class="text-xl font-bold text-gray-800">{{ total_products }}</p>
+        <div class="flex-1 min-w-[150px] px-2 py-1 border-r border-gray-100">
+            <p class="text-[11px] text-gray-400">عدد المنتجات</p>
+            <p class="text-sm font-bold text-gray-700 mt-0.5">{{ total_products }}</p>
         </div>
-        <div class="bg-white rounded-2xl shadow-sm p-5 {% if low_stock_count > 0 %}ring-1 ring-orange-200{% endif %}">
-            <p class="text-xs text-gray-500 mb-1">مخزون منخفض</p>
-            <p class="text-xl font-bold {% if low_stock_count > 0 %}text-orange-600{% else %}text-gray-800{% endif %}">{{ low_stock_count }}</p>
-            <a href="{% url 'staff:inventory' %}?low=1" class="text-[11px] text-blue-600 hover:underline">عرض الكل</a>
+        <div class="flex-1 min-w-[150px] px-2 py-1 border-r border-gray-100">
+            <p class="text-[11px] {% if low_stock_count > 0 %}text-orange-500{% else %}text-gray-400{% endif %}">مخزون منخفض</p>
+            <p class="text-sm font-bold {% if low_stock_count > 0 %}text-orange-600{% else %}text-gray-700{% endif %} mt-0.5">
+                {{ low_stock_count }}{% if low_stock_count > 0 %} <a href="{% url 'staff:inventory' %}?low=1" class="text-[11px] text-blue-600 hover:underline font-normal">(عرض)</a>{% endif %}
+            </p>
         </div>
     </div>
 
