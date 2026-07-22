@@ -1,7 +1,14 @@
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   db:
     image: postgres:16-alpine
     restart: unless-stopped
+    logging: *default-logging
     environment:
       POSTGRES_DB: ${DB_NAME:-biozone}
       POSTGRES_USER: ${DB_USER:-biozone}
@@ -14,21 +21,28 @@ services:
       timeout: 5s
       retries: 10
 
+  # ملحوظة: خدمة Redis مش مستخدمة فعليًا في الكود حاليًا (مفيش CACHES ولا
+  # SESSION_ENGINE بيشير لها) — لو مش ناوي تفعّلها قريب (كاش مثلاً)، تقدر
+  # تشيلها خالص من هنا توفّر رام إضافية على الـ VPS.
   redis:
     image: redis:7-alpine
     restart: unless-stopped
+    logging: *default-logging
 
   web:
     build: .
     restart: unless-stopped
+    logging: *default-logging
     env_file:
       - .env.production
     environment:
       DB_HOST: db
       DB_PORT: 5432
-      # مش بنحط GUNICORN_WORKERS هنا خالص — entrypoint.sh بيحسبه تلقائيًا من
-      # عدد أنوية السيرفر الحقيقي وقت التشغيل. لو حابب رقم يدوي ثابت بدل
-      # الحساب التلقائي، ضيفه في .env.production (GUNICORN_WORKERS=X) مش هنا.
+      # لو GUNICORN_WORKERS متحدد في .env.production بيتاخد زي ما هو (تحكم
+      # يدوي). لو المشروع صغير (عدد عملاء وموظفين محدود) بننصح تحدده يدويًا
+      # (GUNICORN_WORKERS=3 مثلًا) بدل الاعتماد على حساب (2×الأنوية)+1
+      # التلقائي، لأنه ممكن يشغّل عدد workers أكبر من اللي رام السيرفر
+      # تقدر تستحمله لو السيرفر عنده أنوية كتير ورام محدودة.
     volumes:
       - static_volume:/app/staticfiles
       - media_volume:/app/media
@@ -46,8 +60,9 @@ services:
   nginx:
     image: nginx:alpine
     restart: unless-stopped
+    logging: *default-logging
     ports:
-      - "8090:80"
+      - "8080:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - static_volume:/app/staticfiles:ro

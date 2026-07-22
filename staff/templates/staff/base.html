@@ -12,8 +12,40 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
+    <!-- htmx: بيفعّل hx-boost على كل لوحة الموظفين (راجع body تحت) — التنقل
+         بين الصفحات (سايدبار وأزرار) بقى AJAX ناعم بدل full page reload
+         كامل، من غير ما نلمس أي view أو منطق سيرفر. -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script>
+        // htmx بيحتاج يبعت CSRF token في header يدويًا لأي POST مُعمول
+        // boost (زي فورم تسجيل الخروج)، لأنه مش فورم عادي بيتقرا من
+        // الـ input المخفي وقت الإرسال — بنقرأه من كوكي csrftoken.
+        function getCookie(name) {
+            const match = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+            return match ? decodeURIComponent(match.pop()) : null;
+        }
+        document.body.addEventListener('htmx:configRequest', (evt) => {
+            evt.detail.headers['X-CSRFToken'] = getCookie('csrftoken');
+        });
+        // Alpine.js بيبني تفاعليته وقت ما الصفحة تتحمّل أول مرة بس. لما
+        // htmx يستبدل جزء من الـ DOM (بعد أي boost)، العناصر الجديدة (رسائل
+        // التنبيه، الـ backdrop، إلخ) لازم Alpine يتعرف عليها يدويًا وإلا
+        // هتفضل بدون تفاعل (x-show/x-data مش هيشتغلوا).
+        document.body.addEventListener('htmx:afterSwap', (evt) => {
+            if (window.Alpine) window.Alpine.initTree(evt.detail.target);
+        });
+        // انتقال ناعم (fade) بين الصفحات لو المتصفح بيدعم View Transitions
+        // API (Chrome/Edge حاليًا). المتصفحات اللي مش بتدعمها (Firefox
+        // مثلًا) هتستبدل المحتوى فورًا زي أي وقت من غير أي انيميشن — مفيش
+        // كسر أو تعطل، بس مفيش الأنيميشن الإضافي دي بالذات.
+        htmx.config.globalViewTransitions = true;
+    </script>
     <style>
+        ::view-transition-old(root),
+        ::view-transition-new(root) {
+            animation-duration: 0.15s;
+        }
         /* طباعة موحّدة لكل صفحات لوحة الموظفين: أي عنصر عليه class="no-print"
            (التوب بار، السايدبار، الفلاتر، الأزرار) بيختفي وقت الطباعة، وplant
            print-area بس هو اللي بيتطبع. بيُستخدم في كل تقارير قسم التقارير
@@ -26,7 +58,7 @@
         }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen" x-data="{ sidebarOpen: window.innerWidth >= 768 }">
+<body class="bg-gray-100 min-h-screen" hx-boost="true" x-data="{ sidebarOpen: window.innerWidth >= 768 }">
 <!-- Topbar -->
 <header class="fixed top-0 right-0 left-0 h-14 bg-white shadow z-30 flex items-center px-4 gap-4">
     <button @click="sidebarOpen = !sidebarOpen" class="text-gray-500 hover:text-gray-800">
