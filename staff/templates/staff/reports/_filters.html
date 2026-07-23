@@ -1,11 +1,13 @@
 {% load staff_ui %}
-{# ============================================================
+{% comment %}
+   ============================================================
    شريط الفلاتر الموحّد لكل صفحات قسم التقارير.
    بيتوقع الـ context التالي (بيوفره ReportFilters.filter_context()):
    period_choices, selected_period, date_from, date_to,
    employees, selected_employee, clients, selected_client,
    categories, selected_category, products, selected_product
-   ============================================================ #}
+   ============================================================
+{% endcomment %}
 <form method="get" class="no-print bg-white rounded-2xl shadow-sm p-4 md:p-5 mb-6"
       x-data="{ period: '{{ selected_period }}' }">
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
