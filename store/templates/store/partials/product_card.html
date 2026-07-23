@@ -73,9 +73,9 @@
 
       {% if request.user.role == 'CLIENT' and request.user.status == 'ACTIVE' %}
         {% if inv and inv.is_available %}
-          {% with cart_entry=request.session.cart|get_item:unit.pk %}
-            {% if cart_entry.quantity %}
-              {% include "orders/partials/cart_controls.html" with unit_id=unit.pk quantity=cart_entry.quantity %}
+          {% with cart_qty=cart_quantities|get_item:unit.pk %}
+            {% if cart_qty %}
+              {% include "orders/partials/cart_controls.html" with unit_id=unit.pk quantity=cart_qty %}
             {% else %}
               {% include "orders/partials/add_button.html" with unit=unit in_cart=False %}
             {% endif %}

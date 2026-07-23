@@ -13,6 +13,9 @@ from .cart import Cart
 from .models import Order, OrderItem, SiteConfig, Cart as CartModel
 
 
+CART_ITEMS_PER_PAGE = 15  # عدد أصناف السلة اللي تتعرض في الصفحة الواحدة
+
+
 def client_required(view_func):
     """
     بوابة موحّدة لكل عمليات السلة والطلبات: لازم المستخدم يكون مسجّل دخول،
@@ -127,10 +130,18 @@ def cart_view(request):
     total = cart.get_total()
     remaining = config.min_order_amount - total if config.min_order_amount else 0
 
+    # لو الطلبية فيها عدد كبير من الأصناف (مثلاً 30 صنف)، الجدول كان بيطول
+    # من غير أي ترقيم أو تقسيم لصفحات. الإجمالي (total) بيتحسب على كل
+    # الأصناف زي ما هو (مش بس صفحة العرض الحالية).
+    all_items = cart.get_items()
+    paginator = Paginator(all_items, CART_ITEMS_PER_PAGE)
+    items_page = paginator.get_page(request.GET.get('page'))
+
     return render(request, 'orders/cart.html', {
         'carts': carts,
         'active_cart': active_cart_obj,
-        'cart_items': cart.get_items(),
+        'cart_items': items_page,
+        'cart_items_count': len(all_items),
         'total': total,
         'min_order_amount': config.min_order_amount,
         'remaining_to_min': remaining if remaining > 0 else 0,

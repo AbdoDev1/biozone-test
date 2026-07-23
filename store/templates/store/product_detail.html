@@ -81,8 +81,8 @@ hx-on:cartUpdated="htmx.ajax('GET','{% url 'orders:cart_badge' %}',{target:'#car
                 {% if request.user.role == 'CLIENT' and request.user.status == 'ACTIVE' %}
                   {% with inv=product.inventory %}
                   {% if inv and inv.is_available %}
-                    {% with quantity=request.session.cart|get_item:unit.pk %}
-                      {% include "orders/partials/cart_controls.html" with unit_id=unit.pk quantity=quantity.quantity|default:0 %}
+                    {% with quantity=cart_quantities|get_item:unit.pk %}
+                      {% include "orders/partials/cart_controls.html" with unit_id=unit.pk quantity=quantity|default:0 %}
                     {% endwith %}
                   {% else %}
                     <button disabled class="mt-2 bg-gray-100 text-gray-400 text-xs py-2 px-4 rounded-lg cursor-not-allowed">

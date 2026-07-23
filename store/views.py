@@ -7,7 +7,20 @@ from products.models import Category, Product, ProductUnit
 from products.matching import normalize_name
 from products.new_arrivals import new_arrivals_queryset, NEW_ARRIVALS_WINDOW_DAYS
 from inventory.models import Inventory
+from orders.cart import Cart
 from django.db.models import Q
+
+
+def _cart_quantities(request):
+    """
+    قاموس {unit_id: quantity} للسلة النشطة الحالية — بيتحسب مرة واحدة
+    وبيتحقن في شبكة المنتجات عشان بطاقة المنتج تعرف تعرض الـ stepper
+    (+/-) للأصناف الموجودة فعلاً بالسلة بدل زرار "أضف" دايمًا. فاضل
+    فاضي لغير العميل المسجّل (زائر/موظف) لأنه مالوش سلة أصلًا.
+    """
+    if request.user.is_authenticated and request.user.role == 'CLIENT':
+        return Cart(request).get_quantities()
+    return {}
 
 
 PRODUCTS_PER_PAGE = 24
@@ -65,6 +78,7 @@ def store_home(request):
         'selected_manufacturer': selected_manufacturer,
         'search_q': search_q,
         'grid_url': 'store:home',
+        'cart_quantities': _cart_quantities(request),
     }
 
     # شريط "الوارد الجديد" — خاص بالعملاء المسجّلين فقط، مش بيظهر لأي زائر
@@ -115,6 +129,7 @@ def new_arrivals(request):
         'total_products': paginator.count,
         'window_days': NEW_ARRIVALS_WINDOW_DAYS,
         'grid_url': 'store:new_arrivals',
+        'cart_quantities': _cart_quantities(request),
     }
 
     if request.headers.get('HX-Request'):
@@ -137,4 +152,5 @@ def product_detail(request, pk):
     return render(request, 'store/product_detail.html', {
         'product': product,
         'units': units,
+        'cart_quantities': _cart_quantities(request),
     })

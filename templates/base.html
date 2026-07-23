@@ -14,6 +14,49 @@
     <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script>
+        // بعض أزرار الـ htmx (زي +/- في السلة بصفحة التسوق) مش جوه <form> ومفيهاش
+        // csrf_token — من غيره Django بيرفض الطلب (403) والزرار بيبان وكأنه
+        // "مش شغال". الإعداد ده بيضيف هيدر X-CSRFToken تلقائيًا لكل طلب htmx
+        // (POST/PUT/DELETE) في الموقع كله، بدل ما نكرر csrf_token جوه كل partial.
+        document.addEventListener('htmx:configRequest', function (evt) {
+            function getCookie(name) {
+                const match = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+                return match ? decodeURIComponent(match.pop()) : '';
+            }
+            evt.detail.headers['X-CSRFToken'] = getCookie('csrftoken');
+        });
+
+        // العميل بيكتب كمية في خانة "أضف إلى السلة" (قبل ما يضغط أضف فعليًا)،
+        // ولو عمل ريفريش أو انتقل لصفحة تانية من الشبكة، الرقم كان بيرجع 1
+        // تاني لأنه محفوظ في الـ DOM بس. هنا بنحفظه في sessionStorage (بيانات
+        // المتصفح، مالهاش أي تأثير على السيرفر أو السلة الفعلية) ونرجّعه أول
+        // ما أي خانة بنفس رقم الوحدة تظهر تاني — سواء بتحميل الصفحة أو بعد
+        // أي swap من htmx (بحث/فلتر/صفحات). بمجرد ما الإضافة تنجح فعليًا،
+        // بنمسح القيمة المحفوظة عشان مترجعش تتكرر لو الصنف اتشال من السلة بعدين.
+        function restoreQtyInputs(root) {
+            root.querySelectorAll('[data-qty-persist]').forEach(function (el) {
+                const saved = sessionStorage.getItem('qty:' + el.dataset.qtyPersist);
+                if (saved) el.value = saved;
+            });
+        }
+        document.addEventListener('DOMContentLoaded', function () {
+            restoreQtyInputs(document);
+        });
+        document.addEventListener('htmx:afterSwap', function (evt) {
+            restoreQtyInputs(evt.detail.target);
+        });
+        document.addEventListener('input', function (evt) {
+            if (evt.target.matches && evt.target.matches('[data-qty-persist]')) {
+                sessionStorage.setItem('qty:' + evt.target.dataset.qtyPersist, evt.target.value);
+            }
+        });
+        document.addEventListener('htmx:afterRequest', function (evt) {
+            if (!evt.detail.successful) return;
+            const input = evt.detail.elt.querySelector && evt.detail.elt.querySelector('[data-qty-persist]');
+            if (input) sessionStorage.removeItem('qty:' + input.dataset.qtyPersist);
+        });
+    </script>
     {% block extra_head %}{% endblock %}
 </head>
 <body class="bg-surface-page min-h-screen" dir="rtl" {% block body_attrs %}{% endblock %}>
@@ -21,28 +64,12 @@
 <!-- Navbar: نفس هوية لوحة الموظفين (primary-600) بدل الأبيض القديم، عشان
      يبقى شكل موحّد في السيستم كله، ولأن جرس الإشعارات (bell.html) أصلاً
      متلوّن بألوان تفترض هيدر غامق (text-primary-100) وكان يختفي على خلفية
-     بيضاء. المساحة الفاضية بين اللوجو وأزرار التحكم بقت مستغلة بشريط
-     تعريفي قصير في المنتصف (يظهر على الشاشات الكبيرة بس). -->
+     بيضاء. -->
 <nav class="bg-primary-600 shadow-md sticky top-0 z-50 px-4 sm:px-6 py-3 flex flex-wrap justify-between items-center gap-2">
     <a href="{% url 'store:home' %}" class="flex items-center gap-2 text-xl font-bold text-white shrink-0">
         <span class="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center text-sm">B</span>
         Biozone
     </a>
-
-    <div class="hidden lg:flex flex-1 items-center justify-center gap-6 text-primary-100 text-xs">
-        <span class="flex items-center gap-1.5">
-            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.125-.504 1.125-1.125V16.5m-17.25 0h16.5m-16.5 0V5.625c0-.621.504-1.125 1.125-1.125h12c.621 0 1.125.504 1.125 1.125v10.875m-16.5 0h16.5"/></svg>
-            توصيل لجميع المحافظات
-        </span>
-        <span class="flex items-center gap-1.5">
-            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            أسعار جملة وقطاعي موثوقة
-        </span>
-        <span class="flex items-center gap-1.5">
-            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 9V5.25A2.25 2.25 0 0110.5 3h6a2.25 2.25 0 012.25 2.25v13.5A2.25 2.25 0 0116.5 21h-6a2.25 2.25 0 01-2.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"/></svg>
-            دعم فني على مدار اليوم
-        </span>
-    </div>
 
     <div class="flex flex-wrap items-center gap-2 sm:gap-3">
 

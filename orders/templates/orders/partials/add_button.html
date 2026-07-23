@@ -13,7 +13,7 @@
         hx-swap="outerHTML"
         class="flex items-stretch gap-2 mt-2">
     {% csrf_token %}
-    <input type="number" name="quantity" value="1" min="1"
+    <input type="number" name="quantity" value="1" min="1" data-qty-persist="{{ unit.pk }}"
            class="w-14 border border-gray-200 rounded-lg px-1 text-center text-xs outline-none focus:border-blue-400">
     <button type="submit"
             class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs py-2 rounded-lg transition flex items-center justify-center gap-1">

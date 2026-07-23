@@ -109,6 +109,23 @@ class Cart:
         item = CartItem.objects.filter(cart=self._cart_obj, product_unit_id=unit_id).first()
         return item.quantity if item else 0
 
+    def get_quantities(self):
+        """
+        قاموس {unit_id: quantity} لكل أصناف السلة النشطة، في استعلام واحد —
+        بيستخدم في شبكة المتجر (24 منتج/صفحة) بدل ما ننادي get_quantity()
+        لكل منتج لوحده (كان هيبقى استعلام إضافي لكل كارت = N+1).
+        """
+        if self._cart_obj is None:
+            return {}
+        # مفاتيح الـ dict كـ str عشان تتوافق مع فلتر get_item (cart_tags.py)
+        # اللي بيعمل str(key) قبل الـ lookup.
+        return {
+            str(unit_id): quantity
+            for unit_id, quantity in CartItem.objects.filter(cart=self._cart_obj).values_list(
+                "product_unit_id", "quantity"
+            )
+        }
+
     def increase(self, unit_id):
         if self._cart_obj is None:
             return
