@@ -124,6 +124,7 @@
 </head>
 <body class="bg-surface-page min-h-screen" hx-boost="true" x-data="{ sidebarOpen: window.innerWidth >= 768 }">
 <div id="page-progress" class="fixed top-0 inset-x-0 h-0.5 bg-primary-800 z-[9999]"></div>
+{% include 'partials/toast_core.html' %}
 <!-- Topbar -->
 <header class="fixed top-0 right-0 left-0 h-14 bg-primary-600 shadow z-30 flex items-center px-4 gap-4">
     <button @click="sidebarOpen = !sidebarOpen" class="text-primary-100 hover:text-white">

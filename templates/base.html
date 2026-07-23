@@ -16,11 +16,33 @@
     <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     {% block extra_head %}{% endblock %}
 </head>
-<body class="bg-gray-50 min-h-screen" dir="rtl" {% block body_attrs %}{% endblock %}>
+<body class="bg-surface-page min-h-screen" dir="rtl" {% block body_attrs %}{% endblock %}>
 
-<!-- Navbar -->
-<nav class="bg-white shadow-sm sticky top-0 z-50 px-4 sm:px-6 py-3 flex flex-wrap justify-between items-center gap-2">
-    <a href="{% url 'store:home' %}" class="text-xl font-bold text-blue-700">Biozone</a>
+<!-- Navbar: نفس هوية لوحة الموظفين (primary-600) بدل الأبيض القديم، عشان
+     يبقى شكل موحّد في السيستم كله، ولأن جرس الإشعارات (bell.html) أصلاً
+     متلوّن بألوان تفترض هيدر غامق (text-primary-100) وكان يختفي على خلفية
+     بيضاء. المساحة الفاضية بين اللوجو وأزرار التحكم بقت مستغلة بشريط
+     تعريفي قصير في المنتصف (يظهر على الشاشات الكبيرة بس). -->
+<nav class="bg-primary-600 shadow-md sticky top-0 z-50 px-4 sm:px-6 py-3 flex flex-wrap justify-between items-center gap-2">
+    <a href="{% url 'store:home' %}" class="flex items-center gap-2 text-xl font-bold text-white shrink-0">
+        <span class="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center text-sm">B</span>
+        Biozone
+    </a>
+
+    <div class="hidden lg:flex flex-1 items-center justify-center gap-6 text-primary-100 text-xs">
+        <span class="flex items-center gap-1.5">
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.125-.504 1.125-1.125V16.5m-17.25 0h16.5m-16.5 0V5.625c0-.621.504-1.125 1.125-1.125h12c.621 0 1.125.504 1.125 1.125v10.875m-16.5 0h16.5"/></svg>
+            توصيل لجميع المحافظات
+        </span>
+        <span class="flex items-center gap-1.5">
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            أسعار جملة وقطاعي موثوقة
+        </span>
+        <span class="flex items-center gap-1.5">
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 9V5.25A2.25 2.25 0 0110.5 3h6a2.25 2.25 0 012.25 2.25v13.5A2.25 2.25 0 0116.5 21h-6a2.25 2.25 0 01-2.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"/></svg>
+            دعم فني على مدار اليوم
+        </span>
+    </div>
 
     <div class="flex flex-wrap items-center gap-2 sm:gap-3">
 
@@ -30,18 +52,18 @@
 
                 {% include 'notifications/partials/bell.html' %}
 
-                <a href="{% url 'accounts:dashboard' %}" class="text-sm text-gray-500 hover:text-blue-600">
+                <a href="{% url 'accounts:dashboard' %}" class="text-sm text-primary-100 hover:text-white">
                     {{ request.user.username }}
                 </a>
 
                 <a href="{% url 'staff:dashboard' %}"
-                   class="text-sm bg-gray-800 text-white px-4 py-2 rounded-lg">
+                   class="text-sm bg-primary-800 hover:bg-primary-900 text-white px-4 py-2 rounded-lg transition">
                     لوحة التحكم
                 </a>
 
                 <form method="post" action="{% url 'accounts:logout' %}" class="inline">
                     {% csrf_token %}
-                    <button type="submit" class="text-sm text-red-500 hover:underline">
+                    <button type="submit" class="text-sm text-red-200 hover:text-white hover:underline">
                         تسجيل الخروج
                     </button>
                 </form>
@@ -53,7 +75,7 @@
                 <!-- قائمة الحساب المنبثقة: بتجمع كل صفحات العميل (الحساب، المتجر، الطلبات، تسجيل الخروج) -->
                 <div class="relative" x-data="{ open: false }">
                     <button @click="open = !open" @click.outside="open = false"
-                            class="flex items-center gap-1 text-sm text-gray-700 hover:text-blue-600 px-2 py-2 rounded-lg hover:bg-gray-50">
+                            class="flex items-center gap-1 text-sm text-primary-100 hover:text-white px-2 py-2 rounded-lg hover:bg-primary-700">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                         <span>{{ request.user.username }}</span>
                         <svg class="w-4 h-4 transition-transform" :class="open ? 'rotate-180' : ''"
@@ -102,7 +124,7 @@
                 </div>
 
                 <a href="{% url 'orders:cart' %}"
-                   class="flex items-center gap-1.5 text-sm bg-blue-600 text-white px-4 py-2 rounded-lg relative">
+                   class="flex items-center gap-1.5 text-sm bg-white text-primary-700 hover:bg-primary-50 px-4 py-2 rounded-lg relative font-semibold transition">
                     <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 1.936-4.708 2.436-7.18.114-.562-.328-1.07-.9-1.07H5.106M7.5 14.25L5.106 5.272M6 18.75a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z"/></svg>
                     السلة
                     <span id="cart-badge" class="absolute -top-1 -left-1">
@@ -115,12 +137,12 @@
         {% else %}
 
             <a href="{% url 'accounts:login' %}"
-               class="text-sm border border-blue-600 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-50 transition">
+               class="text-sm border border-white/70 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition">
                 تسجيل الدخول
             </a>
 
             <a href="{% url 'accounts:register' %}"
-               class="text-sm bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+               class="text-sm bg-white text-primary-700 hover:bg-primary-50 px-4 py-2 rounded-lg transition font-semibold">
                 إنشاء حساب جديد
             </a>
 
@@ -130,6 +152,8 @@
 </nav>
 
 {% block content %}{% endblock %}
+
+{% include 'partials/toast_system.html' %}
 
 {% block extra_js %}{% endblock %}
 </body>

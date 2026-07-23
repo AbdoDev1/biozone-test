@@ -4,8 +4,6 @@
 
 {% block content %}
 
-{% include 'orders/partials/messages.html' %}
-
 <div class="max-w-4xl mx-auto px-4 py-8">
 
     {% if not carts %}
@@ -21,23 +19,26 @@
     <!-- شريط السلال: تبديل بينهم أو حذف أي واحدة مباشرة -->
     <div class="flex items-center gap-2 mb-4 overflow-x-auto pb-1">
       {% for c in carts %}
-      <div class="flex items-center rounded-xl overflow-hidden border shrink-0 {% if c.is_active %}border-blue-600{% else %}border-gray-200{% endif %}">
+      <div class="flex items-center rounded-xl overflow-hidden border shrink-0 {% if c.is_active %}border-primary-600{% else %}border-gray-200{% endif %}">
         <form method="POST" action="{% url 'orders:cart_switch' c.pk %}">
           {% csrf_token %}
           <button type="submit" {% if c.is_active %}disabled{% endif %}
-                  class="px-4 py-2 text-sm font-medium whitespace-nowrap transition
-                         {% if c.is_active %}bg-blue-600 text-white cursor-default{% else %}bg-white text-gray-600 hover:bg-gray-50{% endif %}">
-            {% if c.name %}{{ c.name }}{% else %}سلة {{ forloop.counter }}{% endif %}
-            <span class="opacity-70">({{ c.items.count }})</span>
+                  class="flex items-center gap-2 pr-3 pl-3.5 py-2 text-sm font-medium whitespace-nowrap transition
+                         {% if c.is_active %}bg-primary-600 text-white cursor-default{% else %}bg-white text-gray-600 hover:bg-gray-50{% endif %}">
+            <span>{% if c.name %}{{ c.name }}{% else %}سلة {{ forloop.counter }}{% endif %}</span>
+            <span class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full text-[11px] font-semibold
+                         {% if c.is_active %}bg-white/20 text-white{% else %}bg-gray-100 text-gray-500{% endif %}">
+                {{ c.items.count }}
+            </span>
           </button>
         </form>
         <form method="POST" action="{% url 'orders:cart_delete' c.pk %}"
-              onsubmit="return confirm('هل أنت متأكد من حذف هذه الطلبية بكل أصنافها؟');">
+              data-confirm="هل أنت متأكد من حذف هذه الطلبية بكل أصنافها؟" data-confirm-type="error">
           {% csrf_token %}
           <button type="submit" title="حذف هذه الطلبية"
-                  class="px-2.5 py-2 text-xs transition
-                         {% if c.is_active %}bg-blue-700 text-blue-100 hover:bg-blue-800{% else %}bg-white text-gray-400 hover:text-red-500{% endif %}">
-            ✕
+                  class="flex items-center justify-center w-8 py-2 border-r transition
+                         {% if c.is_active %}bg-primary-700 border-primary-500 text-primary-100 hover:bg-primary-800{% else %}bg-white border-gray-100 text-gray-400 hover:text-red-500 hover:bg-red-50{% endif %}">
+            <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
           </button>
         </form>
       </div>
@@ -46,7 +47,7 @@
       <form method="POST" action="{% url 'orders:cart_new' %}" class="shrink-0">
         {% csrf_token %}
         <button type="submit"
-                class="px-4 py-2 rounded-xl border border-dashed border-gray-300 text-sm text-gray-500 hover:border-blue-400 hover:text-blue-600 transition whitespace-nowrap inline-flex items-center gap-1">
+                class="px-4 py-2 rounded-xl border border-dashed border-gray-300 text-sm text-gray-500 hover:border-primary-400 hover:text-primary-600 transition whitespace-nowrap inline-flex items-center gap-1">
           <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
           طلبية جديدة
         </button>
