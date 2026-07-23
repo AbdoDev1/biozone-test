@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+
+{% block title %}أصناف طلب #{{ order.pk }} — Biozone{% endblock %}
+
+{% block content %}
+
+{% include 'orders/partials/messages.html' %}
+
+<div class="max-w-2xl mx-auto px-4 py-8">
+    <div class="bg-white rounded-2xl shadow-sm p-6">
+      <div class="flex justify-between items-center mb-6">
+        <h1 class="text-xl font-bold text-gray-800">أصناف طلب #{{ order.pk }}</h1>
+        <span class="text-sm text-gray-400">صفحة {{ page_obj.number }} من {{ page_obj.paginator.num_pages }}</span>
+      </div>
+
+      <div class="space-y-3 mb-6">
+        {% for item in items %}
+        <div class="flex justify-between text-sm border-b pb-3">
+          <div>
+            <p class="font-medium text-gray-800">{{ item.product_unit.product.name_ar }}</p>
+            <p class="text-gray-400 text-xs">{{ item.product_unit.name }} × {{ item.quantity }}</p>
+            <p class="text-gray-400 text-xs mt-0.5">
+              السعر: {{ item.public_price }} ج.م
+              {% if item.discount_percent %}<span class="text-green-600">(خصم {{ item.discount_percent }}%)</span>{% endif %}
+            </p>
+            {% if item.is_amended %}
+            <p class="text-xs mt-1 {% if item.amendment_direction == 'increase' %}text-green-700{% else %}text-orange-600{% endif %}">
+              {% if item.amendment_direction == 'increase' %}
+                ▲ تمت زيادة الكمية من {{ item.original_quantity }} إلى {{ item.quantity }}
+              {% elif item.amendment_direction == 'decrease' %}
+                ▼ تم تقليل الكمية من {{ item.original_quantity }} إلى {{ item.quantity }}
+              {% else %}
+                تم تعديل سعر الوحدة من {{ item.original_unit_price }} ج.م
+              {% endif %}
+              (الإجمالي السابق: {{ item.original_subtotal }} ج.م)
+            </p>
+            {% endif %}
+          </div>
+          <span class="font-semibold text-gray-800">{{ item.subtotal }} ج.م</span>
+        </div>
+        {% endfor %}
+      </div>
+
+      {% if page_obj.paginator.num_pages > 1 %}
+      <div class="flex items-center justify-center gap-2 mb-6 text-sm">
+          {% if page_obj.has_previous %}
+          <a href="?page={{ page_obj.previous_page_number }}"
+             class="px-3 py-2 rounded-lg bg-gray-50 hover:bg-blue-50 text-gray-600">السابق</a>
+          {% endif %}
+          <span class="text-gray-500 px-2">صفحة {{ page_obj.number }} من {{ page_obj.paginator.num_pages }}</span>
+          {% if page_obj.has_next %}
+          <a href="?page={{ page_obj.next_page_number }}"
+             class="px-3 py-2 rounded-lg bg-gray-50 hover:bg-blue-50 text-gray-600">التالي</a>
+          {% endif %}
+      </div>
+      {% endif %}
+
+      <div class="flex justify-between font-bold text-lg border-t pt-4 mb-6">
+        <span>الإجمالي الكلي للطلب</span>
+        <span class="text-blue-700">{{ order.total }} ج.م</span>
+      </div>
+
+      <a href="{% url 'orders:order_detail' order.pk %}"
+         class="text-sm text-blue-600 hover:underline">← الرجوع لتفاصيل الطلب</a>
+    </div>
+</div>
+
+{% endblock %}

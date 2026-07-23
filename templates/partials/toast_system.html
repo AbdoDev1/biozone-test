@@ -1,0 +1,162 @@
+{% comment %}
+نظام إشعارات موحّد (Toast) للنظام كله — يستبدل:
+  1) بانر رسائل Django الثابت في الصفحة (staff + client).
+  2) أي window.confirm()/alert() في السيستم (شكل غير احترافي وغير موحّد
+     بصريًا مع باقي النظام) — بديله هنا هو showConfirmToast() بنفس شكل
+     التوست، أعلى الصفحة، وما يختفيش لوحده لحد ما المستخدم يقرر.
+  3) إشعار "وارد جديد" فوري لما العميل يفتح المتجر لأول مرة في الجلسة.
+
+الاستخدام في أي مكان تاني بالنظام:
+  - showToast("تم الحفظ بنجاح", {type: "success"})
+  - showConfirmToast("هل أنت متأكد؟", function(){ ... }, {type: "warning"})
+  - أو حط data-confirm="نص السؤال" على أي <form> بدل onsubmit="return confirm(...)"
+    وهيتاعترض تلقائيًا.
+{% endcomment %}
+<div id="toast-stack" class="fixed top-4 inset-x-0 z-[9999] flex flex-col items-center gap-2 px-4 pointer-events-none"></div>
+
+<script>
+(function () {
+    const stack = document.getElementById('toast-stack');
+    if (!stack) return;
+
+    const STYLES = {
+        success: { bar: 'bg-emerald-500', icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>' },
+        error:   { bar: 'bg-red-500',    icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>' },
+        warning: { bar: 'bg-amber-500',  icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>' },
+        info:    { bar: 'bg-primary-600',icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/></svg>' },
+    };
+
+    function buildShell(style) {
+        const el = document.createElement('div');
+        el.className = 'pointer-events-auto w-full max-w-sm bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden opacity-0 -translate-y-3 transition-all duration-300';
+        return el;
+    }
+
+    /**
+     * توست إعلامي بيختفي لوحده بعد مدة — بديل أي alert()/رسالة ثابتة.
+     * showToast(message, { type: 'success'|'error'|'warning'|'info', duration: ms, actionHref, actionLabel })
+     */
+    window.showToast = function (message, opts) {
+        opts = opts || {};
+        const type = opts.type || 'info';
+        const duration = opts.duration === undefined ? 5000 : opts.duration;
+        const style = STYLES[type] || STYLES.info;
+
+        const el = buildShell(style);
+        el.innerHTML =
+            '<div class="flex items-start gap-3 p-4">' +
+                '<span class="shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white ' + style.bar + '">' + style.icon + '</span>' +
+                '<div class="min-w-0 flex-1 pt-0.5">' +
+                    '<p class="text-sm text-gray-800 leading-snug">' + message + '</p>' +
+                    (opts.actionHref ? '<a href="' + opts.actionHref + '" class="inline-block mt-1.5 text-xs font-semibold text-primary-600 hover:underline">' + (opts.actionLabel || 'عرض') + '</a>' : '') +
+                '</div>' +
+                '<button class="shrink-0 text-gray-300 hover:text-gray-500" aria-label="إغلاق">' +
+                    '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>' +
+                '</button>' +
+            '</div>' +
+            (duration > 0 ? '<div class="h-0.5 ' + style.bar + ' opacity-40" style="animation: toast-shrink ' + duration + 'ms linear forwards"></div>' : '');
+
+        stack.appendChild(el);
+        requestAnimationFrame(() => el.classList.remove('opacity-0', '-translate-y-3'));
+
+        let timer = duration > 0 ? setTimeout(close, duration) : null;
+        function close() {
+            clearTimeout(timer);
+            el.classList.add('opacity-0', '-translate-y-3');
+            setTimeout(() => el.remove(), 300);
+        }
+        el.querySelector('button[aria-label="إغلاق"]').addEventListener('click', close);
+        return close;
+    };
+
+    /**
+     * بديل احترافي لـ window.confirm() — نفس مكان وهيئة التوست، لكنه
+     * بينتظر قرار المستخدم (تأكيد/إلغاء) بدل ما يختفي لوحده.
+     * showConfirmToast(message, onConfirm, { type })
+     */
+    window.showConfirmToast = function (message, onConfirm, opts) {
+        opts = opts || {};
+        const style = STYLES[opts.type || 'warning'] || STYLES.warning;
+        const el = buildShell(style);
+        el.innerHTML =
+            '<div class="flex items-start gap-3 p-4">' +
+                '<span class="shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white ' + style.bar + '">' + style.icon + '</span>' +
+                '<div class="min-w-0 flex-1 pt-0.5">' +
+                    '<p class="text-sm text-gray-800 leading-snug">' + message + '</p>' +
+                    '<div class="flex items-center gap-2 mt-3">' +
+                        '<button data-act="confirm" class="text-xs font-semibold text-white ' + style.bar + ' hover:opacity-90 px-3 py-1.5 rounded-lg">تأكيد</button>' +
+                        '<button data-act="cancel" class="text-xs font-semibold text-gray-500 hover:text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-50">إلغاء</button>' +
+                    '</div>' +
+                '</div>' +
+            '</div>';
+        stack.appendChild(el);
+        requestAnimationFrame(() => el.classList.remove('opacity-0', '-translate-y-3'));
+
+        function close() {
+            el.classList.add('opacity-0', '-translate-y-3');
+            setTimeout(() => el.remove(), 300);
+        }
+        el.querySelector('[data-act="cancel"]').addEventListener('click', close);
+        el.querySelector('[data-act="confirm"]').addEventListener('click', function () {
+            close();
+            onConfirm();
+        });
+    };
+
+    // اعتراض أي <form data-confirm="..."> بدل onsubmit="return confirm(...)"
+    document.addEventListener('submit', function (e) {
+        const form = e.target;
+        if (form && form.hasAttribute && form.hasAttribute('data-confirm') && !form.dataset.confirmed) {
+            e.preventDefault();
+            showConfirmToast(form.getAttribute('data-confirm'), function () {
+                form.dataset.confirmed = '1';
+                if (form.requestSubmit) { form.requestSubmit(); } else { form.submit(); }
+            }, { type: form.dataset.confirmType || 'warning' });
+        }
+    }, true);
+
+    {% if messages %}
+    document.addEventListener('DOMContentLoaded', function () {
+        {% for message in messages %}
+        showToast("{{ message|escapejs }}", { type: "{{ message.tags|default:'info'|escapejs }}" });
+        {% endfor %}
+    });
+    {% endif %}
+
+    // تنبيه "وارد جديد" أول ما العميل يفتح الموقع (مرة واحدة في الجلسة) —
+    // نفس الإشعار ده أصلاً موجود في قائمة الإشعارات (جرس الإشعارات)،
+    // التوست هنا بس تنبيه فوري مؤقت بيلفت نظره ليه.
+    document.addEventListener('DOMContentLoaded', function () {
+        if (window.__newArrivalsToast) {
+            const n = window.__newArrivalsToast;
+            const seenKey = 'biozone_new_arrivals_seen_' + n.id;
+            if (!sessionStorage.getItem(seenKey)) {
+                sessionStorage.setItem(seenKey, '1');
+                showToast(
+                    '🆕 <strong>' + n.title + '</strong>' + (n.message ? '<br><span class="text-gray-500">' + n.message + '</span>' : ''),
+                    { type: 'info', duration: 8000, actionHref: n.url, actionLabel: 'تصفح الوارد الجديد' }
+                );
+            }
+        }
+    });
+})();
+</script>
+<style>
+@keyframes toast-shrink { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+#toast-stack .h-0\.5 { transform-origin: right; }
+</style>
+
+{% if request.user.is_authenticated and request.user.role == 'CLIENT' %}
+{% for n in nav_notifications %}
+{% if n.kind == 'NEW_ARRIVALS' and not n.is_read %}
+<script>
+    window.__newArrivalsToast = window.__newArrivalsToast || {
+        id: {{ n.pk }},
+        title: "{{ n.title|escapejs }}",
+        message: "{{ n.message|escapejs }}",
+        url: "{% url 'store:new_arrivals' %}"
+    };
+</script>
+{% endif %}
+{% endfor %}
+{% endif %}

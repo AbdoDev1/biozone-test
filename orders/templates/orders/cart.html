@@ -7,7 +7,61 @@
 {% include 'orders/partials/messages.html' %}
 
 <div class="max-w-4xl mx-auto px-4 py-8">
-    <h1 class="text-2xl font-bold text-gray-800 mb-6">سلة المشتريات</h1>
+
+    {% if not carts %}
+    <!-- مفيش أي سلة مفتوحة أصلاً عند العميل -->
+    <div class="text-center py-20 text-gray-400">
+      <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 1.994-4.457 2.781-6.987a1.125 1.125 0 00-1.087-1.437H5.106M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z"/></svg>
+      <p class="text-xl mb-4">مفيش طلبيات مفتوحة حاليًا</p>
+      <a href="{% url 'store:home' %}" class="text-blue-600 hover:underline text-sm">تصفح المنتجات الآن</a>
+    </div>
+
+    {% else %}
+
+    <!-- شريط السلال: تبديل بينهم أو حذف أي واحدة مباشرة -->
+    <div class="flex items-center gap-2 mb-4 overflow-x-auto pb-1">
+      {% for c in carts %}
+      <div class="flex items-center rounded-xl overflow-hidden border shrink-0 {% if c.is_active %}border-blue-600{% else %}border-gray-200{% endif %}">
+        <form method="POST" action="{% url 'orders:cart_switch' c.pk %}">
+          {% csrf_token %}
+          <button type="submit" {% if c.is_active %}disabled{% endif %}
+                  class="px-4 py-2 text-sm font-medium whitespace-nowrap transition
+                         {% if c.is_active %}bg-blue-600 text-white cursor-default{% else %}bg-white text-gray-600 hover:bg-gray-50{% endif %}">
+            {% if c.name %}{{ c.name }}{% else %}سلة {{ forloop.counter }}{% endif %}
+            <span class="opacity-70">({{ c.items.count }})</span>
+          </button>
+        </form>
+        <form method="POST" action="{% url 'orders:cart_delete' c.pk %}"
+              onsubmit="return confirm('هل أنت متأكد من حذف هذه الطلبية بكل أصنافها؟');">
+          {% csrf_token %}
+          <button type="submit" title="حذف هذه الطلبية"
+                  class="px-2.5 py-2 text-xs transition
+                         {% if c.is_active %}bg-blue-700 text-blue-100 hover:bg-blue-800{% else %}bg-white text-gray-400 hover:text-red-500{% endif %}">
+            ✕
+          </button>
+        </form>
+      </div>
+      {% endfor %}
+
+      <form method="POST" action="{% url 'orders:cart_new' %}" class="shrink-0">
+        {% csrf_token %}
+        <button type="submit"
+                class="px-4 py-2 rounded-xl border border-dashed border-gray-300 text-sm text-gray-500 hover:border-blue-400 hover:text-blue-600 transition whitespace-nowrap inline-flex items-center gap-1">
+          <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+          طلبية جديدة
+        </button>
+      </form>
+    </div>
+
+    <!-- اسم الطلبية النشطة -->
+    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-6">
+      <form method="POST" action="{% url 'orders:cart_rename' active_cart.pk %}" class="flex items-center gap-2">
+        {% csrf_token %}
+        <input type="text" name="name" value="{{ active_cart.name }}" placeholder="اسم الطلبية (اختياري)"
+               class="w-48 border border-gray-200 rounded-lg px-3 py-1.5 text-sm outline-none focus:border-blue-400">
+        <button type="submit" class="text-xs text-blue-600 hover:underline">حفظ الاسم</button>
+      </form>
+    </div>
 
     {% if cart_items %}
     {% if below_min %}
@@ -94,9 +148,11 @@
     {% else %}
     <div class="text-center py-20 text-gray-400">
       <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 1.994-4.457 2.781-6.987a1.125 1.125 0 00-1.087-1.437H5.106M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z"/></svg>
-      <p class="text-xl mb-4">سلة المشتريات فارغة</p>
+      <p class="text-xl mb-4">هذه الطلبية فارغة</p>
       <a href="{% url 'store:home' %}" class="text-blue-600 hover:underline text-sm">تصفح المنتجات الآن</a>
     </div>
+    {% endif %}
+
     {% endif %}
 </div>
 

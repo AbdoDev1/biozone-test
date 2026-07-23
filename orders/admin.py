@@ -1,5 +1,21 @@
 from django.contrib import admin
-from .models import Order, OrderItem, OrderLog, SiteConfig
+from .models import Order, OrderItem, OrderLog, SiteConfig, Cart, CartItem
+
+
+class CartItemInline(admin.TabularInline):
+    model = CartItem
+    extra = 0
+    readonly_fields = ('product_unit', 'quantity', 'added_at')
+    can_delete = False
+
+
+@admin.register(Cart)
+class CartAdmin(admin.ModelAdmin):
+    list_display = ('id', 'client', 'display_name', 'is_active', 'updated_at')
+    list_filter = ('is_active',)
+    search_fields = ('id', 'client__username', 'name')
+    inlines = [CartItemInline]
+    readonly_fields = ('created_at', 'updated_at')
 
 
 class OrderItemInline(admin.TabularInline):

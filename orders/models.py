@@ -330,6 +330,87 @@ class OrderItem(models.Model):
         return None
 
 
+class Cart(models.Model):
+    """
+    سلة مشتريات — بقت متخزنة في الداتابيز (مش السيشن) عشان تفضل موجودة
+    حتى لو العميل قفل المتصفح أو غيّر جهازه، وعشان نسمح للعميل يفتح أكتر
+    من سلة في نفس الوقت (مثلاً "طلبية عادية" و"طلبية عاجلة") من غير ما
+    إضافة صنف في واحدة تأثر على التانية، ويرجع يكمل أي سلة وهو مطمن إنها
+    محفوظة له.
+
+    في أي لحظة، سلة واحدة بس من سلال العميل تبقى "نشطة" (is_active) —
+    هي اللي بتتعرض له افتراضيًا في صفحة السلة، وهي اللي بيتم التعامل
+    معاها عند "أضف للسلة". العميل يقدر يبدّل السلة النشطة من نفس الصفحة.
+
+    مهم: مفيش أي سلة بتتنشئ تلقائيًا لمجرد ما العميل يفتح صفحة السلة —
+    السلة الأولى بتتنشئ بس لحظة إضافة أول صنف فعليًا (get_or_create_active)،
+    عشان العميل يعرف بوضوح إنه مفيش عنده أي طلبية مفتوحة لو مسحهم كلهم.
+    """
+    client     = models.ForeignKey(User, on_delete=models.CASCADE, related_name='order_carts')
+    name       = models.CharField(max_length=100, blank=True, verbose_name='اسم الطلبية')
+    is_active  = models.BooleanField(default=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'سلة'
+        verbose_name_plural = 'السلال'
+        ordering = ['-updated_at']
+
+    def __str__(self):
+        return f'{self.display_name} — {self.client.username}'
+
+    @property
+    def display_name(self):
+        return self.name or f'سلة بدون اسم #{self.pk}'
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # سلة واحدة نشطة بس لكل عميل — أي سلة تتفعّل تلغي تفعيل الباقي.
+        if self.is_active:
+            Cart.objects.filter(client=self.client, is_active=True).exclude(pk=self.pk).update(is_active=False)
+
+    @classmethod
+    def get_active(cls, client):
+        """يرجع السلة النشطة للعميل، أو None لو مفيش عنده أي سلة مفتوحة أصلًا (بدون إنشاء أي حاجة)."""
+        cart = cls.objects.filter(client=client, is_active=True).first()
+        if cart is not None:
+            return cart
+        return cls.objects.filter(client=client).order_by('-updated_at').first()
+
+    @classmethod
+    def get_or_create_active(cls, client):
+        """
+        زي get_active، لكن لو العميل مالوش أي سلة خالص، بينشئ واحدة جديدة —
+        يُستخدم بس لحظة إضافة أول صنف فعليًا (orders.cart.Cart.add)، مش عند
+        مجرد فتح صفحة السلة أو حذف سلة موجودة.
+        """
+        cart = cls.get_active(client)
+        if cart is not None:
+            if not cart.is_active:
+                cart.is_active = True
+                cart.save(update_fields=['is_active'])
+            return cart
+        return cls.objects.create(client=client, is_active=True)
+
+
+class CartItem(models.Model):
+    cart         = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='items')
+    product_unit = models.ForeignKey(ProductUnit, on_delete=models.CASCADE)
+    quantity     = models.PositiveIntegerField(default=1)
+    added_at     = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'صنف في السلة'
+        verbose_name_plural = 'أصناف السلة'
+        constraints = [
+            models.UniqueConstraint(fields=['cart', 'product_unit'], name='unique_product_unit_per_cart'),
+        ]
+
+    def __str__(self):
+        return f'{self.product_unit.name} x{self.quantity}'
+
+
 class OrderLog(models.Model):
     """
     سجل عمليات الطلب — كل حدث بيحصل على الطلب (إنشاء، تغيير حالة، ملاحظة).

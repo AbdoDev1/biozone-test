@@ -107,6 +107,7 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'notifications.context_processors.notifications',
                 'orders.context_processors.site_config',
+                'orders.context_processors.cart_count',
                 'store.context_processors.new_arrivals_count',
             ],
         },

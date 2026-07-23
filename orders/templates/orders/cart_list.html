@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block title %}سلالي — Biozone{% endblock %}
+
+{% block content %}
+
+{% include 'orders/partials/messages.html' %}
+
+<div class="max-w-3xl mx-auto px-4 py-8">
+    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
+      <h1 class="text-2xl font-bold text-gray-800">سلالي</h1>
+      <p class="text-sm text-gray-400">تقدر تفتح أكتر من طلبية في نفس الوقت، وتكمّل أي واحدة فيهم وقت ما تحب.</p>
+    </div>
+
+    <form method="POST" action="{% url 'orders:cart_new' %}" class="bg-white rounded-2xl shadow-sm p-5 mb-6 flex flex-col sm:flex-row gap-3">
+      {% csrf_token %}
+      <input type="text" name="name" placeholder="اسم الطلبية الجديدة (اختياري)"
+             class="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-blue-400">
+      <button type="submit"
+              class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2 rounded-xl transition inline-flex items-center justify-center gap-1.5">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+        ابدأ طلبية جديدة
+      </button>
+    </form>
+
+    {% if carts %}
+    <div class="space-y-3">
+      {% for cart_obj in carts %}
+      <div class="bg-white rounded-2xl shadow-sm p-5 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+        <div class="flex-1">
+          <div class="flex items-center gap-2 mb-1">
+            <p class="font-bold text-gray-800">{{ cart_obj.display_name }}</p>
+            {% if cart_obj.is_active %}
+            <span class="px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-100 text-blue-700">نشطة الآن</span>
+            {% endif %}
+          </div>
+          <p class="text-xs text-gray-400">
+            {{ cart_obj.items.count }} صنف — آخر تحديث {{ cart_obj.updated_at|date:"d/m/Y — H:i" }}
+          </p>
+        </div>
+
+        <div class="flex items-center gap-2 flex-wrap">
+          <form method="POST" action="{% url 'orders:cart_rename' cart_obj.pk %}" class="flex items-center gap-1.5">
+            {% csrf_token %}
+            <input type="text" name="name" value="{{ cart_obj.name }}" placeholder="اسم الطلبية"
+                   class="w-32 border border-gray-200 rounded-lg px-2 py-1.5 text-xs outline-none focus:border-blue-400">
+            <button type="submit" class="text-xs text-blue-600 hover:underline">حفظ الاسم</button>
+          </form>
+
+          {% if not cart_obj.is_active %}
+          <form method="POST" action="{% url 'orders:cart_switch' cart_obj.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="bg-gray-800 hover:bg-gray-900 text-white text-xs font-semibold px-4 py-2 rounded-lg transition">
+              التبديل لها
+            </button>
+          </form>
+          {% endif %}
+
+          <form method="POST" action="{% url 'orders:cart_delete' cart_obj.pk %}"
+                onsubmit="return confirm('هل أنت متأكد من حذف هذه الطلبية بكل أصنافها؟');">
+            {% csrf_token %}
+            <button type="submit" class="bg-white border border-red-300 text-red-600 text-xs font-semibold px-4 py-2 rounded-lg hover:bg-red-50 transition">
+              حذف
+            </button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="bg-white rounded-2xl shadow-sm p-10 text-center text-gray-400">
+      مفيش طلبيات محفوظة حاليًا.
+    </div>
+    {% endif %}
+
+    <div class="mt-6">
+      <a href="{% url 'orders:cart' %}" class="text-sm text-blue-600 hover:underline">← الرجوع للسلة النشطة</a>
+    </div>
+</div>
+
+{% endblock %}

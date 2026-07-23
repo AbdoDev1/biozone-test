@@ -1,19 +1,36 @@
+from django.db.models import F
 from products.models import ProductUnit
+from .models import Cart as CartModel, CartItem
 
 
 MAX_ITEM_QUANTITY = 10_000  # سقف منطقي لمنع كمية غير منطقية (مثلاً مليار قطعة) من العالق في السلة
 
 
 class Cart:
-    def __init__(self, request):
-        self.session = request.session
-        self.cart = self.session.setdefault("cart", {})
-        # العميل الحالي — بيحدد السعر والوحدة المسموح بيها تلقائيًا (جملة=كرتونة
-        # بس، قطاعي=قطعة بس)، مفيش اختيار وضع شراء يدوي خالص.
-        self.client = request.user if request.user.is_authenticated else None
+    """
+    غلاف (wrapper) حوالين السلة النشطة للعميل — بقت متخزنة في الداتابيز
+    (orders.models.Cart/CartItem) مش في السيشن، عشان العميل يقدر يفتح أكتر
+    من سلة (طلبية) في نفس الوقت ويرجع يكمل أي واحدة فيهم وقت ما يحب، بدل
+    ما يبقى في سلة واحدة بس بتتفضى بمجرد إرسال الطلب.
 
-    def save(self):
-        self.session.modified = True
+    مهم: الكونستركتور (__init__) مبيعملش أي إنشاء في الداتابيز — بيقرا بس
+    السلة النشطة الحالية لو موجودة. الإنشاء الفعلي (لو العميل مالوش أي سلة
+    خالص) بيحصل جوه add()/set_quantity() بس، لحظة ما فعليًا بيضيف صنف —
+    عشان صفحة السلة تقدر تعرض "مفيش طلبيات مفتوحة" بوضوح لو العميل مسحهم
+    كلهم، بدل ما تلاقي سلة فاضية اتنشأت لوحدها من غير ما هو يطلب كده.
+
+    الواجهة العامة (add/set_quantity/increase/decrease/remove/clear/
+    get_items/get_total/__len__) فضلت زي ما هي عشان orders/views.py يفضل
+    شغال من غير تعديل — الفرق كله مخفي جوه الكلاس ده.
+    """
+
+    def __init__(self, request):
+        self.client = request.user if request.user.is_authenticated else None
+        self._cart_obj = CartModel.get_active(self.client) if self.client else None
+
+    @property
+    def cart_obj(self):
+        return self._cart_obj
 
     def _is_allowed_unit(self, unit):
         """
@@ -37,7 +54,8 @@ class Cart:
 
     def add(self, unit_id, quantity=1):
         """يرجع True لو الصنف اتضاف فعلاً، False لو الوحدة غير مسموحة أو الصنف غير متوفر."""
-        unit_id = str(unit_id)
+        if self.client is None:
+            return False
         try:
             unit = ProductUnit.objects.select_related("product", "product__inventory").get(pk=unit_id)
         except ProductUnit.DoesNotExist:
@@ -45,17 +63,23 @@ class Cart:
         if not self._is_allowed_unit(unit) or not self._is_in_stock(unit):
             return False
 
-        if unit_id not in self.cart:
-            self.cart[unit_id] = {"quantity": 0}
+        # السلة بتتنشئ هنا بس — أول لحظة صنف فعلي بيتضاف بنجاح.
+        if self._cart_obj is None:
+            self._cart_obj = CartModel.get_or_create_active(self.client)
 
-        new_quantity = self.cart[unit_id]["quantity"] + quantity
-        self.cart[unit_id]["quantity"] = max(1, min(new_quantity, MAX_ITEM_QUANTITY))
-        self.save()
+        item, _created = CartItem.objects.get_or_create(
+            cart=self._cart_obj, product_unit=unit, defaults={"quantity": 0},
+        )
+        new_quantity = item.quantity + quantity
+        item.quantity = max(1, min(new_quantity, MAX_ITEM_QUANTITY))
+        item.save(update_fields=["quantity"])
+        self._cart_obj.save(update_fields=["updated_at"])
         return True
 
     def set_quantity(self, unit_id, quantity):
         """يرجع True لو الكمية اتحدّثت فعلاً، False لو الوحدة غير مسموحة أو الصنف غير متوفر."""
-        unit_id = str(unit_id)
+        if self.client is None:
+            return False
 
         if quantity <= 0:
             self.remove(unit_id)
@@ -68,61 +92,76 @@ class Cart:
         if not self._is_allowed_unit(unit) or not self._is_in_stock(unit):
             return False
 
-        self.cart[unit_id] = {"quantity": min(quantity, MAX_ITEM_QUANTITY)}
-        self.save()
+        if self._cart_obj is None:
+            self._cart_obj = CartModel.get_or_create_active(self.client)
+
+        CartItem.objects.update_or_create(
+            cart=self._cart_obj, product_unit=unit,
+            defaults={"quantity": min(quantity, MAX_ITEM_QUANTITY)},
+        )
+        self._cart_obj.save(update_fields=["updated_at"])
         return True
 
-    def increase(self, unit_id):
-        unit_id = str(unit_id)
+    def get_quantity(self, unit_id):
+        """كمية صنف معيّن في السلة النشطة الحالية، أو 0 لو مش موجود/مفيش سلة أصلًا."""
+        if self._cart_obj is None:
+            return 0
+        item = CartItem.objects.filter(cart=self._cart_obj, product_unit_id=unit_id).first()
+        return item.quantity if item else 0
 
-        if unit_id in self.cart:
-            self.cart[unit_id]["quantity"] += 1
-            self.save()
+    def increase(self, unit_id):
+        if self._cart_obj is None:
+            return
+        updated = CartItem.objects.filter(cart=self._cart_obj, product_unit_id=unit_id).update(
+            quantity=F("quantity") + 1,
+        )
+        if updated:
+            self._cart_obj.save(update_fields=["updated_at"])
 
     def decrease(self, unit_id):
-        unit_id = str(unit_id)
-
-        if unit_id in self.cart:
-            self.cart[unit_id]["quantity"] -= 1
-
-            if self.cart[unit_id]["quantity"] <= 0:
-                self.remove(unit_id)
-            else:
-                self.save()
+        if self._cart_obj is None:
+            return
+        try:
+            item = CartItem.objects.get(cart=self._cart_obj, product_unit_id=unit_id)
+        except CartItem.DoesNotExist:
+            return
+        item.quantity -= 1
+        if item.quantity <= 0:
+            item.delete()
+        else:
+            item.save(update_fields=["quantity"])
+        self._cart_obj.save(update_fields=["updated_at"])
 
     def remove(self, unit_id):
-        unit_id = str(unit_id)
-
-        if unit_id in self.cart:
-            del self.cart[unit_id]
-            self.save()
+        if self._cart_obj is None:
+            return
+        deleted, _ = CartItem.objects.filter(cart=self._cart_obj, product_unit_id=unit_id).delete()
+        if deleted:
+            self._cart_obj.save(update_fields=["updated_at"])
 
     def clear(self):
-        self.cart = {}
-        self.session["cart"] = {}
-        self.save()
+        if self._cart_obj is None:
+            return
+        self._cart_obj.items.all().delete()
 
     def __len__(self):
-        return sum(item["quantity"] for item in self.cart.values())
+        if self._cart_obj is None:
+            return 0
+        return sum(item.quantity for item in self._cart_obj.items.all())
 
     def count_items(self):
-        return len(self.cart)
+        if self._cart_obj is None:
+            return 0
+        return self._cart_obj.items.count()
 
     def get_items(self):
-        unit_ids = self.cart.keys()
-
-        units = (
-            ProductUnit.objects
-            .filter(pk__in=unit_ids)
-            .select_related("product")
-        )
+        if self._cart_obj is None:
+            return []
 
         items = []
-
-        for unit in units:
-            uid = str(unit.pk)
-            entry = self.cart[uid]
-            quantity = entry.get("quantity", 0)
+        for cart_item in self._cart_obj.items.select_related("product_unit", "product_unit__product"):
+            unit = cart_item.product_unit
+            quantity = cart_item.quantity
             if quantity <= 0:
                 continue
 

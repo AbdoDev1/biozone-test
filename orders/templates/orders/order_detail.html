@@ -70,37 +70,17 @@
         </button>
       </form>
       {% endif %}
-      <div class="space-y-3 mb-6">
-        {% for item in order.items.all %}
-        <div class="flex justify-between text-sm border-b pb-3">
-          <div>
-            <p class="font-medium text-gray-800">{{ item.product_unit.product.name_ar }}</p>
-            <p class="text-gray-400 text-xs">{{ item.product_unit.name }} × {{ item.quantity }}</p>
-            <p class="text-gray-400 text-xs mt-0.5">
-              السعر: {{ item.public_price }} ج.م
-              {% if item.discount_percent %}<span class="text-green-600">(خصم {{ item.discount_percent }}%)</span>{% endif %}
-            </p>
-            {% if item.is_amended %}
-            <p class="text-xs mt-1 {% if item.amendment_direction == 'increase' %}text-green-700{% else %}text-orange-600{% endif %}">
-              {% if item.amendment_direction == 'increase' %}
-                ▲ تمت زيادة الكمية من {{ item.original_quantity }} إلى {{ item.quantity }}
-              {% elif item.amendment_direction == 'decrease' %}
-                ▼ تم تقليل الكمية من {{ item.original_quantity }} إلى {{ item.quantity }}
-              {% else %}
-                تم تعديل سعر الوحدة من {{ item.original_unit_price }} ج.م
-              {% endif %}
-              (الإجمالي السابق: {{ item.original_subtotal }} ج.م)
-            </p>
-            {% endif %}
-          </div>
-          <span class="font-semibold text-gray-800">{{ item.subtotal }} ج.م</span>
-        </div>
-        {% endfor %}
-        <div class="flex justify-between font-bold text-lg pt-2">
-          <span>الإجمالي</span>
-          <span class="text-blue-700">{{ order.total }} ج.م</span>
-        </div>
-      </div>
+      <a href="{% url 'orders:order_items' order.pk %}"
+         class="flex justify-between items-center bg-gray-50 hover:bg-gray-100 transition rounded-xl p-4 mb-6 text-sm">
+        <span class="font-medium text-gray-700 inline-flex items-center gap-1.5">
+          <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>
+          عرض أصناف الطلب ({{ items_count }} صنف)
+        </span>
+        <span class="flex items-center gap-3">
+          <span class="font-bold text-blue-700">{{ order.total }} ج.م</span>
+          <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/></svg>
+        </span>
+      </a>
 
       {% if order.notes %}
       <div class="bg-gray-50 rounded-xl p-4 text-sm text-gray-600 mb-6">

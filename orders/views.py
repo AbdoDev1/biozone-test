@@ -10,7 +10,7 @@ from django.db import transaction
 from products.models import ProductUnit
 from inventory.models import Inventory
 from .cart import Cart
-from .models import Order, OrderItem, SiteConfig
+from .models import Order, OrderItem, SiteConfig, Cart as CartModel
 
 
 def client_required(view_func):
@@ -57,10 +57,10 @@ def cart_add(request, unit_id):
         # حاجة اتلغت — مع إن الإضافة فعليًا نجحت والسلة اتحدّثت. الـ stepper
         # ده هو نفسه المستخدم في صفحة تفاصيل المنتج، بيعرض الكمية الحقيقية
         # وبيفضل واضح للعميل قد إيه في السلة فعليًا.
-        entry = cart.cart.get(str(unit_id), {})
+        entry_quantity = cart.get_quantity(unit_id)
         response = render(request, "orders/partials/cart_controls.html", {
             "unit_id": unit_id,
-            "quantity": entry.get("quantity", 0),
+            "quantity": entry_quantity,
         })
         response['HX-Trigger'] = json.dumps({'cartUpdated': {'count': len(cart)}})
         return response
@@ -103,11 +103,33 @@ def cart_remove(request, unit_id):
 
 @client_required
 def cart_view(request):
-    cart = Cart(request)
+    """
+    صفحة السلة — بقت صفحة واحدة فيها كل سلال العميل (لو أكتر من واحدة) كـ
+    تابات، بدل ما تكون "السلة" و"سلالي" صفحتين منفصلتين يتنقل بينهم (كان
+    ده مشتت). كل تاب بيمثّل سلة، والتاب النشط هو اللي بيعرض أصنافه تحت،
+    وهو نفسه اللي أي "أضف للسلة" جديد من المتجر بيروحله.
+    """
     config = SiteConfig.get_solo()
+    carts = list(
+        CartModel.objects.filter(client=request.user)
+        .prefetch_related('items')
+        .order_by('created_at')
+    )
+    active_cart_obj = next((c for c in carts if c.is_active), None)
+    if active_cart_obj is None and carts:
+        # حالة نادرة (متوقعة نظريًا بس مش عمليًا) — لو مفيش أي سلة معلّمة
+        # نشطة رغم وجود سلال، نفعّل أول واحدة عشان الصفحة تفضل متسقة.
+        active_cart_obj = carts[0]
+        active_cart_obj.is_active = True
+        active_cart_obj.save(update_fields=['is_active'])
+
+    cart = Cart(request)  # بيقرا نفس السلة النشطة (active_cart_obj) من غير ما ينشئ حاجة
     total = cart.get_total()
     remaining = config.min_order_amount - total if config.min_order_amount else 0
+
     return render(request, 'orders/cart.html', {
+        'carts': carts,
+        'active_cart': active_cart_obj,
         'cart_items': cart.get_items(),
         'total': total,
         'min_order_amount': config.min_order_amount,
@@ -134,14 +156,52 @@ def cart_minus(request, unit_id):
 
 def cart_controls(request, unit_id):
     cart = Cart(request)
-    entry = cart.cart.get(str(unit_id), {})
-    quantity = entry.get("quantity", 0)
+    quantity = cart.get_quantity(unit_id)
     response = render(request, "orders/partials/cart_controls.html", {
         "unit_id": unit_id,
         "quantity": quantity,
     })
     response['HX-Trigger'] = json.dumps({'cartUpdated': {'count': len(cart)}})
     return response
+
+
+@client_required
+@require_POST
+def cart_new(request):
+    name = request.POST.get('name', '').strip()
+    CartModel.objects.create(client=request.user, name=name, is_active=True)
+    messages.success(request, 'تم إنشاء طلبية جديدة، وبقت هي النشطة دلوقتي.')
+    return redirect('orders:cart')
+
+
+@client_required
+@require_POST
+def cart_switch(request, cart_id):
+    cart_obj = get_object_or_404(CartModel, pk=cart_id, client=request.user)
+    cart_obj.is_active = True
+    cart_obj.save()
+    return redirect('orders:cart')
+
+
+@client_required
+@require_POST
+def cart_rename(request, cart_id):
+    cart_obj = get_object_or_404(CartModel, pk=cart_id, client=request.user)
+    cart_obj.name = request.POST.get('name', '').strip()
+    cart_obj.save(update_fields=['name'])
+    return redirect('orders:cart')
+
+
+@client_required
+@require_POST
+def cart_delete(request, cart_id):
+    cart_obj = get_object_or_404(CartModel, pk=cart_id, client=request.user)
+    cart_obj.delete()
+    # ملاحظًا: من غير أي إعادة إنشاء تلقائية لسلة فاضية بديلة — لو دي كانت
+    # آخر سلة عند العميل، يفضل مفيش عنده أي سلة مفتوحة خالص لحد ما يضيف
+    # صنف فعلي تاني (orders.cart.Cart.add بينشئها وقتها لوحده).
+    messages.success(request, 'تم حذف الطلبية.')
+    return redirect('orders:cart')
 
 
 @client_required
@@ -204,7 +264,11 @@ def checkout(request):
                     discount_percent=item['discount_percent'],
                     unit_price=item['unit_price'],
                 )
-        cart.clear()
+        # السلة دي اتحولت لطلب فعليًا، فمفيش داعي تفضل موجودة كسلة فاضية —
+        # لو كانت هي السلة النشطة، مفيش أي إعادة إنشاء تلقائية هنا؛ سلة
+        # جديدة هتتنشئ بس لو العميل ضاف صنف فعلي تاني.
+        if cart.cart_obj is not None:
+            cart.cart_obj.delete()
         messages.success(request, f'تم إرسال طلبك رقم #{order.pk} بنجاح!')
         return redirect('orders:order_detail', pk=order.pk)
 
@@ -216,11 +280,22 @@ def checkout(request):
 
 @client_required
 def order_detail(request, pk):
-    order = get_object_or_404(
-        Order.objects.prefetch_related('items__product_unit__product'),
-        pk=pk, client=request.user,
-    )
-    return render(request, 'orders/order_detail.html', {'order': order})
+    # مبقاش بيجيب items هنا — صفحة التفاصيل بقت ملخّص بس (رقم الطلب، الحالة،
+    # التنبيهات، زرار الإلغاء)، وقائمة الأصناف نفسها انتقلت لصفحة منفصلة
+    # (order_items) عشان الصفحة متبقاش مزدحمة، خصوصًا لو الطلب فيه أصناف كتير.
+    order = get_object_or_404(Order, pk=pk, client=request.user)
+    items_count = order.items.count()
+    return render(request, 'orders/order_detail.html', {'order': order, 'items_count': items_count})
+
+
+@client_required
+def order_items(request, pk):
+    """أصناف الطلب — في صفحة منفصلة عن order_detail، ومقسّمة صفحات لو الطلب فيه أصناف كتير."""
+    order = get_object_or_404(Order, pk=pk, client=request.user)
+    items_qs = order.items.select_related('product_unit__product').order_by('pk')
+    paginator = Paginator(items_qs, 20)
+    page_obj = paginator.get_page(request.GET.get('page'))
+    return render(request, 'orders/order_items.html', {'order': order, 'items': page_obj, 'page_obj': page_obj})
 
 
 @client_required
