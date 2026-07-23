@@ -73,8 +73,12 @@
 
       {% if request.user.role == 'CLIENT' and request.user.status == 'ACTIVE' %}
         {% if inv and inv.is_available %}
-          {% with cart_qty=request.session.cart|get_item:unit.pk %}
-            {% include "orders/partials/add_button.html" with unit=unit in_cart=cart_qty %}
+          {% with cart_entry=request.session.cart|get_item:unit.pk %}
+            {% if cart_entry.quantity %}
+              {% include "orders/partials/cart_controls.html" with unit_id=unit.pk quantity=cart_entry.quantity %}
+            {% else %}
+              {% include "orders/partials/add_button.html" with unit=unit in_cart=False %}
+            {% endif %}
           {% endwith %}
         {% else %}
           <button disabled class="mt-2 w-full bg-gray-100 text-gray-400 text-xs py-2 rounded-lg cursor-not-allowed">

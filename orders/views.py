@@ -50,10 +50,17 @@ def cart_add(request, unit_id):
                 "in_cart": False,
                 "unavailable": True,
             })
-        # نرجع الزر المحدّث (أخضر) + نحرك event لتحديث الـ badge
-        response = render(request, "orders/partials/add_button.html", {
-            "unit": unit,
-            "in_cart": True,
+        # نرجع الـ stepper (-/الكمية الفعلية/+) بدل ما نرجّع فورم "أضف" تاني —
+        # كان بيرجع add_button.html بـ in_cart=True لكن خانة الكمية فيه كانت
+        # قيمتها الافتراضية 1 دايمًا (مش الكمية الفعلية اللي بقت في السلة)،
+        # فالعميل كان بيكتب رقم (مثلاً 5)، يضيف، والرقم يرجع 1 تاني وكأن
+        # حاجة اتلغت — مع إن الإضافة فعليًا نجحت والسلة اتحدّثت. الـ stepper
+        # ده هو نفسه المستخدم في صفحة تفاصيل المنتج، بيعرض الكمية الحقيقية
+        # وبيفضل واضح للعميل قد إيه في السلة فعليًا.
+        entry = cart.cart.get(str(unit_id), {})
+        response = render(request, "orders/partials/cart_controls.html", {
+            "unit_id": unit_id,
+            "quantity": entry.get("quantity", 0),
         })
         response['HX-Trigger'] = json.dumps({'cartUpdated': {'count': len(cart)}})
         return response

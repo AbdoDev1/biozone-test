@@ -6,21 +6,8 @@
           class="mt-2 w-full bg-gray-100 text-gray-400 text-xs py-2 rounded-lg cursor-not-allowed">
     غير متوفر حالياً
   </button>
-{% elif in_cart %}
-  <form hx-post="{% url 'orders:cart_add' unit.pk %}"
-        hx-target="this"
-        hx-swap="outerHTML"
-        class="flex items-stretch gap-2 mt-2">
-    {% csrf_token %}
-    <input type="number" name="quantity" value="1" min="1"
-           class="w-14 border border-gray-200 rounded-lg px-1 text-center text-xs outline-none focus:border-blue-400">
-    <button type="submit"
-            class="flex-1 bg-green-600 hover:bg-green-700 text-white text-xs py-2 rounded-lg transition flex items-center justify-center gap-1">
-      <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
-      تمت الإضافة
-    </button>
-  </form>
 {% else %}
+  {# لو الصنف بالفعل في السلة، بنعرض الـ stepper (cart_controls.html) مش الفورم ده — راجع orders/views.py:cart_add #}
   <form hx-post="{% url 'orders:cart_add' unit.pk %}"
         hx-target="this"
         hx-swap="outerHTML"
