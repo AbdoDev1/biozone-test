@@ -120,6 +120,18 @@
             main { padding-top: 0 !important; margin: 0 !important; }
             .print-area { box-shadow: none !important; }
         }
+        /* التوب بار والسايدبار وشريط التقدّم fixed-positioned، والـ no-print
+           كان متطبق بس على عناصر جواهم مش هما نفسهم — فكانوا فاضلين ظاهرين
+           فوق التقرير وقت الطباعة (Chrome بيثبّتهم فوق كل الصفحات المطبوعة
+           وبيغطوا/يبهدلوا محتوى التقرير). بنخفيهم هنا صراحة. */
+        @media print {
+            header, aside, #page-progress { display: none !important; }
+            main { margin-right: 0 !important; }
+            /* .overflow-x-auto بيعتمد على سكرول بار مش موجود وقت الطباعة،
+               فأي جدول أعرض من الصفحة كان بيتقص. overflow: visible بيخلي
+               الجدول كله يظهر (المتصفح بيقسمه على الصفحات لو لزم). */
+            .overflow-x-auto { overflow: visible !important; }
+        }
     </style>
 </head>
 <body class="bg-surface-page min-h-screen" hx-boost="true" x-data="{ sidebarOpen: window.innerWidth >= 768 }">
