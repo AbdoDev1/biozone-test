@@ -63,7 +63,7 @@
         <div class="no-print flex justify-center gap-2 py-4 border-t">
             {% for num in page_obj.paginator.page_range %}
             <a href="?{{ request.GET|without_page }}&page={{ num }}"
-               class="px-3 py-1 rounded-lg text-sm {% if num == page_obj.number %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-600{% endif %}">{{ num }}</a>
+               class="px-3 py-1 rounded-lg text-sm {% if num == page_obj.number %}bg-primary-600 text-white{% else %}bg-gray-100 text-gray-600{% endif %}">{{ num }}</a>
             {% endfor %}
         </div>
         {% endif %}

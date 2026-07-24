@@ -20,7 +20,7 @@
 
     <div class="bg-gray-50 rounded-xl p-4 mb-6 text-sm text-gray-500">
         الأسعار والخصومات بتتحدد لكل صنف على حدة حسب نوع الحساب المختار — من شاشة
-        <a href="{% url 'staff:account_types' %}" class="text-blue-600 hover:underline">أنواع الحسابات وقوائم الخصومات</a>.
+        <a href="{% url 'staff:account_types' %}" class="text-primary-600 hover:underline">أنواع الحسابات وقوائم الخصومات</a>.
     </div>
 
     <form method="post" class="space-y-5">
@@ -30,7 +30,7 @@
             <label class="text-sm font-medium text-gray-700 mb-2 block">نوع الحساب</label>
             {% if can_change_account_type %}
             <select name="account_type"
-                    class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400">
+                    class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary-400">
                 {% for type in account_types %}
                 <option value="{{ type.pk }}" {% if profile.account_type_id == type.pk %}selected{% endif %}>
                     {{ type.name }}

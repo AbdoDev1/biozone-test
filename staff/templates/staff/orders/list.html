@@ -10,12 +10,12 @@
 <!-- فلتر الحالة -->
 <div class="bg-white rounded-2xl shadow-sm p-4 mb-6 flex flex-wrap gap-2 text-sm">
     <a href="{% url 'staff:order_list' %}"
-       class="px-3 py-1.5 rounded-lg {% if not selected_status %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %}">
+       class="px-3 py-1.5 rounded-lg {% if not selected_status %}bg-primary-600 text-white{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %}">
         الكل
     </a>
     {% for value, label in status_choices %}
     <a href="?status={{ value }}"
-       class="px-3 py-1.5 rounded-lg {% if selected_status == value %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %}">
+       class="px-3 py-1.5 rounded-lg {% if selected_status == value %}bg-primary-600 text-white{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %}">
         {{ label }}
     </a>
     {% endfor %}
@@ -38,13 +38,13 @@
             <tr class="hover:bg-gray-50">
                 <td class="px-4 py-3 font-medium sticky-col">#{{ order.pk }}</td>
                 <td class="px-4 py-3">{{ order.client.username }}</td>
-                <td class="px-4 py-3 font-semibold text-blue-700">{{ order.total }} ج.م</td>
+                <td class="px-4 py-3 font-semibold text-primary-700">{{ order.total }} ج.م</td>
                 <td class="px-4 py-3">
                     {% status_badge order.get_status_display group="order_status" key=order.status %}
                 </td>
                 <td class="px-4 py-3 text-gray-500">{{ order.created_at|date:"Y-m-d H:i" }}</td>
                 <td class="px-4 py-3">
-                    <a href="{% url 'staff:order_detail' order.pk %}" class="text-blue-600 hover:underline text-xs">عرض</a>
+                    <a href="{% url 'staff:order_detail' order.pk %}" class="text-primary-600 hover:underline text-xs">عرض</a>
                     {% if order.status in 'PENDING,NEEDS_APPROVAL,CONFIRMED' %}
                     <a href="{% url 'staff:order_print' order.pk %}" target="_blank" class="text-gray-500 hover:underline text-xs mr-2 inline-flex items-center gap-1"><svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M6.34 18H4.5A2.25 2.25 0 012.25 15.75V9.377c0-.996.61-1.89 1.534-2.256l.847-.336M17.66 18h1.84a2.25 2.25 0 002.25-2.25v-6.373c0-.996-.61-1.89-1.534-2.256l-4.94-1.96m-9.94 1.96l4.94-1.96m5 0v-.815a2.25 2.25 0 00-1.183-1.981l-1.5-.815a2.25 2.25 0 00-2.134 0l-1.5.815a2.25 2.25 0 00-1.183 1.98v.816m5 0h-5M6.34 18l.529 4.752c.062.559.53.983 1.09.983h8.084c.559 0 1.028-.424 1.09-.983L17.66 18M6.34 18h11.32"/></svg>طباعة</a>
                     {% endif %}
@@ -63,12 +63,12 @@
 <div class="flex items-center justify-center gap-2 mt-4 text-sm">
     {% if page_obj.has_previous %}
     <a href="?status={{ selected_status }}&page={{ page_obj.previous_page_number }}"
-       class="px-3 py-2 rounded-lg bg-white shadow-sm hover:bg-blue-50 text-gray-600">السابق</a>
+       class="px-3 py-2 rounded-lg bg-white shadow-sm hover:bg-primary-50 text-gray-600">السابق</a>
     {% endif %}
     <span class="text-gray-500 px-2">صفحة {{ page_obj.number }} من {{ page_obj.paginator.num_pages }}</span>
     {% if page_obj.has_next %}
     <a href="?status={{ selected_status }}&page={{ page_obj.next_page_number }}"
-       class="px-3 py-2 rounded-lg bg-white shadow-sm hover:bg-blue-50 text-gray-600">التالي</a>
+       class="px-3 py-2 rounded-lg bg-white shadow-sm hover:bg-primary-50 text-gray-600">التالي</a>
     {% endif %}
 </div>
 {% endif %}

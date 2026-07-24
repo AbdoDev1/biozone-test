@@ -24,7 +24,7 @@
         {% elif order.status == 'NEEDS_APPROVAL' %}bg-orange-100 text-orange-700
         {% elif order.status == 'CONFIRMED' %}bg-green-100 text-green-700
         {% elif order.status == 'REJECTED' %}bg-red-100 text-red-600
-        {% else %}bg-blue-100 text-blue-700{% endif %}">
+        {% else %}bg-primary-100 text-primary-700{% endif %}">
         {{ order.get_status_display }}
     </span>
 </div>
@@ -112,7 +112,7 @@
         <tfoot>
             <tr class="border-t-2">
                 <td colspan="4" class="px-4 py-3 text-left font-bold">الإجمالي</td>
-                <td class="px-4 py-3 font-bold text-blue-700">{{ order.total }} ج.م</td>
+                <td class="px-4 py-3 font-bold text-primary-700">{{ order.total }} ج.م</td>
             </tr>
         </tfoot>
     </table>

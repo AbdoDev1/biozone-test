@@ -62,7 +62,7 @@
         <div class="flex-1 min-w-[150px] px-2 py-1 border-r border-gray-100">
             <p class="text-[11px] {% if low_stock_count > 0 %}text-orange-500{% else %}text-gray-400{% endif %}">مخزون منخفض</p>
             <p class="text-sm font-bold {% if low_stock_count > 0 %}text-orange-600{% else %}text-gray-700{% endif %} mt-0.5">
-                {{ low_stock_count }}{% if low_stock_count > 0 %} <a href="{% url 'staff:inventory' %}?low=1" class="text-[11px] text-blue-600 hover:underline font-normal">(عرض)</a>{% endif %}
+                {{ low_stock_count }}{% if low_stock_count > 0 %} <a href="{% url 'staff:inventory' %}?low=1" class="text-[11px] text-primary-600 hover:underline font-normal">(عرض)</a>{% endif %}
             </p>
         </div>
     </div>
@@ -83,7 +83,7 @@
         <div class="bg-white rounded-2xl shadow-sm p-5">
             <div class="flex justify-between items-center mb-3">
                 <h2 class="font-bold text-gray-700">أفضل المنتجات (الشهر الحالي)</h2>
-                <a href="{% url 'staff:reports_products' %}" class="text-xs text-blue-600 hover:underline">التقرير الكامل</a>
+                <a href="{% url 'staff:reports_products' %}" class="text-xs text-primary-600 hover:underline">التقرير الكامل</a>
             </div>
             <table class="w-full text-sm">
                 <thead>
@@ -109,7 +109,7 @@
         <div class="bg-white rounded-2xl shadow-sm p-5">
             <div class="flex justify-between items-center mb-3">
                 <h2 class="font-bold text-gray-700">أكثر العملاء شراءً (الشهر الحالي)</h2>
-                <a href="{% url 'staff:reports_customers' %}" class="text-xs text-blue-600 hover:underline">التقرير الكامل</a>
+                <a href="{% url 'staff:reports_customers' %}" class="text-xs text-primary-600 hover:underline">التقرير الكامل</a>
             </div>
             <table class="w-full text-sm">
                 <thead>

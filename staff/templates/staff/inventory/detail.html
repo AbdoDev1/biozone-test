@@ -66,16 +66,16 @@
         <div>
             <label class="block text-sm text-gray-600 mb-1">الحد الأدنى (بالقطعة)</label>
             <input type="number" name="min_quantity" min="0" value="{{ item.min_quantity }}"
-                   class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                   class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
         </div>
         <div class="flex items-center gap-2 pb-2">
             <input type="checkbox" id="is_available" name="is_available" {% if item.is_available %}checked{% endif %}
-                   class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                   class="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500">
             <label for="is_available" class="text-sm text-gray-700">متوفر في المتجر</label>
         </div>
         <div>
             <button type="submit"
-                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition text-sm">
+                    class="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold py-2 rounded-lg transition text-sm">
                 حفظ الإعدادات
             </button>
         </div>
@@ -90,7 +90,7 @@
         <div>
             <label class="block text-sm text-gray-600 mb-1">نوع الحركة</label>
             <select name="movement_type"
-                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
                 <option value="IN">وارد</option>
                 <option value="OUT">صادر</option>
                 <option value="RESERVE">حجز</option>
@@ -100,7 +100,7 @@
         <div>
             <label class="block text-sm text-gray-600 mb-1">الوحدة</label>
             <select name="unit_id"
-                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
                 {% for unit in units %}
                 <option value="{{ unit.pk }}">{{ unit.name }}{% if unit.qty_in_small > 1 %} ({{ unit.qty_in_small }} قطعة){% endif %}</option>
                 {% endfor %}
@@ -109,16 +109,16 @@
         <div>
             <label class="block text-sm text-gray-600 mb-1">الكمية (بالوحدة المختارة)</label>
             <input type="number" name="quantity" min="1"
-                   class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                   class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
         </div>
         <div>
             <label class="block text-sm text-gray-600 mb-1">ملاحظة</label>
             <input type="text" name="note"
-                   class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                   class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
         </div>
         <div class="flex items-end">
             <button type="submit"
-                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition text-sm">
+                    class="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold py-2 rounded-lg transition text-sm">
                 تسجيل
             </button>
         </div>

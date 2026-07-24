@@ -19,12 +19,12 @@
         <label class="text-xs text-gray-500 mb-1 block">بحث</label>
         <input type="text" name="q" value="{{ search_q }}"
                placeholder="اسم المنتج، الباركود، أو كود الصنف..."
-               class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400">
+               class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary-400">
     </div>
     <div class="w-full sm:w-48">
         <label class="text-xs text-gray-500 mb-1 block">القسم</label>
         <select name="category"
-                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400">
+                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary-400">
             <option value="">الكل</option>
             {% for cat in categories %}
             <option value="{{ cat.slug }}" {% if selected_category == cat.slug %}selected{% endif %}>
@@ -76,7 +76,7 @@
                 </td>
                 <td class="px-4 py-3 text-gray-600">{{ product.category.name }}</td>
                 <td class="px-4 py-3 text-gray-500">{{ product.manufacturer|default:"—" }}</td>
-                <td class="px-4 py-3 font-semibold text-blue-700">
+                <td class="px-4 py-3 font-semibold text-primary-700">
                     {% with unit=product.units.all|first %}
                         {% if unit %}{{ unit.unit_price }} ج.م{% else %}—{% endif %}
                     {% endwith %}
@@ -98,7 +98,7 @@
                 <td class="px-4 py-3">
                     <div class="flex gap-2">
                         <a href="{% url 'staff:product_edit' product.pk %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}"
-                           class="bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs px-3 py-1 rounded-lg transition">
+                           class="bg-primary-50 hover:bg-primary-100 text-primary-600 text-xs px-3 py-1 rounded-lg transition">
                             تعديل
                         </a>
                         {% if request.user.role == 'ADMIN' %}
@@ -123,12 +123,12 @@
 <div class="flex items-center justify-center gap-2 mt-4 text-sm">
     {% if page_obj.has_previous %}
     <a href="?q={{ search_q }}&category={{ selected_category }}&page={{ page_obj.previous_page_number }}"
-       class="px-3 py-2 rounded-lg bg-white shadow-sm hover:bg-blue-50 text-gray-600">السابق</a>
+       class="px-3 py-2 rounded-lg bg-white shadow-sm hover:bg-primary-50 text-gray-600">السابق</a>
     {% endif %}
     <span class="text-gray-500 px-2">صفحة {{ page_obj.number }} من {{ page_obj.paginator.num_pages }}</span>
     {% if page_obj.has_next %}
     <a href="?q={{ search_q }}&category={{ selected_category }}&page={{ page_obj.next_page_number }}"
-       class="px-3 py-2 rounded-lg bg-white shadow-sm hover:bg-blue-50 text-gray-600">التالي</a>
+       class="px-3 py-2 rounded-lg bg-white shadow-sm hover:bg-primary-50 text-gray-600">التالي</a>
     {% endif %}
 </div>
 {% endif %}

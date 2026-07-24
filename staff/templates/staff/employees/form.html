@@ -88,9 +88,9 @@
                 <p class="text-sm font-medium text-gray-800 mb-2">{{ group.label }}</p>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {% for item in group.items %}
-                    <label class="flex items-center gap-2 border rounded-lg px-3 py-2 cursor-pointer has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                    <label class="flex items-center gap-2 border rounded-lg px-3 py-2 cursor-pointer has-[:checked]:border-primary-500 has-[:checked]:bg-primary-50">
                         <input type="checkbox" name="perm_codenames" value="{{ item.codename }}"
-                               {% if item.checked %}checked{% endif %} class="accent-blue-600">
+                               {% if item.checked %}checked{% endif %} class="accent-primary-600">
                         <span class="text-sm">{{ item.label }}</span>
                     </label>
                     {% endfor %}

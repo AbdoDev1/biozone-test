@@ -14,7 +14,7 @@
 <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
     <h1 class="text-2xl font-bold text-gray-800">استيراد منتجات من Excel</h1>
     <a href="{% url 'staff:product_list' %}"
-       class="text-sm text-gray-500 hover:text-blue-600">← قائمة المنتجات</a>
+       class="text-sm text-gray-500 hover:text-primary-600">← قائمة المنتجات</a>
 </div>
 
 {% if messages %}
@@ -31,14 +31,14 @@
 {% endif %}
 
 <!-- تحميل القالب / تصدير الأصناف الحالية -->
-<div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+<div class="bg-primary-50 border border-primary-200 rounded-xl p-4 mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
     <div>
-        <p class="font-semibold text-blue-800 text-sm">قالب Excel الجاهز</p>
-        <p class="text-blue-600 text-xs mt-1">حمّل القالب، ثم قم بتعبئته ورفعه مرة أخرى</p>
+        <p class="font-semibold text-primary-800 text-sm">قالب Excel الجاهز</p>
+        <p class="text-primary-600 text-xs mt-1">حمّل القالب، ثم قم بتعبئته ورفعه مرة أخرى</p>
     </div>
     <div class="flex flex-wrap gap-2">
         <a href="{% url 'staff:export_products_select' %}"
-           class="bg-white border border-blue-300 text-blue-700 hover:bg-blue-100 text-sm px-4 py-2 rounded-lg transition">
+           class="bg-white border border-primary-300 text-primary-700 hover:bg-primary-100 text-sm px-4 py-2 rounded-lg transition">
             تصدير أصناف محددة
         </a>
         <a href="{% url 'staff:export_products' %}" hx-boost="false"
@@ -93,7 +93,7 @@
             <span class="text-gray-600">quantity — كمية "وارد" هتتضاف فوق الرصيد الحالي (رصيد افتتاحي للجديد، أو تزويد للموجود)</span>
         </div>
         <div class="flex items-center gap-2">
-            <span class="bg-blue-100 text-blue-600 px-2 py-0.5 rounded">اختياري</span>
+            <span class="bg-primary-100 text-primary-600 px-2 py-0.5 rounded">اختياري</span>
             <span class="text-gray-600">discount:&lt;اسم نوع الحساب&gt; — نسبة الخصم (0-100) لهذا النوع، عمود لكل فئة</span>
         </div>
     </div>
@@ -122,7 +122,7 @@
             <input type="file" name="excel_file" accept=".xlsx"
                    class="block w-full text-sm text-gray-500 border border-gray-200 rounded-lg p-2
                           file:ml-4 file:py-2 file:px-4 file:rounded-lg file:border-0
-                          file:bg-blue-50 file:text-blue-700 file:font-medium hover:file:bg-blue-100">
+                          file:bg-primary-50 file:text-primary-700 file:font-medium hover:file:bg-primary-100">
         </label>
         {% btn "رفع واستيراد" type="submit" size="lg" rounded="xl" full_width=True %}
     </form>

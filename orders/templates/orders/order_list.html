@@ -22,10 +22,10 @@
             {% elif order.status == 'NEEDS_APPROVAL' %}bg-orange-100 text-orange-700
             {% elif order.status == 'CONFIRMED' %}bg-green-100 text-green-700
             {% elif order.status == 'REJECTED' %}bg-red-100 text-red-600
-            {% else %}bg-blue-100 text-blue-700{% endif %}">
+            {% else %}bg-primary-100 text-primary-700{% endif %}">
             {{ order.get_status_display }}
           </span>
-          <span class="font-bold text-blue-700">{{ order.total }} ج.م</span>
+          <span class="font-bold text-primary-700">{{ order.total }} ج.م</span>
         </div>
       </a>
       {% endfor %}
@@ -35,12 +35,12 @@
     <div class="flex items-center justify-center gap-2 mt-6 text-sm">
         {% if page_obj.has_previous %}
         <a href="?page={{ page_obj.previous_page_number }}"
-           class="px-3 py-2 rounded-lg bg-white shadow-sm hover:bg-blue-50 text-gray-600">السابق</a>
+           class="px-3 py-2 rounded-lg bg-white shadow-sm hover:bg-primary-50 text-gray-600">السابق</a>
         {% endif %}
         <span class="text-gray-500 px-2">صفحة {{ page_obj.number }} من {{ page_obj.paginator.num_pages }}</span>
         {% if page_obj.has_next %}
         <a href="?page={{ page_obj.next_page_number }}"
-           class="px-3 py-2 rounded-lg bg-white shadow-sm hover:bg-blue-50 text-gray-600">التالي</a>
+           class="px-3 py-2 rounded-lg bg-white shadow-sm hover:bg-primary-50 text-gray-600">التالي</a>
         {% endif %}
     </div>
     {% endif %}
@@ -48,7 +48,7 @@
     {% else %}
     <div class="bg-white rounded-2xl shadow-sm p-10 text-center text-gray-400">
      لا توجد طلبات.
-      <a href="{% url 'store:home' %}" class="text-blue-600 hover:underline block mt-2">تصفح المنتجات</a>
+      <a href="{% url 'store:home' %}" class="text-primary-600 hover:underline block mt-2">تصفح المنتجات</a>
     </div>
     {% endif %}
 </div>

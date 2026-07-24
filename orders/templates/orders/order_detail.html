@@ -16,7 +16,7 @@
           {% elif order.status == 'NEEDS_APPROVAL' %}bg-orange-100 text-orange-700
           {% elif order.status == 'CONFIRMED' %}bg-green-100 text-green-700
           {% elif order.status == 'REJECTED' %}bg-red-100 text-red-600
-          {% else %}bg-blue-100 text-blue-700{% endif %}">
+          {% else %}bg-primary-100 text-primary-700{% endif %}">
           {{ order.get_status_display }}
         </span>
       </div>
@@ -75,7 +75,7 @@
           عرض أصناف الطلب ({{ items_count }} صنف)
         </span>
         <span class="flex items-center gap-3">
-          <span class="font-bold text-blue-700">{{ order.total }} ج.م</span>
+          <span class="font-bold text-primary-700">{{ order.total }} ج.م</span>
           <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/></svg>
         </span>
       </a>
@@ -95,7 +95,7 @@
             <span class="absolute -right-[21px] top-1 w-2.5 h-2.5 rounded-full
               {% if log.event == 'STATUS_CHANGED' and log.new_status == 'CONFIRMED' %}bg-green-500
               {% elif log.event == 'STATUS_CHANGED' and log.new_status == 'REJECTED' %}bg-red-500
-              {% elif log.event == 'STATUS_CHANGED' and log.new_status == 'DELIVERED' %}bg-blue-500
+              {% elif log.event == 'STATUS_CHANGED' and log.new_status == 'DELIVERED' %}bg-primary-500
               {% else %}bg-gray-400{% endif %}"></span>
             <p class="text-sm text-gray-700">{{ log.note }}</p>
             <p class="text-xs text-gray-400 mt-0.5">{{ log.created_at|date:"d/m/Y — H:i" }}</p>
@@ -106,7 +106,7 @@
 
       <div class="mt-6 flex gap-3">
         <a href="{% url 'orders:order_list' %}"
-           class="text-sm text-blue-600 hover:underline">← الطلبات</a>
+           class="text-sm text-primary-600 hover:underline">← الطلبات</a>
         <a href="{% url 'store:home' %}"
            class="text-sm text-gray-500 hover:underline">المتجر</a>
       </div>

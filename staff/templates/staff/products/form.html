@@ -14,7 +14,7 @@
 <div class="flex justify-between items-center mb-6">
     <h1 class="text-2xl font-bold text-gray-800">{{ title }}</h1>
     <a href="{{ back_url }}"
-       class="text-sm text-gray-500 hover:text-blue-600">← قائمة المنتجات</a>
+       class="text-sm text-gray-500 hover:text-primary-600">← قائمة المنتجات</a>
 </div>
 
 <form method="POST" action="{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}" enctype="multipart/form-data" class="space-y-6">
@@ -103,7 +103,7 @@
         <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-100">
             <h2 class="font-bold text-gray-700">الوحدات والأسعار</h2>
             <button type="button" id="add-unit-row"
-                    class="text-sm text-blue-600 hover:underline font-semibold">+ إضافة وحدة أخرى</button>
+                    class="text-sm text-primary-600 hover:underline font-semibold">+ إضافة وحدة أخرى</button>
         </div>
 
         {{ formset.management_form }}
@@ -116,7 +116,7 @@
             <div class="unit-row border border-gray-100 rounded-lg p-4 relative {% if unit_form.errors %}border-red-300{% endif %}">
                 {% for hidden in unit_form.hidden_fields %}{{ hidden }}{% endfor %}
                 {% if is_edit and not unit_form.instance.pk %}
-                <span class="inline-block text-[11px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full mb-2">
+                <span class="inline-block text-[11px] bg-primary-50 text-primary-600 px-2 py-0.5 rounded-full mb-2">
                     وحدة جديدة — سيتم حفظها مع باقي التعديلات عند الحفظ، دون الحاجة لحفظ منفصل
                 </span>
                 {% endif %}

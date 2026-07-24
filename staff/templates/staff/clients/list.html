@@ -23,7 +23,7 @@
                 {% for profile in pending %}
                 <tr class="hover:bg-gray-50">
                     <td class="px-4 py-3 font-medium">
-                        <a href="{% url 'staff:client_detail' profile.pk %}" class="text-blue-600 hover:underline">
+                        <a href="{% url 'staff:client_detail' profile.pk %}" class="text-primary-600 hover:underline">
                             {{ profile.business_name }}
                         </a>
                     </td>
@@ -89,7 +89,7 @@
                     <td class="px-4 py-3">{{ profile.phone }}</td>
                     <td class="px-4 py-3">
                         <a href="{% url 'staff:client_detail' profile.pk %}"
-                           class="text-blue-600 hover:underline text-xs">عرض</a>
+                           class="text-primary-600 hover:underline text-xs">عرض</a>
                     </td>
                 </tr>
                 {% endfor %}
@@ -100,12 +100,12 @@
     <div class="flex items-center justify-center gap-2 mt-4 text-sm">
         {% if active_page_obj.has_previous %}
         <a href="?active_page={{ active_page_obj.previous_page_number }}#active-clients"
-           class="px-3 py-2 rounded-lg bg-white shadow-sm hover:bg-blue-50 text-gray-600">السابق</a>
+           class="px-3 py-2 rounded-lg bg-white shadow-sm hover:bg-primary-50 text-gray-600">السابق</a>
         {% endif %}
         <span class="text-gray-500 px-2">صفحة {{ active_page_obj.number }} من {{ active_page_obj.paginator.num_pages }}</span>
         {% if active_page_obj.has_next %}
         <a href="?active_page={{ active_page_obj.next_page_number }}#active-clients"
-           class="px-3 py-2 rounded-lg bg-white shadow-sm hover:bg-blue-50 text-gray-600">التالي</a>
+           class="px-3 py-2 rounded-lg bg-white shadow-sm hover:bg-primary-50 text-gray-600">التالي</a>
         {% endif %}
     </div>
     {% endif %}

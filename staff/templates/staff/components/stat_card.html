@@ -1,0 +1,21 @@
+{# كارت إحصائية موحّد للوحة التحكم — بدل تكرار نفس الـ markup 4 مرات. #}
+{# الاستخدام: include للملف ده من dashboard.html مع with وباراميترات الشكل واللون. #}
+{# لتغيير لون العلامة التجارية لكل الكروت مرة واحدة، غيّر primary-* في tailwind.config.js فقط — مفيش داعي تلمس الملف ده. #}
+
+<div class="bg-white rounded-2xl shadow-sm p-6 flex items-start gap-4 relative">
+    <div class="w-11 h-11 rounded-xl {{ icon_bg }} {{ icon_color }} flex items-center justify-center shrink-0">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="{{ icon_path }}"/></svg>
+    </div>
+    <div>
+        <p class="text-gray-500 text-sm">{{ label }}</p>
+        <p class="text-3xl font-bold {{ value_color }} mt-1">{{ value }}</p>
+        {% if link_url %}
+        <a href="{{ link_url }}" class="text-xs text-primary-600 hover:underline mt-2 block">{{ link_text }}</a>
+        {% endif %}
+    </div>
+    {% if badge_count %}
+    <span class="absolute -top-2 -left-2 bg-red-500 text-white text-[11px] font-bold rounded-full min-w-[22px] h-[22px] flex items-center justify-center px-1.5" title="{{ badge_title }}">
+        {{ badge_count }}
+    </span>
+    {% endif %}
+</div>

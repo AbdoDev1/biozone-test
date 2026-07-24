@@ -15,14 +15,14 @@
 <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
     <h1 class="text-2xl font-bold text-gray-800">مراجعة الاستيراد قبل الحفظ</h1>
     <a href="{% url 'staff:import_products' %}"
-       class="text-sm text-gray-500 hover:text-blue-600">← رفع ملف تاني</a>
+       class="text-sm text-gray-500 hover:text-primary-600">← رفع ملف تاني</a>
 </div>
 
 <!-- ملخص سريع -->
 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
     <div class="bg-white rounded-2xl shadow-sm p-4">
         <p class="text-xs text-gray-500">هيتحدّث (تطابق أكيد)</p>
-        <p class="text-2xl font-bold text-blue-600">{{ update_rows|length }}</p>
+        <p class="text-2xl font-bold text-primary-600">{{ update_rows|length }}</p>
     </div>
     <div class="bg-white rounded-2xl shadow-sm p-4">
         <p class="text-xs text-gray-500">هيتضاف كصنف جديد</p>
@@ -56,13 +56,13 @@
             {% for row in review_rows %}
             <div class="border border-yellow-200 bg-yellow-50 rounded-lg p-4">
                 <p class="text-sm font-semibold text-gray-800 mb-3">
-                    سطر {{ row.row_num }}: <span class="text-blue-700">{{ row.name_ar }}</span>
+                    سطر {{ row.row_num }}: <span class="text-primary-700">{{ row.name_ar }}</span>
                 </p>
                 <div class="space-y-2">
                     {% for c in row.candidates %}
-                    <label class="flex items-center gap-2 text-sm bg-white rounded-lg px-3 py-2 border border-gray-200 cursor-pointer hover:border-blue-300">
+                    <label class="flex items-center gap-2 text-sm bg-white rounded-lg px-3 py-2 border border-gray-200 cursor-pointer hover:border-primary-300">
                         <input type="radio" name="decision_{{ row.row_num }}" value="{{ c.pk }}" required
-                               class="accent-blue-600">
+                               class="accent-primary-600">
                         <span>ده نفس <strong>{{ c.name }}</strong>
                             <span class="text-gray-400">({{ c.code }})</span>
                             — تشابه {{ c.score }}%</span>
@@ -102,12 +102,12 @@
     </details>
     {% endif %}
 
-    <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+    <div class="bg-primary-50 border border-primary-200 rounded-xl p-4 mb-6">
         <label class="flex items-start gap-3 cursor-pointer">
-            <input type="checkbox" name="notify_clients" class="mt-1 accent-blue-600">
-            <span class="text-sm text-blue-800">
+            <input type="checkbox" name="notify_clients" class="mt-1 accent-primary-600">
+            <span class="text-sm text-primary-800">
                 <span class="font-semibold block">إرسال إشعار للعملاء بالوارد الجديد 🆕</span>
-                <span class="text-blue-600 text-xs">
+                <span class="text-primary-600 text-xs">
                     كل عميل نشط هيوصله إشعار يوجّهه لصفحة "الوارد الجديد" في المتجر.
                     الأصناف هتظهر هناك (وهتختفي من المتجر العادي مؤقتًا) لحد ما يتباع منها لغاية الحد الأدنى،
                     أو يعدي {{ new_arrivals_window_days }} أيام من إضافتها — أيهما الأول، سواء بعتّت الإشعار أو لأ —

@@ -8,9 +8,9 @@ hx-on:cartUpdated="htmx.ajax('GET','{% url 'orders:cart_badge' %}',{target:'#car
 
 {% block content %}
 
-<div class="bg-blue-700 text-white text-center py-10 px-4">
+<div class="bg-primary-700 text-white text-center py-10 px-4">
     <h1 class="text-3xl font-bold mb-2">🆕 الوارد الجديد</h1>
-    <p class="text-blue-200">
+    <p class="text-primary-200">
         {% if total_products %}
             {{ total_products }} صنف — منتجات جديدة أو اتزوّد رصيدها، لحد ما تتباع لحد الحد الأدنى (أو يعدي {{ window_days }} أيام)
         {% else %}

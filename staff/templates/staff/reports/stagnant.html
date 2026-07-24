@@ -15,7 +15,7 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div>
                 <label class="text-xs font-medium text-gray-500 mb-1 block">لم تُبع منذ</label>
-                <select name="days" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400">
+                <select name="days" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary-400">
                     <option value="30" {% if days == 30 %}selected{% endif %}>30 يومًا</option>
                     <option value="60" {% if days == 60 %}selected{% endif %}>60 يومًا</option>
                     <option value="90" {% if days == 90 %}selected{% endif %}>90 يومًا</option>
@@ -25,11 +25,11 @@
             <div>
                 <label class="text-xs font-medium text-gray-500 mb-1 block">أو حدّد عدد أيام مخصص</label>
                 <input type="number" name="days_custom" min="1" max="3650" placeholder="مثال: 45"
-                       class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400">
+                       class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary-400">
             </div>
             <div>
                 <label class="text-xs font-medium text-gray-500 mb-1 block">القسم</label>
-                <select name="category" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400">
+                <select name="category" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary-400">
                     <option value="">كل الأقسام</option>
                     {% for cat in categories %}
                     <option value="{{ cat.id }}" {% if selected_category == cat.id|stringformat:'s' %}selected{% endif %}>{{ cat.name }}</option>
@@ -38,7 +38,7 @@
             </div>
             <div>
                 <label class="text-xs font-medium text-gray-500 mb-1 block">المنتج</label>
-                <select name="product" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400">
+                <select name="product" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary-400">
                     <option value="">كل المنتجات</option>
                     {% for p in products %}
                     <option value="{{ p.id }}" {% if selected_product == p.id|stringformat:'s' %}selected{% endif %}>{{ p.display_name }}</option>
@@ -89,7 +89,7 @@
         <div class="no-print flex justify-center gap-2 py-4 border-t">
             {% for num in page_obj.paginator.page_range %}
             <a href="?{{ request.GET|without_page }}&page={{ num }}"
-               class="px-3 py-1 rounded-lg text-sm {% if num == page_obj.number %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-600{% endif %}">{{ num }}</a>
+               class="px-3 py-1 rounded-lg text-sm {% if num == page_obj.number %}bg-primary-600 text-white{% else %}bg-gray-100 text-gray-600{% endif %}">{{ num }}</a>
             {% endfor %}
         </div>
         {% endif %}

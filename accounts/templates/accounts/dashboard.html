@@ -15,17 +15,17 @@
     <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
         <div class="flex border-b overflow-x-auto text-sm">
             <button @click="tab = 'overview'"
-                    :class="tab === 'overview' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                    :class="tab === 'overview' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
                     class="px-5 py-3 border-b-2 font-medium whitespace-nowrap transition">
                 نظرة عامة
             </button>
             <button @click="tab = 'orders'"
-                    :class="tab === 'orders' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                    :class="tab === 'orders' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
                     class="px-5 py-3 border-b-2 font-medium whitespace-nowrap transition">
                 طلباتي
             </button>
             <button @click="tab = 'statement'"
-                    :class="tab === 'statement' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                    :class="tab === 'statement' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
                     class="px-5 py-3 border-b-2 font-medium whitespace-nowrap transition">
                 كشف الحساب
                 {% if balance > 0 %}
@@ -33,12 +33,12 @@
                 {% endif %}
             </button>
             <button @click="tab = 'profile'"
-                    :class="tab === 'profile' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                    :class="tab === 'profile' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
                     class="px-5 py-3 border-b-2 font-medium whitespace-nowrap transition">
                 بيانات النشاط التجاري
             </button>
             <button @click="tab = 'security'"
-                    :class="tab === 'security' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                    :class="tab === 'security' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
                     class="px-5 py-3 border-b-2 font-medium whitespace-nowrap transition">
                 الأمان
             </button>
@@ -59,7 +59,7 @@
                         لا يوجد رصيد مستحق
                     {% endif %}
                 </p>
-                <button @click="tab = 'statement'" class="text-xs text-blue-600 hover:underline mt-2">
+                <button @click="tab = 'statement'" class="text-xs text-primary-600 hover:underline mt-2">
                     عرض كشف الحساب بالتفصيل
                 </button>
             </div>
@@ -67,17 +67,17 @@
             <!-- اختصارات سريعة -->
             <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-8 text-sm text-center">
                 <a href="{% url 'store:home' %}"
-                   class="bg-gray-50 rounded-xl p-4 hover:bg-blue-50 transition">
+                   class="bg-gray-50 rounded-xl p-4 hover:bg-primary-50 transition">
                     <svg class="w-6 h-6 mx-auto text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21"/></svg>
                     <br>تصفح المتجر
                 </a>
                 <a href="{% url 'orders:cart' %}"
-                   class="bg-gray-50 rounded-xl p-4 hover:bg-blue-50 transition">
+                   class="bg-gray-50 rounded-xl p-4 hover:bg-primary-50 transition">
                     <svg class="w-6 h-6 mx-auto text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 1.994-4.457 2.781-6.987a1.125 1.125 0 00-1.087-1.437H5.106M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z"/></svg>
                     <br>سلة المشتريات
                 </a>
                 <button @click="tab = 'orders'"
-                        class="bg-gray-50 rounded-xl p-4 hover:bg-blue-50 transition">
+                        class="bg-gray-50 rounded-xl p-4 hover:bg-primary-50 transition">
                     <svg class="w-6 h-6 mx-auto text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25z"/></svg>
                     <br>سجل الطلبات
                 </button>
@@ -100,21 +100,21 @@
                             {% elif order.status == 'NEEDS_APPROVAL' %}bg-orange-100 text-orange-700
                             {% elif order.status == 'CONFIRMED' %}bg-green-100 text-green-700
                             {% elif order.status == 'REJECTED' %}bg-red-100 text-red-600
-                            {% else %}bg-blue-100 text-blue-700{% endif %}">
+                            {% else %}bg-primary-100 text-primary-700{% endif %}">
                             {{ order.get_status_display }}
                         </span>
-                        <span class="font-bold text-blue-700 text-sm">{{ order.total }} ج.م</span>
+                        <span class="font-bold text-primary-700 text-sm">{{ order.total }} ج.م</span>
                     </div>
                 </a>
                 {% endfor %}
             </div>
-            <button @click="tab = 'orders'" class="text-xs text-blue-600 hover:underline">
+            <button @click="tab = 'orders'" class="text-xs text-primary-600 hover:underline">
                 عرض جميع الطلبات
             </button>
             {% else %}
             <p class="text-gray-400 text-sm text-center py-8 border border-gray-100 rounded-xl">
                 لا توجد طلبات حتى الآن.
-                <a href="{% url 'store:home' %}" class="text-blue-600 hover:underline block mt-1">تصفح المنتجات</a>
+                <a href="{% url 'store:home' %}" class="text-primary-600 hover:underline block mt-1">تصفح المنتجات</a>
             </p>
             {% endif %}
         </div>
@@ -136,10 +136,10 @@
                             {% elif order.status == 'NEEDS_APPROVAL' %}bg-orange-100 text-orange-700
                             {% elif order.status == 'CONFIRMED' %}bg-green-100 text-green-700
                             {% elif order.status == 'REJECTED' %}bg-red-100 text-red-600
-                            {% else %}bg-blue-100 text-blue-700{% endif %}">
+                            {% else %}bg-primary-100 text-primary-700{% endif %}">
                             {{ order.get_status_display }}
                         </span>
-                        <span class="font-bold text-blue-700">{{ order.total }} ج.م</span>
+                        <span class="font-bold text-primary-700">{{ order.total }} ج.م</span>
                     </div>
                 </a>
                 {% endfor %}
@@ -149,19 +149,19 @@
             <div class="flex items-center justify-center gap-2 mt-6 text-sm">
                 {% if orders_page_obj.has_previous %}
                 <a href="?orders_page={{ orders_page_obj.previous_page_number }}#orders"
-                   class="px-3 py-2 rounded-lg bg-gray-50 hover:bg-blue-50 text-gray-600">الأحدث</a>
+                   class="px-3 py-2 rounded-lg bg-gray-50 hover:bg-primary-50 text-gray-600">الأحدث</a>
                 {% endif %}
                 <span class="text-gray-500 px-2">صفحة {{ orders_page_obj.number }} من {{ orders_page_obj.paginator.num_pages }}</span>
                 {% if orders_page_obj.has_next %}
                 <a href="?orders_page={{ orders_page_obj.next_page_number }}#orders"
-                   class="px-3 py-2 rounded-lg bg-gray-50 hover:bg-blue-50 text-gray-600">الأقدم</a>
+                   class="px-3 py-2 rounded-lg bg-gray-50 hover:bg-primary-50 text-gray-600">الأقدم</a>
                 {% endif %}
             </div>
             {% endif %}
             {% else %}
             <p class="text-gray-400 text-sm text-center py-8">
                 لا توجد طلبات حتى الآن.
-                <a href="{% url 'store:home' %}" class="text-blue-600 hover:underline block mt-1">تصفح المنتجات</a>
+                <a href="{% url 'store:home' %}" class="text-primary-600 hover:underline block mt-1">تصفح المنتجات</a>
             </p>
             {% endif %}
         </div>
@@ -184,7 +184,7 @@
                             <td class="px-3 py-2 text-gray-500">{{ tx.created_at|date:"Y-m-d" }}</td>
                             <td class="px-3 py-2">
                                 <span class="px-2 py-0.5 rounded-full text-xs
-                                    {% if tx.kind == 'INVOICE' %}bg-blue-100 text-blue-700
+                                    {% if tx.kind == 'INVOICE' %}bg-primary-100 text-primary-700
                                     {% elif tx.kind == 'PAYMENT' %}bg-green-100 text-green-700
                                     {% else %}bg-orange-100 text-orange-700{% endif %}">
                                     {{ tx.get_kind_display }}
@@ -192,7 +192,7 @@
                             </td>
                             <td class="px-3 py-2 text-gray-500">
                                 {% if tx.invoice %}
-                                    <a href="{% url 'invoices:print' tx.invoice.pk %}" target="_blank" class="text-blue-600 hover:underline">
+                                    <a href="{% url 'invoices:print' tx.invoice.pk %}" target="_blank" class="text-primary-600 hover:underline">
                                         {{ tx.invoice.invoice_number }}
                                     </a>
                                 {% else %}
@@ -216,12 +216,12 @@
             <div class="flex items-center justify-center gap-2 mt-4 text-sm">
                 {% if page_obj.has_previous %}
                 <a href="?statement_page={{ page_obj.previous_page_number }}#statement"
-                   class="px-3 py-2 rounded-lg bg-gray-50 hover:bg-blue-50 text-gray-600">الأحدث</a>
+                   class="px-3 py-2 rounded-lg bg-gray-50 hover:bg-primary-50 text-gray-600">الأحدث</a>
                 {% endif %}
                 <span class="text-gray-500 px-2">صفحة {{ page_obj.number }} من {{ page_obj.paginator.num_pages }}</span>
                 {% if page_obj.has_next %}
                 <a href="?statement_page={{ page_obj.next_page_number }}#statement"
-                   class="px-3 py-2 rounded-lg bg-gray-50 hover:bg-blue-50 text-gray-600">الأقدم</a>
+                   class="px-3 py-2 rounded-lg bg-gray-50 hover:bg-primary-50 text-gray-600">الأقدم</a>
                 {% endif %}
             </div>
             {% endif %}
@@ -278,7 +278,7 @@
                 </div>
                 {% endfor %}
                 <button type="submit"
-                        class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg transition text-sm">
+                        class="bg-primary-600 hover:bg-primary-700 text-white font-semibold px-6 py-2 rounded-lg transition text-sm">
                     حفظ كلمة المرور الجديدة
                 </button>
             </form>

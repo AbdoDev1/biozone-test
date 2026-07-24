@@ -11,7 +11,7 @@
     <div class="text-center py-20 text-gray-400">
       <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 1.994-4.457 2.781-6.987a1.125 1.125 0 00-1.087-1.437H5.106M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z"/></svg>
       <p class="text-xl mb-4">مفيش طلبيات مفتوحة حاليًا</p>
-      <a href="{% url 'store:home' %}" class="text-blue-600 hover:underline text-sm">تصفح المنتجات الآن</a>
+      <a href="{% url 'store:home' %}" class="text-primary-600 hover:underline text-sm">تصفح المنتجات الآن</a>
     </div>
 
     {% else %}
@@ -59,8 +59,8 @@
       <form method="POST" action="{% url 'orders:cart_rename' active_cart.pk %}" class="flex items-center gap-2">
         {% csrf_token %}
         <input type="text" name="name" value="{{ active_cart.name }}" placeholder="اسم الطلبية (اختياري)"
-               class="w-48 border border-gray-200 rounded-lg px-3 py-1.5 text-sm outline-none focus:border-blue-400">
-        <button type="submit" class="text-xs text-blue-600 hover:underline">حفظ الاسم</button>
+               class="w-48 border border-gray-200 rounded-lg px-3 py-1.5 text-sm outline-none focus:border-primary-400">
+        <button type="submit" class="text-xs text-primary-600 hover:underline">حفظ الاسم</button>
       </form>
     </div>
 
@@ -105,9 +105,9 @@
                 {% csrf_token %}
                 <input type="number" name="quantity" value="{{ item.quantity }}" min="1"
                        onchange="this.form.requestSubmit()"
-                       class="w-16 border border-gray-200 rounded-lg px-2 py-1 text-center text-sm outline-none focus:border-blue-400">
+                       class="w-16 border border-gray-200 rounded-lg px-2 py-1 text-center text-sm outline-none focus:border-primary-400">
                 <span class="text-[11px] text-gray-400">{{ item.unit.name }}</span>
-                <button type="submit" class="text-xs text-blue-600 hover:underline">تحديث</button>
+                <button type="submit" class="text-xs text-primary-600 hover:underline">تحديث</button>
               </form>
             </td>
             <td class="px-4 py-3 text-green-700 font-semibold">
@@ -154,7 +154,7 @@
     <div class="bg-white rounded-2xl shadow-sm p-6 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
       <div>
         <p class="text-gray-500 text-sm">الإجمالي</p>
-        <p class="text-3xl font-bold text-blue-700">{{ total }} ج.م</p>
+        <p class="text-3xl font-bold text-primary-700">{{ total }} ج.م</p>
       </div>
       <div class="flex flex-col sm:flex-row gap-3">
         <a href="{% url 'store:home' %}"
@@ -167,7 +167,7 @@
         </span>
         {% else %}
         <a href="{% url 'orders:checkout' %}"
-           class="text-center bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl transition text-sm font-semibold">
+           class="text-center bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-xl transition text-sm font-semibold">
           إتمام الطلب
         </a>
         {% endif %}
@@ -178,7 +178,7 @@
     <div class="text-center py-20 text-gray-400">
       <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 1.994-4.457 2.781-6.987a1.125 1.125 0 00-1.087-1.437H5.106M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z"/></svg>
       <p class="text-xl mb-4">هذه الطلبية فارغة</p>
-      <a href="{% url 'store:home' %}" class="text-blue-600 hover:underline text-sm">تصفح المنتجات الآن</a>
+      <a href="{% url 'store:home' %}" class="text-primary-600 hover:underline text-sm">تصفح المنتجات الآن</a>
     </div>
     {% endif %}
 

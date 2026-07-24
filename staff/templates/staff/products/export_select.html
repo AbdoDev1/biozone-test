@@ -14,7 +14,7 @@
 <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
     <h1 class="text-2xl font-bold text-gray-800">تصدير أصناف محددة إلى Excel</h1>
     <a href="{% url 'staff:import_products' %}"
-       class="text-sm text-gray-500 hover:text-blue-600">← استيراد / تصدير المنتجات</a>
+       class="text-sm text-gray-500 hover:text-primary-600">← استيراد / تصدير المنتجات</a>
 </div>
 
 {% if messages %}
@@ -37,9 +37,9 @@
     <!-- شريط البحث والفلاتر -->
     <div class="bg-white rounded-2xl shadow-sm p-4 mb-4 flex flex-col sm:flex-row gap-3 sm:items-center">
         <input type="text" x-model="search" placeholder="ابحث بالاسم أو الكود..."
-               class="flex-1 border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-blue-400">
+               class="flex-1 border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary-400">
         <select x-model="categoryFilter"
-                class="border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-blue-400">
+                class="border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary-400">
             <option value="">كل الأقسام</option>
             {% for cat in categories %}
             <option value="{{ cat.slug }}">{{ cat.name }}</option>
@@ -47,23 +47,23 @@
         </select>
         <button type="button" @click="selectWholeCategory()"
                 :disabled="!categoryFilter"
-                :class="categoryFilter ? 'bg-blue-50 text-blue-700 hover:bg-blue-100' : 'bg-gray-50 text-gray-300 cursor-not-allowed'"
+                :class="categoryFilter ? 'bg-primary-50 text-primary-700 hover:bg-primary-100' : 'bg-gray-50 text-gray-300 cursor-not-allowed'"
                 class="text-sm px-4 py-2.5 rounded-lg transition whitespace-nowrap">
             تحديد القسم كامل
         </button>
     </div>
 
     <!-- ملخص التحديد -->
-    <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4 flex flex-wrap items-center justify-between gap-3">
-        <p class="text-sm text-blue-800">
+    <div class="bg-primary-50 border border-primary-200 rounded-xl p-4 mb-4 flex flex-wrap items-center justify-between gap-3">
+        <p class="text-sm text-primary-800">
             <span class="font-bold" x-text="selected.length"></span> صنف محدد
-            <span class="text-blue-500" x-show="filteredProducts.length !== products.length">
+            <span class="text-primary-500" x-show="filteredProducts.length !== products.length">
                 (من <span x-text="filteredProducts.length"></span> ظاهر بعد الفلترة)
             </span>
         </p>
         <div class="flex gap-2 flex-wrap">
             <button type="button" @click="selectAllVisible()"
-                    class="text-xs bg-white border border-blue-300 text-blue-700 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition">
+                    class="text-xs bg-white border border-primary-300 text-primary-700 hover:bg-primary-100 px-3 py-1.5 rounded-lg transition">
                 تحديد كل الظاهر
             </button>
             <button type="button" @click="deselectAllVisible()"
@@ -93,10 +93,10 @@
                     </thead>
                     <tbody class="divide-y divide-gray-100">
                         <template x-for="product in filteredProducts" :key="product.id">
-                            <tr class="hover:bg-gray-50" :class="selected.includes(product.id) ? 'bg-blue-50/40' : ''">
+                            <tr class="hover:bg-gray-50" :class="selected.includes(product.id) ? 'bg-primary-50/40' : ''">
                                 <td class="px-4 py-2.5">
                                     <input type="checkbox" name="product_ids" :value="product.id" x-model.number="selected"
-                                           class="w-4 h-4 accent-blue-600">
+                                           class="w-4 h-4 accent-primary-600">
                                 </td>
                                 <td class="px-4 py-2.5 font-medium" x-text="product.name"></td>
                                 <td class="px-4 py-2.5 text-gray-400 font-mono text-xs" x-text="product.code || '—'"></td>
@@ -112,7 +112,7 @@
         </div>
 
         <button type="submit" :disabled="selected.length === 0"
-                :class="selected.length === 0 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'"
+                :class="selected.length === 0 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-primary-600 hover:bg-primary-700 text-white'"
                 class="w-full font-semibold py-3 rounded-xl transition">
             تصدير <span x-text="selected.length"></span> صنف محدد
         </button>

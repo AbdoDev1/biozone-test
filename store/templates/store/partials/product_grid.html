@@ -10,7 +10,7 @@
 
   {% if page_obj.has_previous %}
     <button
-        class="px-3 py-2 rounded-lg bg-white shadow-sm hover:bg-blue-50 text-gray-600"
+        class="px-3 py-2 rounded-lg bg-white shadow-sm hover:bg-primary-50 text-gray-600"
         hx-get="{% url grid_url|default:'store:home' %}"
         hx-vals='{"page": {{ page_obj.previous_page_number }}}'
         hx-include="#filter-form, #search-q, #category-select"
@@ -27,7 +27,7 @@
 
   {% if page_obj.has_next %}
     <button
-        class="px-3 py-2 rounded-lg bg-white shadow-sm hover:bg-blue-50 text-gray-600"
+        class="px-3 py-2 rounded-lg bg-white shadow-sm hover:bg-primary-50 text-gray-600"
         hx-get="{% url grid_url|default:'store:home' %}"
         hx-vals='{"page": {{ page_obj.next_page_number }}}'
         hx-include="#filter-form, #search-q, #category-select"

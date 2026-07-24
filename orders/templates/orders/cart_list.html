@@ -13,9 +13,9 @@
     <form method="POST" action="{% url 'orders:cart_new' %}" class="bg-white rounded-2xl shadow-sm p-5 mb-6 flex flex-col sm:flex-row gap-3">
       {% csrf_token %}
       <input type="text" name="name" placeholder="اسم الطلبية الجديدة (اختياري)"
-             class="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-blue-400">
+             class="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary-400">
       <button type="submit"
-              class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2 rounded-xl transition inline-flex items-center justify-center gap-1.5">
+              class="bg-primary-600 hover:bg-primary-700 text-white text-sm font-semibold px-5 py-2 rounded-xl transition inline-flex items-center justify-center gap-1.5">
         <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
         ابدأ طلبية جديدة
       </button>
@@ -29,7 +29,7 @@
           <div class="flex items-center gap-2 mb-1">
             <p class="font-bold text-gray-800">{{ cart_obj.display_name }}</p>
             {% if cart_obj.is_active %}
-            <span class="px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-100 text-blue-700">نشطة الآن</span>
+            <span class="px-2 py-0.5 rounded-full text-[11px] font-medium bg-primary-100 text-primary-700">نشطة الآن</span>
             {% endif %}
           </div>
           <p class="text-xs text-gray-400">
@@ -41,8 +41,8 @@
           <form method="POST" action="{% url 'orders:cart_rename' cart_obj.pk %}" class="flex items-center gap-1.5">
             {% csrf_token %}
             <input type="text" name="name" value="{{ cart_obj.name }}" placeholder="اسم الطلبية"
-                   class="w-32 border border-gray-200 rounded-lg px-2 py-1.5 text-xs outline-none focus:border-blue-400">
-            <button type="submit" class="text-xs text-blue-600 hover:underline">حفظ الاسم</button>
+                   class="w-32 border border-gray-200 rounded-lg px-2 py-1.5 text-xs outline-none focus:border-primary-400">
+            <button type="submit" class="text-xs text-primary-600 hover:underline">حفظ الاسم</button>
           </form>
 
           {% if not cart_obj.is_active %}
@@ -72,7 +72,7 @@
     {% endif %}
 
     <div class="mt-6">
-      <a href="{% url 'orders:cart' %}" class="text-sm text-blue-600 hover:underline">← الرجوع للسلة النشطة</a>
+      <a href="{% url 'orders:cart' %}" class="text-sm text-primary-600 hover:underline">← الرجوع للسلة النشطة</a>
     </div>
 </div>
 

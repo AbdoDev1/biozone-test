@@ -21,17 +21,17 @@
             <label class="text-sm font-medium text-gray-700 mb-1 block">اسم نوع الحساب</label>
             <input type="text" name="name" value="{{ account_type.name|default:'' }}"
                    placeholder="مثال: جملة، صيدلية، مستشفى"
-                   class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400">
+                   class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary-400">
         </div>
 
         <div>
             <label class="text-sm font-medium text-gray-700 mb-2 block">الوحدة التي تظهر لهذا النوع في المتجر</label>
             <div class="space-y-2">
                 {% for value, label in unit_sizes %}
-                <label class="flex items-center gap-2 border rounded-lg px-3 py-2 cursor-pointer has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                <label class="flex items-center gap-2 border rounded-lg px-3 py-2 cursor-pointer has-[:checked]:border-primary-500 has-[:checked]:bg-primary-50">
                     <input type="radio" name="default_unit_size" value="{{ value }}"
                            {% if account_type.default_unit_size == value or not account_type and value == 'S' %}checked{% endif %}
-                           class="accent-blue-600">
+                           class="accent-primary-600">
                     <span class="text-sm">{{ label }}</span>
                 </label>
                 {% endfor %}

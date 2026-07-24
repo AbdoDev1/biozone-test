@@ -21,7 +21,7 @@
          class="absolute left-0 mt-2 w-80 max-w-[90vw] bg-white rounded-lg shadow-lg border border-gray-100 z-50">
         <div class="flex items-center justify-between px-4 py-2 border-b border-gray-100">
             <span class="text-sm font-semibold text-gray-800">الإشعارات</span>
-            <button x-show="unreadCount > 0" @click="markAllRead()" class="text-xs text-blue-600 hover:underline">
+            <button x-show="unreadCount > 0" @click="markAllRead()" class="text-xs text-primary-600 hover:underline">
                 تحديد الكل كمقروء
             </button>
         </div>
@@ -30,9 +30,9 @@
             <template x-for="n in items" :key="n.id">
                 <a :href="'{% url 'notifications:open' 0 %}'.replace('/0/', '/' + n.id + '/')"
                    class="block px-4 py-3 text-sm hover:bg-gray-50"
-                   :class="!n.is_read ? 'bg-blue-50/50' : ''">
+                   :class="!n.is_read ? 'bg-primary-50/50' : ''">
                     <div class="flex items-start gap-2">
-                        <span x-show="!n.is_read" class="w-2 h-2 mt-1.5 rounded-full bg-blue-500 shrink-0"></span>
+                        <span x-show="!n.is_read" class="w-2 h-2 mt-1.5 rounded-full bg-primary-500 shrink-0"></span>
                         <div class="min-w-0">
                             <p class="font-medium text-gray-800 truncate" x-text="n.title"></p>
                             <p x-show="n.message" class="text-xs text-gray-500 mt-0.5 line-clamp-2" x-text="n.message"></p>
@@ -45,7 +45,7 @@
         </div>
 
         <a href="{% url 'notifications:list' %}"
-           class="block text-center px-4 py-2 text-xs text-blue-600 hover:underline border-t border-gray-100">
+           class="block text-center px-4 py-2 text-xs text-primary-600 hover:underline border-t border-gray-100">
             عرض كل الإشعارات
         </a>
     </div>
