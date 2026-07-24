@@ -1,6 +1,31 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import UserCreationForm, PasswordChangeForm
 from .models import User, ClientProfile, AccountType
+
+INPUT_CLASSES = (
+    'w-full border border-gray-300 rounded-lg px-4 py-2 text-sm '
+    'focus:outline-none focus:ring-2 focus:ring-blue-500'
+)
+
+
+class ClientPasswordChangeForm(PasswordChangeForm):
+    """
+    نفس فورم Django القياسي لتغيير كلمة المرور، بس بعناوين عربية
+    وكلاسات Tailwind عشان تتوافق مع باقي فورمات الحساب بدل شكل
+    Django الافتراضي.
+    """
+    old_password = forms.CharField(
+        label='كلمة المرور الحالية',
+        widget=forms.PasswordInput(attrs={'class': INPUT_CLASSES}),
+    )
+    new_password1 = forms.CharField(
+        label='كلمة المرور الجديدة',
+        widget=forms.PasswordInput(attrs={'class': INPUT_CLASSES}),
+    )
+    new_password2 = forms.CharField(
+        label='تأكيد كلمة المرور الجديدة',
+        widget=forms.PasswordInput(attrs={'class': INPUT_CLASSES}),
+    )
 
 
 class RegisterForm(UserCreationForm):

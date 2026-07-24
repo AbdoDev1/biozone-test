@@ -97,6 +97,9 @@ def pending_view(request):
 ACCOUNT_STATEMENT_PAGE_SIZE = 30
 
 
+ORDERS_TAB_PAGE_SIZE = 10
+
+
 def dashboard_view(request):
     if not request.user.is_authenticated:
         return redirect('accounts:login')
@@ -104,9 +107,25 @@ def dashboard_view(request):
         return redirect('staff:dashboard')
 
     from django.core.paginator import Paginator
+    from django.contrib.auth import update_session_auth_hash
     from django.db.models import F, Sum, Window
     from accounting.models import AccountTransaction
+    from orders.models import Order
+    from .forms import ClientPasswordChangeForm
 
+    # ---- تغيير كلمة المرور (تبويب الأمان) ----
+    # فورم مستقل بيتبعت لنفس الصفحة؛ لو الطلب مش خاص بيه (تبويبات باقي
+    # الصفحة) بنجهزه فاضي عادي عشان يتعرض في التبويب من غير أخطاء.
+    password_form = ClientPasswordChangeForm(user=request.user)
+    if request.method == 'POST' and request.POST.get('form') == 'password':
+        password_form = ClientPasswordChangeForm(user=request.user, data=request.POST)
+        if password_form.is_valid():
+            user = password_form.save()
+            update_session_auth_hash(request, user)  # يمنع تسجيل الخروج التلقائي بعد التغيير
+            messages.success(request, 'تم تغيير كلمة المرور بنجاح.')
+            return redirect('accounts:dashboard')
+
+    # ---- الرصيد التراكمي بعد كل حركة (كشف الحساب) ----
     # الرصيد التراكمي بعد كل حركة كان بيتحسب بالكامل في بايثون (بيجيب كل
     # حركات العميل من غير ترقيم صفحات ويلف عليها سطر بسطر) — ده كان بيبطّئ
     # الصفحة تدريجيًا مع الوقت لأي عميل قديم عنده آلاف الحركات.
@@ -123,13 +142,26 @@ def dashboard_view(request):
     ).order_by('-created_at', '-id')  # الأحدث فوق للعميل
 
     paginator = Paginator(transactions, ACCOUNT_STATEMENT_PAGE_SIZE)
-    page_obj = paginator.get_page(request.GET.get('page'))
+    # ملحوظة: تبويب كشف الحساب بيستخدم باراميتر ?page مستقل (statement_page)
+    # عشان مايتعارضش مع باراميتر صفحات تبويب الطلبات لو الاتنين اتفعّلوا
+    # مع بعض في نفس الرابط.
+    page_obj = paginator.get_page(request.GET.get('statement_page'))
 
     balance = AccountTransaction.balance_for(request.user)
+
+    # ---- الطلبات (نظرة عامة + تبويب الطلبات) ----
+    orders_qs = Order.objects.filter(client=request.user).prefetch_related('items').order_by('-created_at')
+    recent_orders = orders_qs[:5]
+
+    orders_paginator = Paginator(orders_qs, ORDERS_TAB_PAGE_SIZE)
+    orders_page_obj = orders_paginator.get_page(request.GET.get('orders_page'))
 
     return render(request, 'accounts/dashboard.html', {
         'balance': balance,
         'balance_abs': abs(balance),
         'statement': page_obj,
         'page_obj': page_obj,
+        'recent_orders': recent_orders,
+        'orders_page_obj': orders_page_obj,
+        'password_form': password_form,
     })

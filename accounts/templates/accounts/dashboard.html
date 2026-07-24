@@ -2,95 +2,288 @@
 {% block title %}حسابي — Biozone{% endblock %}
 {% block content %}
 
-<div class="max-w-3xl mx-auto px-4 py-8">
+<div x-data="{ tab: 'overview' }" class="max-w-4xl mx-auto px-4 py-8">
 
-    <div class="bg-white rounded-2xl shadow-sm p-6 md:p-8 mb-6">
+    <div class="bg-white rounded-2xl shadow-sm p-6 md:p-8 mb-4">
         <h1 class="text-xl font-bold text-gray-800 mb-1">
             مرحبًا، {{ request.user.client_profile.business_name|default:request.user.username }}
         </h1>
-        <p class="text-gray-500 text-sm">مرحبًا بك في حسابك على Biozone</p>
+        <p class="text-gray-500 text-sm">لوحة حسابك على Biozone</p>
     </div>
 
-    <!-- الرصيد -->
-    <div class="rounded-xl p-5 mb-6 {% if balance > 0 %}bg-red-50{% else %}bg-green-50{% endif %}">
-        <p class="text-sm text-gray-500 mb-1">الرصيد الحالي</p>
-        <p class="text-2xl font-bold {% if balance > 0 %}text-red-600{% else %}text-green-600{% endif %}">
-            {% if balance > 0 %}
-                مبلغ مستحق عليك: {{ balance }} ج.م
-            {% elif balance < 0 %}
-                رصيد دائن لك: {{ balance_abs }} ج.م
-            {% else %}
-                لا يوجد رصيد مستحق
-            {% endif %}
-        </p>
-    </div>
+    <!-- التابات -->
+    <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
+        <div class="flex border-b overflow-x-auto text-sm">
+            <button @click="tab = 'overview'"
+                    :class="tab === 'overview' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                    class="px-5 py-3 border-b-2 font-medium whitespace-nowrap transition">
+                نظرة عامة
+            </button>
+            <button @click="tab = 'orders'"
+                    :class="tab === 'orders' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                    class="px-5 py-3 border-b-2 font-medium whitespace-nowrap transition">
+                طلباتي
+            </button>
+            <button @click="tab = 'statement'"
+                    :class="tab === 'statement' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                    class="px-5 py-3 border-b-2 font-medium whitespace-nowrap transition">
+                كشف الحساب
+                {% if balance > 0 %}
+                <span class="text-xs text-red-600 font-semibold">({{ balance }} ج.م)</span>
+                {% endif %}
+            </button>
+            <button @click="tab = 'profile'"
+                    :class="tab === 'profile' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                    class="px-5 py-3 border-b-2 font-medium whitespace-nowrap transition">
+                بيانات النشاط التجاري
+            </button>
+            <button @click="tab = 'security'"
+                    :class="tab === 'security' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                    class="px-5 py-3 border-b-2 font-medium whitespace-nowrap transition">
+                الأمان
+            </button>
+        </div>
 
-    <!-- خياراتك -->
-    <div class="grid grid-cols-1 sm:grid-cols-1 gap-3 mb-8 text-sm text-center">
-        <a href="{% url 'orders:cart' %}" class="bg-white rounded-2xl shadow-sm p-4 hover:bg-blue-50 transition sm:max-w-xs sm:mx-auto sm:w-full">
-            <svg class="w-6 h-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 1.994-4.457 2.781-6.987a1.125 1.125 0 00-1.087-1.437H5.106M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z"/></svg><br>سلة المشتريات
-        </a>
-    </div>
+        <!-- تبويب: نظرة عامة -->
+        <div x-show="tab === 'overview'" class="p-4 md:p-6">
 
-    <!-- سجل المعاملات -->
-    <h2 class="text-sm font-semibold text-gray-700 mb-2">سجل المعاملات</h2>
-    <div class="bg-white rounded-2xl shadow-sm overflow-x-auto">
-        <table class="w-full text-xs sm:text-sm">
-            <thead class="bg-gray-50 text-gray-600">
-                <tr>
-                    <th class="px-3 py-2 text-right">التاريخ</th>
-                    <th class="px-3 py-2 text-right">النوع</th>
-                    <th class="px-3 py-2 text-right">تفاصيل</th>
-                    <th class="px-3 py-2 text-right">المبلغ</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100">
-                {% for tx in statement %}
-                <tr>
-                    <td class="px-3 py-2 text-gray-500">{{ tx.created_at|date:"Y-m-d" }}</td>
-                    <td class="px-3 py-2">
-                        <span class="px-2 py-0.5 rounded-full text-xs
-                            {% if tx.kind == 'INVOICE' %}bg-blue-100 text-blue-700
-                            {% elif tx.kind == 'PAYMENT' %}bg-green-100 text-green-700
-                            {% else %}bg-orange-100 text-orange-700{% endif %}">
-                            {{ tx.get_kind_display }}
+            <!-- بطاقة الرصيد -->
+            <div class="rounded-xl p-5 mb-6 {% if balance > 0 %}bg-red-50{% else %}bg-green-50{% endif %}">
+                <p class="text-sm text-gray-500 mb-1">الرصيد الحالي</p>
+                <p class="text-2xl font-bold {% if balance > 0 %}text-red-600{% else %}text-green-600{% endif %}">
+                    {% if balance > 0 %}
+                        مبلغ مستحق عليك: {{ balance }} ج.م
+                    {% elif balance < 0 %}
+                        رصيد دائن لك: {{ balance_abs }} ج.م
+                    {% else %}
+                        لا يوجد رصيد مستحق
+                    {% endif %}
+                </p>
+                <button @click="tab = 'statement'" class="text-xs text-blue-600 hover:underline mt-2">
+                    عرض كشف الحساب بالتفصيل
+                </button>
+            </div>
+
+            <!-- اختصارات سريعة -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-8 text-sm text-center">
+                <a href="{% url 'store:home' %}"
+                   class="bg-gray-50 rounded-xl p-4 hover:bg-blue-50 transition">
+                    <svg class="w-6 h-6 mx-auto text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21"/></svg>
+                    <br>تصفح المتجر
+                </a>
+                <a href="{% url 'orders:cart' %}"
+                   class="bg-gray-50 rounded-xl p-4 hover:bg-blue-50 transition">
+                    <svg class="w-6 h-6 mx-auto text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 1.994-4.457 2.781-6.987a1.125 1.125 0 00-1.087-1.437H5.106M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z"/></svg>
+                    <br>سلة المشتريات
+                </a>
+                <button @click="tab = 'orders'"
+                        class="bg-gray-50 rounded-xl p-4 hover:bg-blue-50 transition">
+                    <svg class="w-6 h-6 mx-auto text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25z"/></svg>
+                    <br>سجل الطلبات
+                </button>
+            </div>
+
+            <!-- آخر الطلبات -->
+            <h2 class="text-sm font-semibold text-gray-700 mb-2">آخر الطلبات</h2>
+            {% if recent_orders %}
+            <div class="space-y-2 mb-2">
+                {% for order in recent_orders %}
+                <a href="{% url 'orders:order_detail' order.pk %}"
+                   class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 border border-gray-100 rounded-xl p-3 hover:bg-gray-50 transition">
+                    <div>
+                        <span class="font-medium text-gray-800">طلب #{{ order.pk }}</span>
+                        <span class="text-xs text-gray-400 ms-2">{{ order.created_at|date:"d/m/Y" }}</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="px-3 py-1 rounded-full text-xs font-medium
+                            {% if order.status == 'PENDING' %}bg-yellow-100 text-yellow-700
+                            {% elif order.status == 'NEEDS_APPROVAL' %}bg-orange-100 text-orange-700
+                            {% elif order.status == 'CONFIRMED' %}bg-green-100 text-green-700
+                            {% elif order.status == 'REJECTED' %}bg-red-100 text-red-600
+                            {% else %}bg-blue-100 text-blue-700{% endif %}">
+                            {{ order.get_status_display }}
                         </span>
-                    </td>
-                    <td class="px-3 py-2 text-gray-500">
-                        {% if tx.invoice %}
-                            <a href="{% url 'invoices:print' tx.invoice.pk %}" target="_blank" class="text-blue-600 hover:underline">
-                                {{ tx.invoice.invoice_number }}
-                            </a>
-                        {% else %}
-                            {{ tx.note }}
-                        {% endif %}
-                    </td>
-                    <td class="px-3 py-2 font-medium {% if tx.amount > 0 %}text-red-600{% else %}text-green-600{% endif %}">
-                        {{ tx.amount }}
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="4" class="px-3 py-8 text-center text-gray-400">لا توجد معاملات حتى الآن</td>
-                </tr>
+                        <span class="font-bold text-blue-700 text-sm">{{ order.total }} ج.م</span>
+                    </div>
+                </a>
                 {% endfor %}
-            </tbody>
-        </table>
-    </div>
+            </div>
+            <button @click="tab = 'orders'" class="text-xs text-blue-600 hover:underline">
+                عرض جميع الطلبات
+            </button>
+            {% else %}
+            <p class="text-gray-400 text-sm text-center py-8 border border-gray-100 rounded-xl">
+                لا توجد طلبات حتى الآن.
+                <a href="{% url 'store:home' %}" class="text-blue-600 hover:underline block mt-1">تصفح المنتجات</a>
+            </p>
+            {% endif %}
+        </div>
 
-    {% if page_obj.paginator.num_pages > 1 %}
-    <div class="flex items-center justify-center gap-2 mt-4 text-sm">
-        {% if page_obj.has_previous %}
-        <a href="?page={{ page_obj.previous_page_number }}"
-           class="px-3 py-2 rounded-lg bg-white shadow-sm hover:bg-blue-50 text-gray-600">الأحدث</a>
-        {% endif %}
-        <span class="text-gray-500 px-2">صفحة {{ page_obj.number }} من {{ page_obj.paginator.num_pages }}</span>
-        {% if page_obj.has_next %}
-        <a href="?page={{ page_obj.next_page_number }}"
-           class="px-3 py-2 rounded-lg bg-white shadow-sm hover:bg-blue-50 text-gray-600">الأقدم</a>
-        {% endif %}
-    </div>
-    {% endif %}
+        <!-- تبويب: طلباتي -->
+        <div x-show="tab === 'orders'" class="p-4 md:p-6">
+            {% if orders_page_obj %}
+            <div class="space-y-3">
+                {% for order in orders_page_obj %}
+                <a href="{% url 'orders:order_detail' order.pk %}"
+                   class="bg-white border border-gray-100 rounded-2xl shadow-sm p-5 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 hover:shadow-md transition block">
+                    <div>
+                        <p class="font-bold text-gray-800">طلب #{{ order.pk }}</p>
+                        <p class="text-xs text-gray-400 mt-1">{{ order.created_at|date:"d/m/Y" }}</p>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <span class="px-3 py-1 rounded-full text-xs font-medium
+                            {% if order.status == 'PENDING' %}bg-yellow-100 text-yellow-700
+                            {% elif order.status == 'NEEDS_APPROVAL' %}bg-orange-100 text-orange-700
+                            {% elif order.status == 'CONFIRMED' %}bg-green-100 text-green-700
+                            {% elif order.status == 'REJECTED' %}bg-red-100 text-red-600
+                            {% else %}bg-blue-100 text-blue-700{% endif %}">
+                            {{ order.get_status_display }}
+                        </span>
+                        <span class="font-bold text-blue-700">{{ order.total }} ج.م</span>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
 
+            {% if orders_page_obj.paginator.num_pages > 1 %}
+            <div class="flex items-center justify-center gap-2 mt-6 text-sm">
+                {% if orders_page_obj.has_previous %}
+                <a href="?orders_page={{ orders_page_obj.previous_page_number }}#orders"
+                   class="px-3 py-2 rounded-lg bg-gray-50 hover:bg-blue-50 text-gray-600">الأحدث</a>
+                {% endif %}
+                <span class="text-gray-500 px-2">صفحة {{ orders_page_obj.number }} من {{ orders_page_obj.paginator.num_pages }}</span>
+                {% if orders_page_obj.has_next %}
+                <a href="?orders_page={{ orders_page_obj.next_page_number }}#orders"
+                   class="px-3 py-2 rounded-lg bg-gray-50 hover:bg-blue-50 text-gray-600">الأقدم</a>
+                {% endif %}
+            </div>
+            {% endif %}
+            {% else %}
+            <p class="text-gray-400 text-sm text-center py-8">
+                لا توجد طلبات حتى الآن.
+                <a href="{% url 'store:home' %}" class="text-blue-600 hover:underline block mt-1">تصفح المنتجات</a>
+            </p>
+            {% endif %}
+        </div>
+
+        <!-- تبويب: كشف الحساب -->
+        <div x-show="tab === 'statement'" class="p-4 md:p-6">
+            <div class="bg-white rounded-2xl overflow-x-auto border border-gray-100">
+                <table class="w-full text-xs sm:text-sm">
+                    <thead class="bg-gray-50 text-gray-600">
+                        <tr>
+                            <th class="px-3 py-2 text-right">التاريخ</th>
+                            <th class="px-3 py-2 text-right">النوع</th>
+                            <th class="px-3 py-2 text-right">تفاصيل</th>
+                            <th class="px-3 py-2 text-right">المبلغ</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        {% for tx in statement %}
+                        <tr>
+                            <td class="px-3 py-2 text-gray-500">{{ tx.created_at|date:"Y-m-d" }}</td>
+                            <td class="px-3 py-2">
+                                <span class="px-2 py-0.5 rounded-full text-xs
+                                    {% if tx.kind == 'INVOICE' %}bg-blue-100 text-blue-700
+                                    {% elif tx.kind == 'PAYMENT' %}bg-green-100 text-green-700
+                                    {% else %}bg-orange-100 text-orange-700{% endif %}">
+                                    {{ tx.get_kind_display }}
+                                </span>
+                            </td>
+                            <td class="px-3 py-2 text-gray-500">
+                                {% if tx.invoice %}
+                                    <a href="{% url 'invoices:print' tx.invoice.pk %}" target="_blank" class="text-blue-600 hover:underline">
+                                        {{ tx.invoice.invoice_number }}
+                                    </a>
+                                {% else %}
+                                    {{ tx.note }}
+                                {% endif %}
+                            </td>
+                            <td class="px-3 py-2 font-medium {% if tx.amount > 0 %}text-red-600{% else %}text-green-600{% endif %}">
+                                {{ tx.amount }}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="px-3 py-8 text-center text-gray-400">لا توجد معاملات حتى الآن</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if page_obj.paginator.num_pages > 1 %}
+            <div class="flex items-center justify-center gap-2 mt-4 text-sm">
+                {% if page_obj.has_previous %}
+                <a href="?statement_page={{ page_obj.previous_page_number }}#statement"
+                   class="px-3 py-2 rounded-lg bg-gray-50 hover:bg-blue-50 text-gray-600">الأحدث</a>
+                {% endif %}
+                <span class="text-gray-500 px-2">صفحة {{ page_obj.number }} من {{ page_obj.paginator.num_pages }}</span>
+                {% if page_obj.has_next %}
+                <a href="?statement_page={{ page_obj.next_page_number }}#statement"
+                   class="px-3 py-2 rounded-lg bg-gray-50 hover:bg-blue-50 text-gray-600">الأقدم</a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- تبويب: بيانات النشاط التجاري -->
+        <div x-show="tab === 'profile'" class="p-6 md:p-8 space-y-4 text-sm">
+            <div class="flex flex-col sm:flex-row gap-1 sm:gap-4">
+                <span class="text-gray-500 sm:w-40">اسم النشاط التجاري</span>
+                <span class="font-medium">{{ request.user.client_profile.business_name }}</span>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-1 sm:gap-4">
+                <span class="text-gray-500 sm:w-40">اسم المستخدم</span>
+                <span class="font-medium">{{ request.user.username }}</span>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-1 sm:gap-4">
+                <span class="text-gray-500 sm:w-40">البريد الإلكتروني</span>
+                <span class="font-medium">{{ request.user.email }}</span>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-1 sm:gap-4">
+                <span class="text-gray-500 sm:w-40">رقم الهاتف</span>
+                <span class="font-medium">{{ request.user.client_profile.phone }}</span>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-1 sm:gap-4">
+                <span class="text-gray-500 sm:w-40">العنوان</span>
+                <span class="font-medium">{{ request.user.client_profile.address }}</span>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-1 sm:gap-4">
+                <span class="text-gray-500 sm:w-40">نوع الحساب</span>
+                <span class="font-medium">{{ request.user.client_profile.account_type.name }}</span>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-1 sm:gap-4">
+                <span class="text-gray-500 sm:w-40">تاريخ التسجيل</span>
+                <span class="font-medium">{{ request.user.date_joined|date:"Y-m-d" }}</span>
+            </div>
+            <p class="text-xs text-gray-400 pt-2 border-t border-gray-100">
+                لتعديل هذه البيانات، يرجى التواصل مع فريق الدعم.
+            </p>
+        </div>
+
+        <!-- تبويب: الأمان -->
+        <div x-show="tab === 'security'" class="p-6 md:p-8">
+            <h3 class="text-sm font-semibold text-gray-700 mb-4">تغيير كلمة المرور</h3>
+            <form method="post" class="space-y-4 max-w-sm">
+                {% csrf_token %}
+                <input type="hidden" name="form" value="password">
+                {% for field in password_form %}
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}
+                    <p class="text-red-500 text-xs mt-1">{{ field.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                {% endfor %}
+                <button type="submit"
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg transition text-sm">
+                    حفظ كلمة المرور الجديدة
+                </button>
+            </form>
+        </div>
+
+    </div>
 </div>
 {% endblock %}
