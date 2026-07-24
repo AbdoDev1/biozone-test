@@ -52,6 +52,11 @@ CSRF_TRUSTED_ORIGINS = [
 # Application definition
 
 INSTALLED_APPS = [
+    # 'daphne' لازم يكون أول حاجة في القايمة (قبل حتى django.contrib.admin) —
+    # ده مش تفضيل ترتيب عادي، ده شرط من مكتبة Channels نفسها عشان يستبدل
+    # أمر `runserver` بنسخة بتفهم WebSocket (مفيد لو حبيت تجرب بسرعة بره
+    # docker compose؛ الإنتاج الفعلي بيشغل daphne/uvicorn مباشرة مش runserver).
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -68,6 +73,7 @@ INSTALLED_APPS = [
     'invoices',
     'accounting',
     'notifications',
+    'channels',
 ]
 
 MIDDLEWARE = [
@@ -149,6 +155,22 @@ CACHES = {
 # وملموس على Redis وانت بتجرب/تختبر (مش مجرد كونتينر شغال من غير استخدام).
 SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
 SESSION_CACHE_ALIAS = 'default'
+
+# قناة الإشعارات اللحظية (Django Channels) — بتستخدم Redis كـ pub/sub بين
+# عمليات gunicorn المختلفة (worker واحد ممكن يكون فاتح WebSocket لمستخدم،
+# وworker تاني هو اللي بينفذ notify() لما حدث يحصل — لازم يقدروا يتكلموا
+# مع بعض). قاعدة بيانات منفصلة (رقم 2) عن الكاش/السيشن (رقم 1) عمدًا،
+# عشان لو حصل يومًا FLUSHDB غلط على واحدة منهم، متأثرش على التانية.
+REDIS_CHANNEL_URL = config('REDIS_CHANNEL_URL', default='redis://redis:6379/2')
+ASGI_APPLICATION = 'config.asgi.application'
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': [REDIS_CHANNEL_URL],
+        },
+    },
+}
 
  #----- الإيميل (لازم لإرسال روابط إعادة تعيين كلمة السر) -----
 # EMAIL_BACKEND الافتراضي بيطبع الإيميل في الـ console (docker compose logs -f web)

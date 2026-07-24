@@ -32,7 +32,13 @@ else
 fi
 echo "== تشغيل gunicorn بعدد workers: $WORKERS (أنوية متاحة: $(nproc 2>/dev/null || echo '؟')) =="
 
-exec gunicorn config.wsgi:application \
+# config.asgi:application بدل config.wsgi:application، و worker class بقى
+# uvicorn (عبر حزمة uvicorn-worker) بدل الـ worker المتزامن الافتراضي —
+# ده اللي بيخلي gunicorn يقدر يستضيف اتصالات WebSocket (جرس الإشعارات
+# اللحظي) جنب طلبات HTTP العادية في نفس الوقت، مع الاحتفاظ بنفس منطق
+# gunicorn لإدارة عدد الـ workers وإعادة التشغيل عند الأعطال.
+exec gunicorn config.asgi:application \
+    --worker-class uvicorn_worker.UvicornWorker \
     --bind 0.0.0.0:8000 \
     --workers "$WORKERS" \
     --timeout 60 \

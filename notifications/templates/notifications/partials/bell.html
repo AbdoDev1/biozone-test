@@ -1,6 +1,11 @@
 {% comment %}
-جرس الإشعارات — Alpine.js component بيعمل poll لنقطة JSON كل 15 ثانية
-عشان يحدّث نفسه لوحده من غير ما المستخدم يعمل refresh للصفحة.
+جرس الإشعارات — Alpine.js component. المصدر الأساسي للتحديث دلوقتي هو
+اتصال WebSocket (notifications/consumers.py): أي إشعار جديد بيوصل فورًا
+من غير أي انتظار. الـ polling القديم (كل 15 ثانية) اتحوّل لشبكة أمان بس
+(كل دقيقة) — بيشتغل دايمًا بالتوازي، وده اللي بيغطي حالتين: (1) لو
+الـ WebSocket اتقطع مؤقتًا (شبكة ضعيفة، Redis واقع لحظيًا) قبل ما يعيد
+الاتصال، و(2) أي إشعار كان ممكن يتفوت في الثانية اللي بين قطع الاتصال
+وإعادة المحاولة.
 {% endcomment %}
 <div class="relative"
      x-data="notificationBell({{ nav_unread_count|default:0 }})">
@@ -58,9 +63,31 @@ function notificationBell(initialUnread) {
         unreadCount: initialUnread,
         items: [],
         pollTimer: null,
+        ws: null,
+        wsReconnectDelay: 1000,
+        wsClosedByUs: false,
         init() {
             this.refresh();
-            this.pollTimer = setInterval(() => this.refresh(), 15000);
+            // شبكة أمان بطيئة (دقيقة كاملة) بالتوازي مع WebSocket — راجع
+            // التعليق أعلى الملف.
+            this.pollTimer = setInterval(() => this.refresh(), 60000);
+            this.connectWebSocket();
+        },
+        connectWebSocket() {
+            const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            this.ws = new WebSocket(`${protocol}//${location.host}/ws/notifications/`);
+            this.ws.onmessage = () => this.refresh();
+            this.ws.onclose = () => {
+                if (this.wsClosedByUs) return;
+                // إعادة محاولة الاتصال مع backoff تصاعدي (لحد 30 ثانية
+                // كحد أقصى) عشان لو Redis واقع أو السيرفر بيعمل restart
+                // منضربش الشبكة بمحاولات متكررة كل جزء من الثانية.
+                setTimeout(() => this.connectWebSocket(), this.wsReconnectDelay);
+                this.wsReconnectDelay = Math.min(this.wsReconnectDelay * 2, 30000);
+            };
+            this.ws.onopen = () => {
+                this.wsReconnectDelay = 1000;
+            };
         },
         // Alpine بينادي destroy() تلقائيًا (زي init()) وقت ما العنصر
         // بتاع الـ component يتشال من الـ DOM — وده بيحصل على كل تنقل
@@ -71,8 +98,14 @@ function notificationBell(initialUnread) {
         // component بقى منفصل عن الـ DOM الفعلي — وده اللي كان بيظهر في
         // الكونسول كـ "n is not defined" بعد كذا تنقل، لأن كل تنقل جديد
         // كان بيضيف تايمر تاني فوق اللي قبله من غير ما يقفل القديم.
+        // نفس المبدأ هنا بننضفه لاتصال الـ WebSocket كمان (wsClosedByUs
+        // بيمنع منطق إعادة الاتصال من الشغل بعد ما إحنا قفلناه عمدًا).
         destroy() {
             if (this.pollTimer) clearInterval(this.pollTimer);
+            if (this.ws) {
+                this.wsClosedByUs = true;
+                this.ws.close();
+            }
         },
         toggle() {
             this.open = !this.open;

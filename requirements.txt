@@ -11,3 +11,10 @@ sqlparse==0.5.5
 gunicorn==23.0.0
 sentry-sdk==2.20.0
 redis==5.2.1
+
+# إشعارات لحظية (WebSockets) عبر Django Channels — راجع notifications/consumers.py
+channels==4.3.2
+channels-redis==4.3.0
+daphne==4.2.3
+uvicorn[standard]==0.51.0
+uvicorn-worker==0.4.0

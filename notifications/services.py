@@ -13,6 +13,34 @@ from .models import Notification
 MAX_NOTIFICATIONS_PER_USER = 100
 
 
+def _push_realtime(recipient_id):
+    """
+    بتبعت إشارة فورية (event خفيف من غير بيانات) لجرس الإشعارات المفتوح
+    فعليًا (WebSocket) عند المستخدم ده، عشان يعمل refresh() لنفسه على طول
+    بدل ما يستنى الـ polling الدوري (15 ثانية). البيانات الحقيقية بتتجاب
+    زي ما هي دايمًا من notifications:bell_data — الرسالة دي بس "تنبيه"،
+    مفيش تكرار لمنطق الـ serialization هنا.
+
+    الاستيراد جوه الدالة (مش أعلى الملف) نفس أسلوب باقي الملف ده، وكمان
+    عشان لو الـ channel layer مش شغال لأي سبب (Redis واقع مثلًا)، بنمتص
+    الاستثناء بهدوء — الإشعار نفسه اتسجل في الداتابيز بنجاح بالفعل، وأي
+    جرس مفتوح هيلحقه لاحقًا من نفس الـ polling العادي (fallback).
+    """
+    try:
+        from asgiref.sync import async_to_sync
+        from channels.layers import get_channel_layer
+
+        channel_layer = get_channel_layer()
+        if channel_layer is None:
+            return
+        async_to_sync(channel_layer.group_send)(
+            f'notifications_user_{recipient_id}',
+            {'type': 'notify'},
+        )
+    except Exception:
+        pass
+
+
 def _trim_old(recipient_id, keep=MAX_NOTIFICATIONS_PER_USER):
     """
     بتفضّل أحدث `keep` إشعار للمستخدم بس وتمسح الباقي. بتتنادى بعد أي
@@ -46,6 +74,7 @@ def notify(recipient, kind, title, message='', url_name='', url_kwargs=None, exc
         url_kwargs=url_kwargs or {},
     )
     _trim_old(recipient.pk)
+    _push_realtime(recipient.pk)
     return notification
 
 
@@ -71,6 +100,7 @@ def notify_staff_with_perm(codename, kind, title, message='', url_name='', url_k
         Notification.objects.bulk_create(notifications)
         for n in notifications:
             _trim_old(n.recipient_id)
+            _push_realtime(n.recipient_id)
     return notifications
 
 
@@ -95,4 +125,5 @@ def notify_all_clients(kind, title, message='', url_name='', url_kwargs=None):
         Notification.objects.bulk_create(notifications)
         for n in notifications:
             _trim_old(n.recipient_id)
+            _push_realtime(n.recipient_id)
     return notifications
