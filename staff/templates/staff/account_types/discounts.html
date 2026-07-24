@@ -28,7 +28,7 @@
     {% btn "بحث" type="submit" variant="secondary" %}
 </form>
 
-<form method="post">
+<form method="post" hx-push-url="false">
     {% csrf_token %}
     <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
         <table class="w-full text-sm">

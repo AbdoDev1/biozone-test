@@ -22,7 +22,7 @@
     </div>
     {% endif %}
 
-    <form method="post" class="space-y-4">
+    <form method="post" hx-push-url="false" class="space-y-4">
         {% csrf_token %}
 
         <div>

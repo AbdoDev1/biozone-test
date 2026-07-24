@@ -1,9 +1,12 @@
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.defaultfilters import timesince
 
 from .models import Notification
+
+NOTIFICATIONS_PAGE_SIZE = 20
 
 
 def _serialize(notification):
@@ -32,10 +35,14 @@ def notification_bell_data(request):
 
 @login_required
 def notification_list(request):
-    notifications = request.user.notifications.all()[:100]
+    notifications = request.user.notifications.all()
+    paginator = Paginator(notifications, NOTIFICATIONS_PAGE_SIZE)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
     is_staff_view = request.user.role in ('ADMIN', 'WAREHOUSE')
     context = {
-        'notifications': notifications,
+        'notifications': page_obj,
+        'page_obj': page_obj,
         'is_staff_view': is_staff_view,
         'notifications_base_template': 'staff/base.html' if is_staff_view else 'base.html',
     }

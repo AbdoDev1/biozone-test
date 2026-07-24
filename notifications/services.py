@@ -8,6 +8,24 @@ from accounts.models import User
 
 from .models import Notification
 
+# أقصى عدد إشعارات بيتم الاحتفاظ بيه لكل مستخدم — أي حاجة أقدم من كده
+# بتتمسح تلقائيًا أول ما تتخطى الحد ده (راجع _trim_old أسفل).
+MAX_NOTIFICATIONS_PER_USER = 100
+
+
+def _trim_old(recipient_id, keep=MAX_NOTIFICATIONS_PER_USER):
+    """
+    بتفضّل أحدث `keep` إشعار للمستخدم بس وتمسح الباقي. بتتنادى بعد أي
+    إنشاء إشعار (واحد أو bulk) عشان الجدول ميكبرش من غير حد أقصى.
+    """
+    old_ids = list(
+        Notification.objects.filter(recipient_id=recipient_id)
+        .order_by('-created_at', '-pk')
+        .values_list('pk', flat=True)[keep:]
+    )
+    if old_ids:
+        Notification.objects.filter(pk__in=old_ids).delete()
+
 
 def notify(recipient, kind, title, message='', url_name='', url_kwargs=None, exclude_actor=None):
     """
@@ -19,7 +37,7 @@ def notify(recipient, kind, title, message='', url_name='', url_kwargs=None, exc
         return None
     if recipient is None:
         return None
-    return Notification.objects.create(
+    notification = Notification.objects.create(
         recipient=recipient,
         kind=kind,
         title=title,
@@ -27,6 +45,8 @@ def notify(recipient, kind, title, message='', url_name='', url_kwargs=None, exc
         url_name=url_name,
         url_kwargs=url_kwargs or {},
     )
+    _trim_old(recipient.pk)
+    return notification
 
 
 def notify_staff_with_perm(codename, kind, title, message='', url_name='', url_kwargs=None, exclude_actor=None):
@@ -49,6 +69,8 @@ def notify_staff_with_perm(codename, kind, title, message='', url_name='', url_k
             ))
     if notifications:
         Notification.objects.bulk_create(notifications)
+        for n in notifications:
+            _trim_old(n.recipient_id)
     return notifications
 
 
@@ -71,4 +93,6 @@ def notify_all_clients(kind, title, message='', url_name='', url_kwargs=None):
     ]
     if notifications:
         Notification.objects.bulk_create(notifications)
+        for n in notifications:
+            _trim_old(n.recipient_id)
     return notifications

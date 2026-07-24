@@ -23,7 +23,7 @@
         <a href="{% url 'staff:account_types' %}" class="text-primary-600 hover:underline">أنواع الحسابات وقوائم الخصومات</a>.
     </div>
 
-    <form method="post" class="space-y-5">
+    <form method="post" hx-push-url="false" class="space-y-5">
         {% csrf_token %}
 
         <div>

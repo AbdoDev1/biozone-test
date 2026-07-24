@@ -14,7 +14,7 @@
 <div class="max-w-xl mx-auto bg-white rounded-2xl shadow p-6 md:p-8">
     <h1 class="text-xl font-bold text-gray-800 mb-6">{{ title }}</h1>
 
-    <form method="post" class="space-y-5">
+    <form method="post" hx-push-url="false" class="space-y-5">
         {% csrf_token %}
 
         <div>

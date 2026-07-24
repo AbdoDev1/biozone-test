@@ -102,10 +102,27 @@
 
     // اعتراض أي <form data-confirm="..."> بدل onsubmit="return confirm(...)"
     // (data-confirm-type="success|error|warning|info" اختياري، الافتراضي warning)
+    //
+    // ملحوظة مهمة: البلوك ده بيتحط جوه <body>، وhx-boost بيستبدل محتوى
+    // الـ body بالكامل مع كل تنقل، وبيعيد تنفيذ أي <script> جواه تاني
+    // (htmx بيتفادى تكرار تحميل <script src=...> بس، مش الكود inline
+    // زي ده). يعني من غير الحارس (guard) اللي تحت، كل تنقل boosted كان
+    // بيضيف listener جديد فوق اللي قبله على document (اللي مش بيتبدل
+    // أبدًا)، فبعد ما تزور الصفحة كذا مرة كان بيظهرلك نفس رسالة التأكيد
+    // مكررة بعدد مرات الزيارة.
+    if (window.__toastConfirmBound) return;
+    window.__toastConfirmBound = true;
     document.addEventListener('submit', function (e) {
         const form = e.target;
         if (form && form.hasAttribute && form.hasAttribute('data-confirm') && !form.dataset.confirmed) {
             e.preventDefault();
+            // stopPropagation ضروري هنا: من غير كده الحدث بيكمل مساره
+            // لحد ما يوصل للفورم نفسه، وهناك أي listener تاني متسجل عليه
+            // (زي htmx لما يكون hx-boost شغال) بيتنفذ فورًا، يعني الطلب
+            // (رفض/تأكيد إلخ) بيتبعت فعليًا فورًا بدل ما ينتظر قرار
+            // المستخدم في التوست — التوست كان بيظهر بس شكليًا من غير ما
+            // يوقف حاجة فعلًا.
+            e.stopPropagation();
             showConfirmToast(form.getAttribute('data-confirm'), function () {
                 form.dataset.confirmed = '1';
                 if (form.requestSubmit) { form.requestSubmit(); } else { form.submit(); }

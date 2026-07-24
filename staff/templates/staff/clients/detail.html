@@ -249,7 +249,7 @@
 
             <!-- تسجيل دفعة وتسوية -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <form method="post" action="{% url 'staff:client_add_payment' profile.pk %}"
+                <form method="post" hx-push-url="false" action="{% url 'staff:client_add_payment' profile.pk %}"
                       class="border border-gray-100 rounded-xl p-4 space-y-3">
                     {% csrf_token %}
                     <h4 class="text-sm font-semibold text-gray-700">تسجيل دفعة</h4>
@@ -274,7 +274,7 @@
                     {% btn "تسجيل الدفعة" type="submit" variant="success" full_width=True %}
                 </form>
 
-                <form method="post" action="{% url 'staff:client_add_adjustment' profile.pk %}"
+                <form method="post" hx-push-url="false" action="{% url 'staff:client_add_adjustment' profile.pk %}"
                       class="border border-gray-100 rounded-xl p-4 space-y-3">
                     {% csrf_token %}
                     <h4 class="text-sm font-semibold text-gray-700">تسوية يدوية</h4>

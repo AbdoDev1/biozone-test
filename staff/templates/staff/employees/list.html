@@ -54,7 +54,7 @@
                     <a href="{% url 'staff:employee_edit' employee.pk %}"
                        class="text-primary-600 hover:underline text-xs">تعديل الصلاحيات</a>
                     {% if employee.pk != request.user.pk %}
-                    <form method="post" action="{% url 'staff:employee_toggle_active' employee.pk %}">
+                    <form method="post" hx-push-url="false" action="{% url 'staff:employee_toggle_active' employee.pk %}">
                         {% csrf_token %}
                         {% if employee.is_active %}
                         <button type="submit" class="text-red-600 hover:underline text-xs">إيقاف</button>

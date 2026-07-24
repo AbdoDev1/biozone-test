@@ -145,7 +145,7 @@
         <div x-show="tab === 'entry'" class="p-4 md:p-6">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-                <form method="post" action="{% url 'staff:accounting_quick_entry' %}"
+                <form method="post" hx-push-url="false" action="{% url 'staff:accounting_quick_entry' %}"
                       class="border border-gray-100 rounded-xl p-4 space-y-3">
                     {% csrf_token %}
                     <input type="hidden" name="kind" value="PAYMENT">
@@ -181,7 +181,7 @@
                     {% btn "تسجيل الدفعة" type="submit" variant="success" full_width=True %}
                 </form>
 
-                <form method="post" action="{% url 'staff:accounting_quick_entry' %}"
+                <form method="post" hx-push-url="false" action="{% url 'staff:accounting_quick_entry' %}"
                       class="border border-gray-100 rounded-xl p-4 space-y-3">
                     {% csrf_token %}
                     <input type="hidden" name="kind" value="ADJUSTMENT">
