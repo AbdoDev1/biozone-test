@@ -1,0 +1,30 @@
+# إعدادات ruff (linter) — docs.astral.sh/ruff
+#
+# البداية هنا مقصودة إنها "محافظة": بس القواعد اللي بتمسك أخطاء حقيقية
+# (imports غير مستخدمة، متغيرات غير مستخدمة، أخطاء syntax واضحة) — مش
+# قواعد التنسيق/الأسلوب (ترتيب imports، طول أسطر، docstrings...) اللي
+# ممكن تطلّع مئات التحذيرات على كود موجود من غير أي فايدة حقيقية دلوقتي.
+# لو حابب توسّعها بعدين، ضيف لقايمة select تحت (مثلاً "I" لترتيب imports،
+# أو "UP" لصيغ بايثون الأحدث).
+
+[tool.ruff]
+line-length = 119
+target-version = "py312"
+extend-exclude = ["*/migrations/*"]
+
+[tool.ruff.lint]
+select = [
+    "E9",  # أخطاء syntax حقيقية
+    "F",   # pyflakes: imports/متغيرات غير مستخدمة، أسماء غير معرّفة، إلخ
+    "W605",  # invalid escape sequence (مصدر شائع لأخطاء صامتة في regex)
+]
+ignore = [
+    "F401",  # imports معادة التصدير في ملفات __init__.py (import_export/, orders/views/)
+]
+
+[tool.ruff.lint.per-file-ignores]
+# ملفات __init__.py اللي وظيفتها إعادة التصدير بس — الاستيراد "غير
+# المستخدم" هنا مقصود (F401 متجاهلة أصلًا فوق، بس السطر ده احتياطي
+# لو حد ضيّق القاعدة العامة بعدين).
+"*/import_export/__init__.py" = ["F401"]
+"orders/views/__init__.py" = ["F401"]

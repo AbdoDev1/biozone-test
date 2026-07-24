@@ -10,3 +10,4 @@ num2words==0.5.14
 sqlparse==0.5.5
 gunicorn==23.0.0
 sentry-sdk==2.20.0
+redis==5.2.1

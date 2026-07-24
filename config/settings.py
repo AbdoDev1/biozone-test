@@ -132,6 +132,24 @@ DATABASES = {
     }
 }
 
+# Cache (Redis)
+# REDIS_URL افتراضيًا بتشاور على اسم السيرفس "redis" في docker-compose
+# (شبكة الـ compose بتعمل DNS تلقائي بالاسم ده). لو Redis واقع أو مش
+# متاح، Django هيرمي استثناء وقت أي عملية cache بدل ما يتجاهلها بصمت —
+# كده أي مشكلة في الاتصال هتظهر فورًا وقت الاختبار المحلي.
+REDIS_URL = config('REDIS_URL', default='redis://redis:6379/1')
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': REDIS_URL,
+    }
+}
+
+# السيشن كمان بيتخزن في Redis بدل الداتابيز، عشان يبقى فيه اعتماد حقيقي
+# وملموس على Redis وانت بتجرب/تختبر (مش مجرد كونتينر شغال من غير استخدام).
+SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+SESSION_CACHE_ALIAS = 'default'
+
  #----- الإيميل (لازم لإرسال روابط إعادة تعيين كلمة السر) -----
 # EMAIL_BACKEND الافتراضي بيطبع الإيميل في الـ console (docker compose logs -f web)
 # ده مفيد جدًا للتجربة المحلية من غير ما تحتاج SMTP حقيقي.
