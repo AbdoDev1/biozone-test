@@ -41,7 +41,13 @@ class User(AbstractUser):
         # الأدمن دايمًا Superuser تلقائيًا (وصول كامل لكل الصلاحيات بدون استثناء)،
         # وأي دور تاني (مخزن/عميل) مش Superuser أبدًا حتى لو اتغيّر يدويًا —
         # الدور هو مصدر الحقيقة الوحيد، مش حقل is_superuser نفسه.
+        # is_staff بنفس المنطق بالظبط: هو الشرط اللي لوحة دجانجو الإدارية
+        # الافتراضية (/admin/) بتتطلبه صراحة (منفصل عن is_superuser) —
+        # من غيره، أي أدمن يتضاف من شاشة "إضافة موظف" (مش عن طريق أمر
+        # ensure_admin وقت الديبلوي) كان بيفضل مش قادر يفتح /admin/ خالص
+        # رغم إنه Superuser فعليًا.
         self.is_superuser = (self.role == self.Role.ADMIN)
+        self.is_staff = (self.role == self.Role.ADMIN)
         super().save(*args, **kwargs)
 
     def has_accounting_access(self):

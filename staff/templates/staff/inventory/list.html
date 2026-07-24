@@ -68,7 +68,7 @@
                     {% endif %}
                 </td>
                 <td class="px-4 py-3">
-                    <a href="{% url 'staff:inventory_detail' item.pk %}"
+                    <a href="{% url 'staff:inventory_detail' item.pk %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}"
                        class="text-blue-600 hover:underline text-xs">عرض</a>
                 </td>
             </tr>

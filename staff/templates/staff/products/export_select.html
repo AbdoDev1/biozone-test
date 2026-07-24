@@ -78,7 +78,7 @@
     </div>
 
     <!-- قائمة الأصناف -->
-    <form method="post" action="{% url 'staff:export_products_selected' %}">
+    <form method="post" action="{% url 'staff:export_products_selected' %}" hx-boost="false">
         {% csrf_token %}
         <div class="bg-white rounded-2xl shadow-sm overflow-hidden mb-4">
             <div class="overflow-y-auto" style="max-height: 55vh;">

@@ -135,18 +135,24 @@ def without_page(querydict):
 
 
 @register.simple_tag(takes_context=True)
-def crumb(context, label, url_name=None, *url_args):
+def crumb(context, label, url_name=None, *url_args, url=None):
     """
     عنصر واحد في مسار التنقل (breadcrumbs). لو 'url_name' اتحدد بيتعمل رابط
     ومعاه سهم فاصل بعده؛ من غيره بيتعرض كنص الصفحة الحالية (آخر عنصر في المسار).
     الاستخدام: {% crumb "المخزون" "staff:inventory" %} ... {% crumb item.name %}
+
+    لو 'url' اتحدد صراحة (رابط جاهز، ممكن يكون معاه querystring زي
+    ?page=3&q=...) بيتستخدم زي ما هو من غير reverse — عشان روابط الرجوع
+    اللي لازم تحافظ على رقم الصفحة/البحث بتاع القائمة اللي جاي منها
+    المستخدم (شوف staff.utils.url_with_qs).
     """
-    if url_name:
+    if url_name and url is None:
         try:
             from django.urls import reverse
             url = reverse(url_name, args=url_args) if url_args else reverse(url_name)
         except Exception:
             url = '#'
+    if url:
         return format_html(
             '<a href="{}" class="hover:text-blue-600 hover:underline">{}</a>'
             '<svg class="w-3.5 h-3.5 inline-block mx-1 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5"/></svg>',

@@ -7,6 +7,7 @@ from django.db.models import Q
 from inventory.models import Inventory, StockMovement
 from products.models import ProductUnit
 from staff.permissions import perm_required
+from staff.utils import list_qs, url_with_qs, redirect_with_qs
 
 STAFF_LIST_PAGE_SIZE = 30
 
@@ -57,6 +58,10 @@ def inventory_detail(request, pk):
         'item': item,
         'movements': movements,
         'units': units,
+        # بيحافظ على رقم صفحة/بحث قائمة المخزون اللي جاي منها المستخدم،
+        # عشان رابط "المخزون" في breadcrumb يرجعه لنفس المكان بدل صفحة 1.
+        'back_url': url_with_qs(request, 'staff:inventory'),
+        'list_qs': list_qs(request),
     })
 
 
@@ -75,13 +80,13 @@ def update_settings(request, pk):
                 raise ValueError
         except (TypeError, ValueError):
             messages.error(request, 'الحد الأدنى يجب أن يكون رقمًا صحيحًا غير سالب.')
-            return redirect('staff:inventory_detail', pk=pk)
+            return redirect_with_qs(request, 'staff:inventory_detail', pk=pk)
 
         item.min_quantity = min_quantity
         item.is_available = request.POST.get('is_available') == 'on'
         item.save(update_fields=['min_quantity', 'is_available'])
         messages.success(request, 'تم تحديث إعدادات الصنف بنجاح.')
-    return redirect('staff:inventory_detail', pk=pk)
+    return redirect_with_qs(request, 'staff:inventory_detail', pk=pk)
 
 
 @perm_required('inventory.add_stockmovement')
@@ -100,18 +105,18 @@ def add_movement(request, pk):
         }
         if movement_type not in manual_allowed_types:
             messages.error(request, 'نوع الحركة غير صحيح')
-            return redirect('staff:inventory_detail', pk=pk)
+            return redirect_with_qs(request, 'staff:inventory_detail', pk=pk)
 
         unit = ProductUnit.objects.filter(pk=unit_id, product_id=item.product_id).first()
         if not unit:
             messages.error(request, 'يرجى اختيار الوحدة (كرتونة/قطعة) التي سُجّلت بها الكمية')
-            return redirect('staff:inventory_detail', pk=pk)
+            return redirect_with_qs(request, 'staff:inventory_detail', pk=pk)
 
         try:
             quantity = int(request.POST.get('quantity', 0))
         except (TypeError, ValueError):
             messages.error(request, 'الكمية غير صحيحة')
-            return redirect('staff:inventory_detail', pk=pk)
+            return redirect_with_qs(request, 'staff:inventory_detail', pk=pk)
 
         # نقفل صف المخزون فعليًا (select_for_update) طول مدة التحقق والحفظ،
         # بنفس الأسلوب المستخدم في orders/models.py و orders/views.py.
@@ -137,8 +142,8 @@ def add_movement(request, pk):
             except ValidationError as e:
                 for err in e.messages:
                     messages.error(request, err)
-                return redirect('staff:inventory_detail', pk=pk)
+                return redirect_with_qs(request, 'staff:inventory_detail', pk=pk)
 
         messages.success(request, 'تم تسجيل الحركة بنجاح')
-        return redirect('staff:inventory_detail', pk=pk)
-    return redirect('staff:inventory_detail', pk=pk)
+        return redirect_with_qs(request, 'staff:inventory_detail', pk=pk)
+    return redirect_with_qs(request, 'staff:inventory_detail', pk=pk)

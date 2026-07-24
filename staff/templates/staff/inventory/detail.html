@@ -4,7 +4,7 @@
 {% load staff_ui %}
 <nav class="flex items-center text-sm text-gray-500 mb-4">
     {% crumb "الرئيسية" "staff:dashboard" %}
-    {% crumb "المخزون" "staff:inventory" %}
+    {% crumb "المخزون" url=back_url %}
     {% crumb item.product.display_name %}
 </nav>
 {% endblock %}
@@ -60,7 +60,7 @@
 <!-- إعدادات الصنف: الحد الأدنى وظهوره في المتجر -->
 <div class="bg-white rounded-2xl shadow-sm p-6 mb-6">
     <h2 class="font-semibold text-gray-700 mb-4">إعدادات الصنف</h2>
-    <form method="post" action="{% url 'staff:inventory_update_settings' item.pk %}"
+    <form method="post" action="{% url 'staff:inventory_update_settings' item.pk %}{% if list_qs %}?{{ list_qs }}{% endif %}"
           class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
         {% csrf_token %}
         <div>
@@ -85,7 +85,7 @@
 <!-- إضافة حركة -->
 <div class="bg-white rounded-2xl shadow-sm p-6 mb-6">
     <h2 class="font-semibold text-gray-700 mb-4">تسجيل حركة</h2>
-    <form method="post" action="{% url 'staff:add_movement' item.pk %}" class="grid grid-cols-1 md:grid-cols-5 gap-4">
+    <form method="post" action="{% url 'staff:add_movement' item.pk %}{% if list_qs %}?{{ list_qs }}{% endif %}" class="grid grid-cols-1 md:grid-cols-5 gap-4">
         {% csrf_token %}
         <div>
             <label class="block text-sm text-gray-600 mb-1">نوع الحركة</label>

@@ -41,12 +41,12 @@
            class="bg-white border border-blue-300 text-blue-700 hover:bg-blue-100 text-sm px-4 py-2 rounded-lg transition">
             تصدير أصناف محددة
         </a>
-        <a href="{% url 'staff:export_products' %}"
+        <a href="{% url 'staff:export_products' %}" hx-boost="false"
            class="bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 text-sm px-4 py-2 rounded-lg transition">
             تصدير كل الأصناف
         </a>
         {% url 'staff:download_template' as download_template_url %}
-        {% btn "تحميل القالب" href=download_template_url %}
+        {% btn "تحميل القالب" href=download_template_url extra_attrs='hx-boost="false"' %}
     </div>
 </div>
 <p class="text-xs text-gray-500 -mt-3 mb-6">

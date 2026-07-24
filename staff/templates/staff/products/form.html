@@ -4,7 +4,7 @@
 {% load staff_ui %}
 <nav class="flex items-center text-sm text-gray-500 mb-4">
     {% crumb "الرئيسية" "staff:dashboard" %}
-    {% crumb "المنتجات" "staff:product_list" %}
+    {% crumb "المنتجات" url=back_url %}
     {% crumb title %}
 </nav>
 {% endblock %}
@@ -13,11 +13,11 @@
 
 <div class="flex justify-between items-center mb-6">
     <h1 class="text-2xl font-bold text-gray-800">{{ title }}</h1>
-    <a href="{% url 'staff:product_list' %}"
+    <a href="{{ back_url }}"
        class="text-sm text-gray-500 hover:text-blue-600">← قائمة المنتجات</a>
 </div>
 
-<form method="POST" enctype="multipart/form-data" class="space-y-6">
+<form method="POST" action="{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}" enctype="multipart/form-data" class="space-y-6">
     {% csrf_token %}
 
     <!-- بيانات المنتج -->
@@ -235,10 +235,9 @@
         {% else %}
         {% btn "إضافة المنتج" type="submit" size="lg" rounded="xl" %}
         {% endif %}
-        {% url 'staff:product_list' as product_list_url %}
-        {% btn "إلغاء" href=product_list_url variant="secondary" size="lg" rounded="xl" %}
+        {% btn "إلغاء" href=back_url variant="secondary" size="lg" rounded="xl" %}
         {% if is_edit %}
-        <a href="{% url 'staff:product_delete' product.pk %}"
+        <a href="{% url 'staff:product_delete' product.pk %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}"
            class="text-center sm:mr-auto bg-red-50 hover:bg-red-100 text-red-600 font-semibold px-8 py-3 rounded-xl transition">
             حذف المنتج
         </a>

@@ -4,7 +4,7 @@
 {% load staff_ui %}
 <nav class="flex items-center text-sm text-gray-500 mb-4">
     {% crumb "الرئيسية" "staff:dashboard" %}
-    {% crumb "المنتجات" "staff:product_list" %}
+    {% crumb "المنتجات" url=back_url %}
     {% crumb "حذف" %}
 </nav>
 {% endblock %}
@@ -31,15 +31,14 @@
         </p>
         {% endif %}
 
-        <form method="POST" class="flex gap-3 justify-center">
+        <form method="POST" action="{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}" class="flex gap-3 justify-center">
             {% csrf_token %}
             {% if has_stock %}
             {% btn "تعطيل" type="submit" variant="caution" %}
             {% else %}
             {% btn "حذف نهائي" type="submit" variant="danger" %}
             {% endif %}
-            {% url 'staff:product_list' as product_list_url %}
-            {% btn "إلغاء" href=product_list_url variant="secondary" %}
+            {% btn "إلغاء" href=back_url variant="secondary" %}
         </form>
     </div>
 </div>

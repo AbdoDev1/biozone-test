@@ -16,6 +16,7 @@ from products.pricing import autofill_small_unit_price
 from products.matching import normalize_name
 from inventory.models import Inventory, StockMovement
 from staff.permissions import perm_required
+from staff.utils import list_qs, url_with_qs, redirect_with_qs
 
 STAFF_LIST_PAGE_SIZE = 30
 
@@ -83,6 +84,7 @@ def product_add(request):
                 return render(request, 'staff/products/form.html', {
                     'form': form, 'formset': formset,
                     'title': 'إضافة منتج جديد', 'is_edit': False,
+                    'back_url': url_with_qs(request, 'staff:product_list'),
                 })
 
             inventory, _ = Inventory.objects.get_or_create(
@@ -105,7 +107,7 @@ def product_add(request):
                         created_by=request.user,
                     )
             messages.success(request, f'تم إضافة المنتج "{product.name_ar}" بنجاح.')
-            return redirect('staff:product_list')
+            return redirect_with_qs(request, 'staff:product_list')
     else:
         form = ProductForm()
         formset = ProductUnitFormSet(instance=Product())
@@ -114,6 +116,7 @@ def product_add(request):
         'formset': formset,
         'title': 'إضافة منتج جديد',
         'is_edit': False,
+        'back_url': url_with_qs(request, 'staff:product_list'),
     })
 
 
@@ -139,6 +142,7 @@ def product_edit(request, pk):
                 return render(request, 'staff/products/form.html', {
                     'form': form, 'formset': formset,
                     'title': f'تعديل: {product.name_ar}', 'is_edit': True, 'product': product,
+                    'back_url': url_with_qs(request, 'staff:product_list'),
                 })
             except IntegrityError:
                 messages.error(
@@ -151,6 +155,7 @@ def product_edit(request, pk):
                 return render(request, 'staff/products/form.html', {
                     'form': form, 'formset': formset,
                     'title': f'تعديل: {product.name_ar}', 'is_edit': True, 'product': product,
+                    'back_url': url_with_qs(request, 'staff:product_list'),
                 })
 
             # أي وحدة جديدة اتضافت أثناء التعديل ومعاها كمية ابتدائية
@@ -174,7 +179,7 @@ def product_edit(request, pk):
                     )
 
             messages.success(request, f'تم تعديل المنتج "{product.name_ar}" بنجاح.')
-            return redirect('staff:product_list')
+            return redirect_with_qs(request, 'staff:product_list')
     else:
         form = ProductForm(instance=product)
         formset = ProductUnitFormSet(instance=product)
@@ -184,6 +189,7 @@ def product_edit(request, pk):
         'title': f'تعديل: {product.name_ar}',
         'is_edit': True,
         'product': product,
+        'back_url': url_with_qs(request, 'staff:product_list'),
     })
 
 
@@ -202,9 +208,10 @@ def product_delete(request, pk):
         else:
             product.delete()
             messages.success(request, f'تم حذف المنتج "{name}".')
-        return redirect('staff:product_list')
+        return redirect_with_qs(request, 'staff:product_list')
 
     return render(request, 'staff/products/delete.html', {
         'product': product,
         'has_stock': has_stock,
+        'back_url': url_with_qs(request, 'staff:product_list'),
     })

@@ -228,7 +228,7 @@ ProductUnitFormSet = inlineformset_factory(
     ProductUnit,
     form=ProductUnitForm,
     formset=BaseProductUnitFormSet,
-    fields=['size', 'name', 'qty_in_small', 'unit_price'],
+    fields=['size', 'name', 'qty_in_small', 'unit_price', 'cost_price'],
     extra=1,
     can_delete=True,
     min_num=1,

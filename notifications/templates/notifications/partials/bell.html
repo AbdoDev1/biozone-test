@@ -3,8 +3,7 @@
 عشان يحدّث نفسه لوحده من غير ما المستخدم يعمل refresh للصفحة.
 {% endcomment %}
 <div class="relative"
-     x-data="notificationBell({{ nav_unread_count|default:0 }})"
-     x-init="init()">
+     x-data="notificationBell({{ nav_unread_count|default:0 }})">
 
     {% csrf_token %}
 
@@ -62,6 +61,18 @@ function notificationBell(initialUnread) {
         init() {
             this.refresh();
             this.pollTimer = setInterval(() => this.refresh(), 15000);
+        },
+        // Alpine بينادي destroy() تلقائيًا (زي init()) وقت ما العنصر
+        // بتاع الـ component يتشال من الـ DOM — وده بيحصل على كل تنقل
+        // boosted بتاع htmx (الصفحة بتتبدّل بالكامل، يعني الجرس القديم
+        // بيتشال والجرس الجديد بيتبني من الصفر). من غير الـ cleanup ده،
+        // الـ setInterval القديم كان فاضل شغال في الخلفية لنفس التوقيت
+        // (يعادي عليه Alpine مش بيقفله تلقائيًا)، وبيحاول يحدّث حالة
+        // component بقى منفصل عن الـ DOM الفعلي — وده اللي كان بيظهر في
+        // الكونسول كـ "n is not defined" بعد كذا تنقل، لأن كل تنقل جديد
+        // كان بيضيف تايمر تاني فوق اللي قبله من غير ما يقفل القديم.
+        destroy() {
+            if (this.pollTimer) clearInterval(this.pollTimer);
         },
         toggle() {
             this.open = !this.open;
