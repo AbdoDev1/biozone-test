@@ -5,7 +5,7 @@ views السلة والطلبات — كان ده ملف واحد (views.py، 35
 
 1. cart.py     — كل عمليات السلة (إضافة/تحديث/حذف/تبديل بين سلال متعددة)
 2. checkout.py — تحويل السلة لطلب فعلي
-3. order.py    — عمليات الطلب بعد إرساله (تفاصيل، إلغاء، موافقة/رفض تعديل)
+3. order.py    — عمليات الطلب بعد إرساله (تفاصيل، موافقة/رفض تعديل)
 4. decorators.py — client_required، مشترك بين التلاتة
 
 orders/urls.py بيستورد بـ `from . import views` وبعدين `views.cart_view`
@@ -31,7 +31,6 @@ from .checkout import checkout
 from .decorators import client_required
 from .order import (
     order_approve_amendment,
-    order_cancel,
     order_detail,
     order_items,
     order_list,
@@ -45,6 +44,6 @@ __all__ = [
     'cart_plus', 'cart_minus', 'cart_controls', 'cart_new', 'cart_switch',
     'cart_rename', 'cart_delete',
     'checkout',
-    'order_detail', 'order_items', 'order_cancel', 'order_list',
+    'order_detail', 'order_items', 'order_list',
     'order_approve_amendment', 'order_reject_amendment',
 ]

@@ -9,6 +9,7 @@ from staff.permissions import perm_required
 
 STAFF_LIST_PAGE_SIZE = 30
 ITEMS_PER_PRINT_PAGE = 14  # لو الأصناف زادت عن كده، النسخة القابلة للطباعة بتتقسم لصفحات مرقّمة 1/ن، 2/ن...
+ITEMS_PER_DETAIL_PAGE = 20  # ترقيم صفحات جدول الأصناف في تفاصيل الطلب (تفادي صفحة طويلة جدًا لو الطلب فيه أصناف كتير)
 
 
 @perm_required('orders.view_order')
@@ -140,4 +141,11 @@ def order_detail(request, pk):
                     messages.error(request, f'تعذّر تسليم الطلب: {"، ".join(e.messages)}')
             return redirect('staff:order_detail', pk=order.pk)
 
-    return render(request, 'staff/orders/detail.html', {'order': order})
+    items_qs = order.items.select_related('product_unit__product__inventory').order_by('pk')
+    items_paginator = Paginator(items_qs, ITEMS_PER_DETAIL_PAGE)
+    items_page = items_paginator.get_page(request.GET.get('page'))
+
+    return render(request, 'staff/orders/detail.html', {
+        'order': order,
+        'items_page': items_page,
+    })

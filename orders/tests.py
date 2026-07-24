@@ -111,9 +111,4 @@ class OrderLifecycleTestCase(TestCase):
         self.assertEqual(self.item.quantity, 10)
         self.assertEqual(self.item.unit_price, Decimal('10.00'))
 
-    def test_client_cancel_only_allowed_while_pending(self):
-        """العميل يقدر يلغي بس لو الطلب لسه PENDING."""
-        self.order.confirm(actor=self.client_user)
 
-        with self.assertRaises(ValueError):
-            self.order.client_cancel(actor=self.client_user)

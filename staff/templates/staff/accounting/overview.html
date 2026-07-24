@@ -65,7 +65,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for row in rows %}
+                        {% for row in rows_page %}
                         <tr class="border-b last:border-0 hover:bg-gray-50">
                             <td class="py-2 px-2 font-medium sticky-col">{{ row.profile.business_name }}</td>
                             <td class="py-2 px-2 text-gray-500">{{ row.profile.account_type.name }}</td>
@@ -97,6 +97,19 @@
                     </tbody>
                 </table>
             </div>
+            {% if rows_page.paginator.num_pages > 1 %}
+            <div class="flex items-center justify-center gap-2 mt-4 text-sm">
+                {% if rows_page.has_previous %}
+                <a href="?clients_page={{ rows_page.previous_page_number }}"
+                   class="px-3 py-1.5 rounded-lg bg-gray-50 hover:bg-primary-50 text-gray-600">السابق</a>
+                {% endif %}
+                <span class="text-gray-500 px-2">صفحة {{ rows_page.number }} من {{ rows_page.paginator.num_pages }}</span>
+                {% if rows_page.has_next %}
+                <a href="?clients_page={{ rows_page.next_page_number }}"
+                   class="px-3 py-1.5 rounded-lg bg-gray-50 hover:bg-primary-50 text-gray-600">التالي</a>
+                {% endif %}
+            </div>
+            {% endif %}
         </div>
 
         <!-- تبويب: آخر الحركات -->
@@ -139,10 +152,23 @@
                     </tbody>
                 </table>
             </div>
+            {% if recent_transactions.paginator.num_pages > 1 %}
+            <div class="flex items-center justify-center gap-2 mt-4 text-sm">
+                {% if recent_transactions.has_previous %}
+                <a href="?tx_page={{ recent_transactions.previous_page_number }}"
+                   class="px-3 py-1.5 rounded-lg bg-gray-50 hover:bg-primary-50 text-gray-600">السابق</a>
+                {% endif %}
+                <span class="text-gray-500 px-2">صفحة {{ recent_transactions.number }} من {{ recent_transactions.paginator.num_pages }}</span>
+                {% if recent_transactions.has_next %}
+                <a href="?tx_page={{ recent_transactions.next_page_number }}"
+                   class="px-3 py-1.5 rounded-lg bg-gray-50 hover:bg-primary-50 text-gray-600">التالي</a>
+                {% endif %}
+            </div>
+            {% endif %}
         </div>
 
         <!-- تبويب: تسجيل دفعة / تسوية -->
-        <div x-show="tab === 'entry'" class="p-4 md:p-6">
+        <div x-show="tab === 'entry'" x-data="{ paymentBalance: null, adjustBalance: null }" class="p-4 md:p-6">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
                 <form method="post" hx-push-url="false" action="{% url 'staff:accounting_quick_entry' %}"
@@ -153,12 +179,17 @@
                     <div>
                         <label class="block text-xs text-gray-500 mb-1">العميل</label>
                         <select name="client_id" required
+                                @change="paymentBalance = $event.target.selectedOptions[0].dataset.balance ?? null"
                                 class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary-400">
                             <option value="">اختر عميل...</option>
-                            {% for client in active_clients %}
-                            <option value="{{ client.user_id }}">{{ client.business_name }}</option>
+                            {% for row in rows %}
+                            <option value="{{ row.profile.user_id }}" data-balance="{{ row.balance }}">{{ row.profile.business_name }}</option>
                             {% endfor %}
                         </select>
+                        <p x-show="paymentBalance !== null" class="text-xs mt-1.5"
+                           :class="parseFloat(paymentBalance) > 0 ? 'text-red-600' : (parseFloat(paymentBalance) < 0 ? 'text-green-600' : 'text-gray-400')">
+                            <span x-text="parseFloat(paymentBalance) > 0 ? 'مديونيته الحالية: ' + paymentBalance + ' ج.م' : (parseFloat(paymentBalance) < 0 ? 'له رصيد: ' + Math.abs(parseFloat(paymentBalance)) + ' ج.م' : 'لا يوجد عليه مديونية حاليًا')"></span>
+                        </p>
                     </div>
                     <div>
                         <label class="block text-xs text-gray-500 mb-1">المبلغ</label>
@@ -189,12 +220,17 @@
                     <div>
                         <label class="block text-xs text-gray-500 mb-1">العميل</label>
                         <select name="client_id" required
+                                @change="adjustBalance = $event.target.selectedOptions[0].dataset.balance ?? null"
                                 class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary-400">
                             <option value="">اختر عميل...</option>
-                            {% for client in active_clients %}
-                            <option value="{{ client.user_id }}">{{ client.business_name }}</option>
+                            {% for row in rows %}
+                            <option value="{{ row.profile.user_id }}" data-balance="{{ row.balance }}">{{ row.profile.business_name }}</option>
                             {% endfor %}
                         </select>
+                        <p x-show="adjustBalance !== null" class="text-xs mt-1.5"
+                           :class="parseFloat(adjustBalance) > 0 ? 'text-red-600' : (parseFloat(adjustBalance) < 0 ? 'text-green-600' : 'text-gray-400')">
+                            <span x-text="parseFloat(adjustBalance) > 0 ? 'مديونيته الحالية: ' + adjustBalance + ' ج.م' : (parseFloat(adjustBalance) < 0 ? 'له رصيد: ' + Math.abs(parseFloat(adjustBalance)) + ' ج.م' : 'لا يوجد عليه مديونية حاليًا')"></span>
+                        </p>
                     </div>
                     <div>
                         <label class="block text-xs text-gray-500 mb-1">المبلغ</label>

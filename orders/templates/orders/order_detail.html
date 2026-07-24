@@ -27,7 +27,6 @@
           <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2m6-2a10 10 0 11-20 0 10 10 0 0120 0z"/></svg>
           طلبك قيد المراجعة من فريق المخزن
         </p>
-        <p>يمكنك إلغاء الطلب بالكامل ما دامت المراجعة لم تبدأ بعد.</p>
       </div>
       {% endif %}
 
@@ -58,16 +57,6 @@
       </div>
       {% endif %}
 
-      {% if order.status == 'PENDING' %}
-      <form method="POST" action="{% url 'orders:order_cancel' order.pk %}"
-            data-confirm="هل أنت متأكد من إلغاء الطلب بالكامل؟ لا يمكن التراجع عن ذلك." data-confirm-type="error" class="mb-6">
-        {% csrf_token %}
-        <button type="submit" class="bg-white border border-red-300 text-red-600 text-sm font-semibold px-5 py-2 rounded-lg hover:bg-red-50 transition inline-flex items-center gap-1.5">
-          <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-          إلغاء الطلب بالكامل
-        </button>
-      </form>
-      {% endif %}
       <a href="{% url 'orders:order_items' order.pk %}"
          class="flex justify-between items-center bg-gray-50 hover:bg-gray-100 transition rounded-xl p-4 mb-6 text-sm">
         <span class="font-medium text-gray-700 inline-flex items-center gap-1.5">

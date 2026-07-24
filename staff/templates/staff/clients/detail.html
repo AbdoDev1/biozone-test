@@ -44,13 +44,13 @@
                     :class="tab === 'orders' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
                     class="px-5 py-3 border-b-2 font-medium whitespace-nowrap transition">
                 الطلبات
-                <span class="text-xs text-gray-400">({{ orders|length }})</span>
+                <span class="text-xs text-gray-400">({{ total_orders }})</span>
             </button>
             <button @click="tab = 'invoices'"
                     :class="tab === 'invoices' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
                     class="px-5 py-3 border-b-2 font-medium whitespace-nowrap transition">
                 الفواتير
-                <span class="text-xs text-gray-400">({{ invoices|length }})</span>
+                <span class="text-xs text-gray-400">({{ total_invoices }})</span>
             </button>
             <button @click="tab = 'financial'"
                     :class="tab === 'financial' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
@@ -132,6 +132,19 @@
                     </tbody>
                 </table>
             </div>
+            {% if orders_page_obj.paginator.num_pages > 1 %}
+            <div class="flex items-center justify-center gap-2 mt-4 text-sm">
+                {% if orders_page_obj.has_previous %}
+                <a href="?orders_page={{ orders_page_obj.previous_page_number }}#orders"
+                   class="px-3 py-1.5 rounded-lg bg-gray-50 hover:bg-primary-50 text-gray-600">السابق</a>
+                {% endif %}
+                <span class="text-gray-500 px-2">صفحة {{ orders_page_obj.number }} من {{ orders_page_obj.paginator.num_pages }}</span>
+                {% if orders_page_obj.has_next %}
+                <a href="?orders_page={{ orders_page_obj.next_page_number }}#orders"
+                   class="px-3 py-1.5 rounded-lg bg-gray-50 hover:bg-primary-50 text-gray-600">التالي</a>
+                {% endif %}
+            </div>
+            {% endif %}
             {% else %}
             <p class="text-gray-400 text-sm py-8 text-center">لم يقم هذا العميل بأي طلب حتى الآن.</p>
             {% endif %}
@@ -186,6 +199,19 @@
                 </details>
                 {% endfor %}
             </div>
+            {% if invoices_page_obj.paginator.num_pages > 1 %}
+            <div class="flex items-center justify-center gap-2 mt-4 text-sm">
+                {% if invoices_page_obj.has_previous %}
+                <a href="?invoices_page={{ invoices_page_obj.previous_page_number }}#invoices"
+                   class="px-3 py-1.5 rounded-lg bg-gray-50 hover:bg-primary-50 text-gray-600">السابق</a>
+                {% endif %}
+                <span class="text-gray-500 px-2">صفحة {{ invoices_page_obj.number }} من {{ invoices_page_obj.paginator.num_pages }}</span>
+                {% if invoices_page_obj.has_next %}
+                <a href="?invoices_page={{ invoices_page_obj.next_page_number }}#invoices"
+                   class="px-3 py-1.5 rounded-lg bg-gray-50 hover:bg-primary-50 text-gray-600">التالي</a>
+                {% endif %}
+            </div>
+            {% endif %}
             {% else %}
             <p class="text-gray-400 text-sm py-8 text-center">لا توجد فواتير لهذا العميل حتى الآن.</p>
             {% endif %}
@@ -222,21 +248,21 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
-                        {% for row in statement %}
+                        {% for tx in statement %}
                         <tr>
-                            <td class="px-3 py-2 text-gray-500 sticky-col">{{ row.tx.created_at|date:"Y-m-d" }}</td>
+                            <td class="px-3 py-2 text-gray-500 sticky-col">{{ tx.created_at|date:"Y-m-d" }}</td>
                             <td class="px-3 py-2">
-                                {% status_badge row.tx.get_kind_display group="tx_kind" key=row.tx.kind %}
+                                {% status_badge tx.get_kind_display group="tx_kind" key=tx.kind %}
                             </td>
                             <td class="px-3 py-2 text-gray-500">
-                                {% if row.tx.invoice %}{{ row.tx.invoice.invoice_number }}{% endif %}
-                                {{ row.tx.note }}
-                                {% if row.tx.method %}({{ row.tx.get_method_display }}){% endif %}
+                                {% if tx.invoice %}{{ tx.invoice.invoice_number }}{% endif %}
+                                {{ tx.note }}
+                                {% if tx.method %}({{ tx.get_method_display }}){% endif %}
                             </td>
-                            <td class="px-3 py-2 font-medium {% if row.tx.amount > 0 %}text-red-600{% else %}text-green-600{% endif %}">
-                                {{ row.tx.amount }}
+                            <td class="px-3 py-2 font-medium {% if tx.amount > 0 %}text-red-600{% else %}text-green-600{% endif %}">
+                                {{ tx.amount }}
                             </td>
-                            <td class="px-3 py-2 font-semibold">{{ row.running_balance }}</td>
+                            <td class="px-3 py-2 font-semibold">{{ tx.running_balance }}</td>
                         </tr>
                         {% empty %}
                         <tr>
@@ -246,6 +272,19 @@
                     </tbody>
                 </table>
             </div>
+            {% if statement_page_obj.paginator.num_pages > 1 %}
+            <div class="flex items-center justify-center gap-2 mb-6 text-sm">
+                {% if statement_page_obj.has_previous %}
+                <a href="?statement_page={{ statement_page_obj.previous_page_number }}#financial"
+                   class="px-3 py-1.5 rounded-lg bg-gray-50 hover:bg-primary-50 text-gray-600">السابق</a>
+                {% endif %}
+                <span class="text-gray-500 px-2">صفحة {{ statement_page_obj.number }} من {{ statement_page_obj.paginator.num_pages }}</span>
+                {% if statement_page_obj.has_next %}
+                <a href="?statement_page={{ statement_page_obj.next_page_number }}#financial"
+                   class="px-3 py-1.5 rounded-lg bg-gray-50 hover:bg-primary-50 text-gray-600">التالي</a>
+                {% endif %}
+            </div>
+            {% endif %}
 
             <!-- تسجيل دفعة وتسوية -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">

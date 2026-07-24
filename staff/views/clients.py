@@ -12,6 +12,9 @@ from accounting.models import AccountTransaction
 from staff.permissions import perm_required
 
 STAFF_LIST_PAGE_SIZE = 30
+CLIENT_ORDERS_PAGE_SIZE = 20
+CLIENT_INVOICES_PAGE_SIZE = 20
+CLIENT_STATEMENT_PAGE_SIZE = 30
 
 
 # إدارة حسابات العملاء بقت مبنية على صلاحيات دجانجو حقيقية دقيقة (مش قفل
@@ -44,27 +47,46 @@ def client_list(request):
 
 @perm_required('accounts.view_clientprofile')
 def client_detail(request, pk):
-    profile = get_object_or_404(ClientProfile, pk=pk)
-    orders = Order.objects.filter(client=profile.user).prefetch_related('items')
-    invoices = Invoice.objects.filter(order__client=profile.user).prefetch_related('items')
+    from django.db.models import F, Sum, Window
 
-    transactions = AccountTransaction.objects.filter(client=profile.user).select_related('invoice')
+    profile = get_object_or_404(ClientProfile, pk=pk)
+
+    orders_qs = Order.objects.filter(client=profile.user).prefetch_related('items').order_by('-created_at')
+    orders_paginator = Paginator(orders_qs, CLIENT_ORDERS_PAGE_SIZE)
+    orders_page = orders_paginator.get_page(request.GET.get('orders_page'))
+
+    invoices_qs = Invoice.objects.filter(order__client=profile.user).prefetch_related('items').order_by('-issued_at')
+    invoices_paginator = Paginator(invoices_qs, CLIENT_INVOICES_PAGE_SIZE)
+    invoices_page = invoices_paginator.get_page(request.GET.get('invoices_page'))
+
     balance = AccountTransaction.balance_for(profile.user)
 
-    # كشف حساب: بنحسب الرصيد التراكمي بعد كل حركة بالترتيب الزمني، وبعدين
-    # بنعرضها الأحدث فوق (لازم يتساوى مع صفحة العميل نفسها في accounts/dashboard.html)
-    running = Decimal('0')
-    statement = []
-    for tx in transactions:
-        running += tx.amount
-        statement.append({'tx': tx, 'running_balance': running})
-    statement.reverse()
+    # كشف حساب: نفس أسلوب accounts/views.py (dashboard_view) — الرصيد
+    # التراكمي بيتحسب في قاعدة البيانات (window function) بدل ما نجيب كل
+    # حركات العميل ونلف عليها بايثون، عشان الصفحة تفضل سريعة حتى لو
+    # العميل عنده تاريخ طويل جدًا من الحركات.
+    transactions = AccountTransaction.objects.filter(
+        client=profile.user
+    ).select_related('invoice').annotate(
+        running_balance=Window(
+            expression=Sum('amount'),
+            order_by=[F('created_at').asc(), F('id').asc()],
+        )
+    ).order_by('-created_at', '-id')
+
+    statement_paginator = Paginator(transactions, CLIENT_STATEMENT_PAGE_SIZE)
+    statement_page = statement_paginator.get_page(request.GET.get('statement_page'))
 
     return render(request, 'staff/clients/detail.html', {
         'profile': profile,
-        'orders': orders,
-        'invoices': invoices,
-        'statement': statement,
+        'orders': orders_page,
+        'orders_page_obj': orders_page,
+        'total_orders': orders_paginator.count,
+        'invoices': invoices_page,
+        'invoices_page_obj': invoices_page,
+        'total_invoices': invoices_paginator.count,
+        'statement': statement_page,
+        'statement_page_obj': statement_page,
         'balance': balance,
         'balance_abs': abs(balance),
         'payment_methods': AccountTransaction.PaymentMethod.choices,

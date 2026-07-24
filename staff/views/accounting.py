@@ -2,6 +2,7 @@ from decimal import Decimal, InvalidOperation
 
 from django.contrib import messages
 from django.core.exceptions import ValidationError
+from django.core.paginator import Paginator
 from django.db.models import Sum
 from django.shortcuts import render, redirect, get_object_or_404
 
@@ -9,6 +10,9 @@ from accounts.models import User, ClientProfile
 from accounting.models import AccountTransaction
 from staff.permissions import perm_required
 from staff.excel_utils import build_simple_workbook, workbook_response
+
+CLIENTS_BALANCE_PAGE_SIZE = 30
+TRANSACTIONS_PAGE_SIZE = 30
 
 
 def _clients_with_balance():
@@ -40,20 +44,26 @@ def accounting_overview(request):
     total_credit = sum((-r['balance'] for r in rows if r['balance'] < 0), Decimal('0'))
     debtors_count = sum(1 for r in rows if r['balance'] > 0)
 
-    recent_transactions = (
-        AccountTransaction.objects.select_related('client', 'client__client_profile', 'invoice', 'created_by')
-        .order_by('-created_at')[:50]
-    )
+    # جدول "أرصدة العملاء" مرقّم صفحات (بيكبر مع نمو قاعدة العملاء)، لكن
+    # القوائم المنسدلة لاختيار عميل في فورمي "تسجيل دفعة/تسوية" لازم تفضل
+    # شايفة كل العملاء النشطين مش بس اللي في الصفحة الحالية — فبنستخدم
+    # rows الكاملة للـ dropdowns وrows_page بس لعرض الجدول.
+    rows_paginator = Paginator(rows, CLIENTS_BALANCE_PAGE_SIZE)
+    rows_page = rows_paginator.get_page(request.GET.get('clients_page'))
 
-    active_clients = [r['profile'] for r in rows]
+    transactions_qs = AccountTransaction.objects.select_related(
+        'client', 'client__client_profile', 'invoice', 'created_by'
+    ).order_by('-created_at')
+    transactions_paginator = Paginator(transactions_qs, TRANSACTIONS_PAGE_SIZE)
+    transactions_page = transactions_paginator.get_page(request.GET.get('tx_page'))
 
     return render(request, 'staff/accounting/overview.html', {
         'rows': rows,
+        'rows_page': rows_page,
         'total_receivable': total_receivable,
         'total_credit': total_credit,
         'debtors_count': debtors_count,
-        'recent_transactions': recent_transactions,
-        'active_clients': active_clients,
+        'recent_transactions': transactions_page,
         'payment_methods': AccountTransaction.PaymentMethod.choices,
     })
 
@@ -95,6 +105,22 @@ def accounting_quick_entry(request):
             messages.error(request, f'المبلغ غير صالح: {"، ".join(e.messages)}')
         else:
             messages.success(request, f'تم تسجيل دفعة بقيمة {amount} ج.م لـ {profile.business_name}.')
+            from notifications.services import notify
+            from notifications.models import Notification
+            new_balance = AccountTransaction.balance_for(profile.user)
+            if new_balance > 0:
+                balance_note = f'رصيدك الحالي بعد الدفعة: {new_balance} ج.م.'
+            elif new_balance < 0:
+                balance_note = f'أصبح لك رصيد بقيمة {abs(new_balance)} ج.م.'
+            else:
+                balance_note = 'حسابك مسدّد بالكامل الآن.'
+            notify(
+                profile.user,
+                kind=Notification.Kind.PAYMENT_RECEIVED,
+                title='تم تسجيل دفعة على حسابك',
+                message=f'تم تسجيل دفعة بقيمة {amount} ج.م. {balance_note}',
+                url_name='accounts:dashboard',
+            )
 
     elif kind == AccountTransaction.Kind.ADJUSTMENT:
         if not note:

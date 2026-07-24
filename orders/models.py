@@ -240,18 +240,6 @@ class Order(models.Model):
         """العميل رفض التعديل — الطلب بالكامل يترفض."""
         self.reject(actor=actor, reason='العميل رفض التعديل المقترح من المخزن.')
 
-    def client_cancel(self, actor=None):
-        """
-        العميل بيلغي طلبه بنفسه — متاح بس لسه الطلب PENDING (لسه محدش من
-        المخزن فتحه أو بدأ يراجعه/يعدّله). لو الطلب دخل أي مرحلة تانية
-        (تعديل بانتظار الموافقة، تأكيد، تسليم)، الإلغاء الذاتي مش متاح
-        والعميل لازم يتواصل مع المخزن مباشرة.
-        """
-        if self.status != self.Status.PENDING:
-            raise ValueError('هذا الطلب لم يعد قابلاً للإلغاء الذاتي — تواصل مع المخزن مباشرة.')
-        self.reject(actor=actor, reason='ألغى العميل الطلب بنفسه قبل مراجعته.')
-
-
 class OrderItem(models.Model):
     order        = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
     product_unit = models.ForeignKey(ProductUnit, on_delete=models.PROTECT)

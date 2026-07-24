@@ -77,7 +77,7 @@
             </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
-            {% for item in order.items.all %}
+            {% for item in items_page %}
             <tr class="{% if item.is_amended %}bg-orange-50{% endif %}">
                 <td class="px-4 py-3 sticky-col">
                     <p class="font-medium text-gray-800">{{ item.product_unit.product.display_name }}</p>
@@ -118,6 +118,20 @@
     </table>
     </div>
 
+    {% if items_page.paginator.num_pages > 1 %}
+    <div class="flex items-center justify-center gap-2 py-3 border-t bg-gray-50 text-sm">
+        {% if items_page.has_previous %}
+        <a href="?page={{ items_page.previous_page_number }}"
+           class="px-3 py-1.5 rounded-lg bg-white border border-gray-200 hover:bg-primary-50 text-gray-600">السابق</a>
+        {% endif %}
+        <span class="text-gray-500 px-2">صفحة {{ items_page.number }} من {{ items_page.paginator.num_pages }}</span>
+        {% if items_page.has_next %}
+        <a href="?page={{ items_page.next_page_number }}"
+           class="px-3 py-1.5 rounded-lg bg-white border border-gray-200 hover:bg-primary-50 text-gray-600">التالي</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
     {% if order.status == 'PENDING' %}
     <div class="p-4 border-t bg-gray-50">
         <button type="submit"
@@ -126,6 +140,7 @@
         </button>
         <p class="text-xs text-gray-400 mt-2">
             قم بتعديل الكمية في الحقل المخصص في حال وجود نقص بالمخزون، واتركها كما هي للأصناف المتوفرة بالكامل.
+            {% if items_page.paginator.num_pages > 1 %}الحفظ بيطبّق بس على أصناف الصفحة الحالية — لو محتاج تعدّل أصناف في صفحة تانية، افتحها واحفظ كل صفحة على حدة.{% endif %}
         </p>
     </div>
     {% endif %}
