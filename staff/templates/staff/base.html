@@ -136,7 +136,7 @@
     <div class="mr-auto flex items-center gap-4">
         {% include 'notifications/partials/bell.html' %}
         <span class="text-sm text-primary-100">{{ request.user.username }}</span>
-        <form method="post" action="{% url 'staff:logout' %}" class="inline">
+        <form method="post" action="{% url 'staff:logout' %}" class="inline" hx-boost="false">
             {% csrf_token %}
             <button type="submit" class="text-sm text-red-200 hover:text-white hover:underline">تسجيل الخروج</button>
         </form>
