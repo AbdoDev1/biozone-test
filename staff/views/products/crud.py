@@ -14,7 +14,7 @@ from products.models import Product, Category
 from products.forms import ProductForm, ProductUnitFormSet
 from products.pricing import autofill_small_unit_price
 from products.matching import normalize_name
-from inventory.models import Inventory, StockMovement
+from products.services import stock_setup
 from staff.permissions import perm_required
 from staff.utils import list_qs, url_with_qs, redirect_with_qs
 
@@ -87,25 +87,9 @@ def product_add(request):
                     'back_url': url_with_qs(request, 'staff:product_list'),
                 })
 
-            inventory, _ = Inventory.objects.get_or_create(
-                product=product,
-                defaults={'quantity': 0, 'reserved': 0, 'min_quantity': 0},
+            stock_setup.apply_initial_stock(
+                product, formset, request.user, note='كمية ابتدائية عند إضافة المنتج',
             )
-            # initial_stock مش حقل موديل — بنقراه من cleaned_data لكل نموذج غير محذوف
-            for unit_form in formset.forms:
-                if unit_form.cleaned_data.get('DELETE'):
-                    continue
-                unit = unit_form.instance
-                initial_stock = unit_form.cleaned_data.get('initial_stock') or 0
-                if unit.pk and initial_stock > 0:
-                    StockMovement.objects.create(
-                        inventory=inventory,
-                        unit=unit,
-                        movement_type='IN',
-                        quantity=initial_stock,
-                        note='كمية ابتدائية عند إضافة المنتج',
-                        created_by=request.user,
-                    )
             messages.success(request, f'تم إضافة المنتج "{product.name_ar}" بنجاح.')
             return redirect_with_qs(request, 'staff:product_list')
     else:
@@ -159,24 +143,9 @@ def product_edit(request, pk):
                 })
 
             # أي وحدة جديدة اتضافت أثناء التعديل ومعاها كمية ابتدائية
-            inventory, _ = Inventory.objects.get_or_create(
-                product=product,
-                defaults={'quantity': 0, 'reserved': 0, 'min_quantity': 0},
+            stock_setup.apply_initial_stock(
+                product, formset, request.user, note='كمية ابتدائية عند إضافة وحدة جديدة للمنتج',
             )
-            for unit_form in formset.forms:
-                if unit_form.cleaned_data.get('DELETE'):
-                    continue
-                initial_stock = unit_form.cleaned_data.get('initial_stock') or 0
-                unit = unit_form.instance
-                if unit.pk and initial_stock > 0:
-                    StockMovement.objects.create(
-                        inventory=inventory,
-                        unit=unit,
-                        movement_type='IN',
-                        quantity=initial_stock,
-                        note='كمية ابتدائية عند إضافة وحدة جديدة للمنتج',
-                        created_by=request.user,
-                    )
 
             messages.success(request, f'تم تعديل المنتج "{product.name_ar}" بنجاح.')
             return redirect_with_qs(request, 'staff:product_list')
