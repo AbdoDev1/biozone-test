@@ -66,3 +66,4 @@ class LoggedInClient(HttpUser):
     @task(1)
     def view_orders(self):
         self.client.get("/orders/", name="/orders/")
+
