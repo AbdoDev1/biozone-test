@@ -50,6 +50,7 @@ hx-on:cartUpdated="htmx.ajax('GET','{% url 'orders:cart_badge' %}',{target:'#car
             </svg>
         </div>
 
+        <label for="category-select" class="sr-only">اختر القسم</label>
         <select
             id="category-select"
             name="category"
@@ -67,6 +68,13 @@ hx-on:cartUpdated="htmx.ajax('GET','{% url 'orders:cart_badge' %}',{target:'#car
         </select>
     </div>
 </div>
+
+<!-- h2 دائم (visually hidden) بعد الـ h1 مباشرة: لو "الوارد الجديد" مالوش
+     منتجات، البلوك بتاعه (وبالتالي الـ h2 الوحيد اللي كان جاي بعد الـ h1)
+     مابيتعرضش خالص، فالترتيب كان بيقفز من h1 لـ h3 (عنوان "الشركة المصنعة"
+     أو اسم المنتج) على طول — وده بيكسر ترتيب العناوين لقارئ الشاشة. العنصر
+     ده بيضمن إن h2 موجود دايمًا بغض النظر عن وجود وارد جديد أو لأ. -->
+<h2 class="sr-only">تصفح المنتجات</h2>
 
 <div id="new-arrivals-preview">
     {% include 'store/partials/new_arrivals_block.html' %}

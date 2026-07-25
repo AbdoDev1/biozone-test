@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 from decouple import config
+from django.utils.csp import CSP
 SECRET_KEY = config('SECRET_KEY')
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -78,6 +79,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'django.middleware.csp.ContentSecurityPolicyMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -269,6 +271,37 @@ CSRF_COOKIE_SECURE = USE_HTTPS_SECURITY
 SECURE_HSTS_SECONDS = 31536000 if USE_HTTPS_SECURITY else 0
 SECURE_HSTS_INCLUDE_SUBDOMAINS = USE_HTTPS_SECURITY
 SECURE_HSTS_PRELOAD = USE_HTTPS_SECURITY
+
+# Content-Security-Policy (Django 6 native دعم — راجع django.middleware.csp
+# و django.utils.csp.CSP فوق). القائمة دي مبنية على كل مصدر خارجي فعلي
+# بيتحمّل في templates/base.html و staff/templates/staff/base.html
+# (htmx/Alpine من unpkg وjsdelivr، خط Cairo من Google Fonts). لو ضفت CDN
+# جديد لأي صفحة، لازم يتضاف هنا برضه وإلا هيتحظر صامت من المتصفح.
+#
+# ملحوظتين مهمين عن التنازلات هنا:
+# 1) 'unsafe-inline' في script-src/style-src لسه موجودة لأن فيه <script>
+#    و style="" inline متناثرة في تمبلتات كتير (توست، تقارير، فورم
+#    المنتجات...) — إزالتها محتاجة نقل كل السكريبتات دي لملفات خارجية أو
+#    nonce على كل واحد فيهم، شغلانة أكبر من مجرد إضافة الهيدر. أهم حاجة
+#    دلوقتي إن الهيدر موجود ومحدد المصادر المسموحة، بدل مفيش حماية خالص.
+# 2) 'unsafe-eval' في script-src لازمة لـ Alpine.js (بيستخدم Function()
+#    داخليًا يقيّم تعبيرات زي x-data="{ open: false }")، إلا لو اتحول
+#    لنسخة alpinejs/csp المخصصة (بتقيّد x-data بمكونات مسجّلة بس، هتكسر
+#    كل الاستخدامات الحالية البسيطة).
+SECURE_CSP = {
+    "default-src": [CSP.SELF],
+    "script-src": [CSP.SELF, CSP.UNSAFE_INLINE, CSP.UNSAFE_EVAL, "https://unpkg.com", "https://cdn.jsdelivr.net"],
+    "style-src": [CSP.SELF, CSP.UNSAFE_INLINE, "https://fonts.googleapis.com"],
+    "font-src": [CSP.SELF, "https://fonts.gstatic.com"],
+    "img-src": [CSP.SELF, "data:"],
+    "connect-src": [CSP.SELF],
+    "object-src": [CSP.NONE],
+    "base-uri": [CSP.SELF],
+    "form-action": [CSP.SELF],
+    # مفيش أي حد شرعي غير موقعنا نفسه محتاج يعمل iframe لصفحاته — نفس تأثير
+    # X-Frame-Options: DENY الموجود أصلًا، بس بمعيار CSP الأحدث.
+    "frame-ancestors": [CSP.NONE],
+}
 
 
 # ============================================================================

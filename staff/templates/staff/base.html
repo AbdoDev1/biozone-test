@@ -14,9 +14,16 @@
     <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
     <!-- htmx: بيفعّل hx-boost على كل لوحة الموظفين (راجع body تحت) — التنقل
          بين الصفحات (سايدبار وأزرار) بقى AJAX ناعم بدل full page reload
-         كامل، من غير ما نلمس أي view أو منطق سيرفر. -->
-    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+         كامل، من غير ما نلمس أي view أو منطق سيرفر.
+         integrity/crossorigin (SRI): نفس السبب في templates/base.html —
+         حماية من تلاعب محتمل في محتوى الـ CDN، والإصدار مثبّت بالظبط
+         (مش @3.x.x ولا @4 عايمين) عشان الهاش يفضل صحيح. -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"
+            integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC"
+            crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.12/dist/cdn.min.js"
+            integrity="sha384-pb6hrQvo4s23cEUFtj0CZkzGE3jyK3pj26RIupXXxhSrrcUA/Cn0lZgcCrGH0t6L"
+            crossorigin="anonymous"></script>
     <!-- Chart.js: اتنقل هنا مركزيًا (بدل ما يتكرر جوه كل صفحة تقرير) عشان
          مشكلة حقيقية سببها hx-boost: أي <script src> بيتحقن ديناميكيًا وقت
          استبدال الـ body (بعد أي تنقل boosted) بيتحمّل async تلقائيًا من
@@ -26,7 +33,9 @@
          الـ head (مش بيستبدله) وبيلاحظ إن نفس الـ src موجود فمش بيعيد
          تحميله/تنفيذه تاني، فالتحميل هنا مرة واحدة بيضمن إن المكتبة
          جاهزة قبل أي سكريبت رسم بياني في أي صفحة. -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"
+            integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ"
+            crossorigin="anonymous"></script>
     <script>
         // htmx بيحتاج يبعت CSRF token في header يدويًا لأي POST مُعمول
         // boost (زي فورم تسجيل الخروج)، لأنه مش فورم عادي بيتقرا من

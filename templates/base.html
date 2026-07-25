@@ -12,8 +12,20 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
-    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <!-- htmx بيعالج عناصر الصفحة (hx-get, hx-trigger...) لما DOMContentLoaded
+         يطلق، فـ defer آمن هنا (بيأجل تحميل/تنفيذ السكريبت لحد ما الـ HTML
+         يخلص parsing، بدل ما يوقف الرندر وهو بيتحمّل زي ما كان). ده بيقلل
+         وقت الـ render-blocking من غير ما يأثر على سلوك htmx.
+         integrity/crossorigin (Subresource Integrity): لو حد اخترق CDN
+         unpkg.com وبدّل محتوى الملف، الهاش مش هيتطابق والمتصفح هيرفض
+         يشغّل السكريبت بدل ما ينفذه زي ما هو. لازم الإصدار يفضل مثبّت
+         بالظبط (مش @3.x.x عايم) عشان الهاش يفضل صحيح. -->
+    <script src="https://unpkg.com/htmx.org@1.9.10" defer
+            integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC"
+            crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/alpinejs@3.15.12/dist/cdn.min.js" defer
+            integrity="sha384-pb6hrQvo4s23cEUFtj0CZkzGE3jyK3pj26RIupXXxhSrrcUA/Cn0lZgcCrGH0t6L"
+            crossorigin="anonymous"></script>
     <script>
         // بعض أزرار الـ htmx (زي +/- في السلة بصفحة التسوق) مش جوه <form> ومفيهاش
         // csrf_token — من غيره Django بيرفض الطلب (403) والزرار بيبان وكأنه
@@ -178,7 +190,13 @@
     </div>
 </nav>
 
+<!-- main landmark: صفحة الويب من غيره بتظهر في تدقيق الوصولية (accessibility)
+     كـ "Document does not have a main landmark" — بيصعّب على مستخدمي قارئ
+     الشاشة إنهم يقفزوا لمحتوى الصفحة الأساسي من غير ما يمروا على الناف بار
+     في كل مرة. -->
+<main>
 {% block content %}{% endblock %}
+</main>
 
 {% include 'partials/toast_system.html' %}
 
