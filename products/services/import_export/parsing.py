@@ -17,9 +17,9 @@ import openpyxl
 
 from accounts.models import AccountType
 from products.matching import normalize_name, find_similar_products
-from products.models import Category, Product
+from products.models import Product
 
-from .common import FUZZY_MATCH_THRESHOLD, REQUIRED_IMPORT_HEADERS, discount_col_name
+from .common import FUZZY_MATCH_THRESHOLD, REQUIRED_IMPORT_HEADERS, discount_col_name, resolve_category
 
 __all__ = [
     'parse_unit_row',
@@ -62,7 +62,7 @@ def parse_unit_row(row_num, row, idx, account_types_by_col):
     if qty_in_small < 1:
         return None, f'سطر {row_num}: "الكمية بالوحدة الصغرى" يجب أن تكون 1 على الأقل'
 
-    if category_slug and not Category.objects.filter(slug=category_slug).exists():
+    if category_slug and resolve_category(category_slug) is None:
         return None, f'سطر {row_num}: القسم "{category_slug}" مش موجود'
 
     # عمود discount:<فئة> موجود في الملف = القيمة دي هي الوصف الكامل لحالة

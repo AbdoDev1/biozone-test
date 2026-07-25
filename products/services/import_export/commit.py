@@ -8,7 +8,9 @@ from decimal import Decimal
 
 from accounts.models import AccountType
 from inventory.models import Inventory, StockMovement
-from products.models import Category, Product, ProductUnit, UnitDiscount
+from products.models import Product, ProductUnit, UnitDiscount
+
+from .common import resolve_category
 
 __all__ = [
     'commit_product',
@@ -27,7 +29,7 @@ def commit_product(row_data, target_pk, user, account_types_by_pk):
     """
     category = None
     if row_data['category_slug']:
-        category = Category.objects.get(slug=row_data['category_slug'])
+        category = resolve_category(row_data['category_slug'])
 
     if target_pk:
         product = Product.objects.get(pk=target_pk)

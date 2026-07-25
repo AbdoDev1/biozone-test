@@ -4,6 +4,8 @@
 ملف بيتصدّر من النظام يفضل قابل للاستيراد تاني بنفس الصيغة بالظبط.
 """
 
+from django.utils.text import slugify
+
 FUZZY_MATCH_THRESHOLD = 0.82  # 82% تشابه فأكثر = "محتاج مراجعة بشرية"
 
 # عمود الخصم لكل نوع حساب (فئة) بيتسمى discount:<اسم نوع الحساب> — الأنواع
@@ -18,6 +20,41 @@ REQUIRED_IMPORT_HEADERS = ['name_ar', 'unit_name', 'qty_in_small', 'unit_price']
 
 def discount_col_name(account_type):
     return f'{DISCOUNT_COL_PREFIX}{account_type.name}'
+
+
+def resolve_category(value):
+    """
+    بتدوّر على القسم من قيمة عمود category_slug في ملف الإكسل — بتقبل إما
+    الـslug الحقيقي (زي "عناية-بالاسنان") أو اسم القسم العادي بمسافات
+    عادية (زي "عناية بالاسنان")، عشان الموظف اللي بيجهّز الملف مضطرش
+    يعرف صيغة الـslug بالظبط (شرطات بدل مسافات، همزات المطابقة...).
+
+    الترتيب: تطابق تام مع slug موجود، وإلا تطابق تام مع name موجود، وإلا
+    نحوّل القيمة نفسها لـslug (بنفس دالة توليد الـslug الأصلية) ونجرّب
+    تاني — بيغطي حالة "القيمة فيها مسافات بس لو تحوّلت لslug هتطابق قسم
+    موجود". بيرجّع الـCategory أو None لو مفيش تطابق بأي طريقة.
+    """
+    from products.models import Category
+
+    value = (value or '').strip()
+    if not value:
+        return None
+
+    category = Category.objects.filter(slug=value).first()
+    if category:
+        return category
+
+    category = Category.objects.filter(name=value).first()
+    if category:
+        return category
+
+    normalized_slug = slugify(value, allow_unicode=True)
+    if normalized_slug and normalized_slug != value:
+        category = Category.objects.filter(slug=normalized_slug).first()
+        if category:
+            return category
+
+    return None
 
 
 import re
