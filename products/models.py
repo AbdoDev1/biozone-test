@@ -69,8 +69,10 @@ class Product(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     # آخر لحظة اعتُبر فيها المنتج "وارد جديد" — بتتحدّث لحظة الإنشاء لأول
     # مرة، ولحظة أي تزويد رصيد بعد كده (راجع inventory.models.StockMovement.save).
-    # صفحة "الوارد" في المتجر (store app) بتعرض أي منتج تاريخه هنا في آخر
-    # فترة معيّنة — مفيش جدول أو حالة منفصلة، مجرد فلتر بالتاريخ.
+    # المنتج بيفضل ظاهر في المتجر العادي زي أي منتج تاني (بحث/أقسام) طول
+    # ما هو "وارد" — مجرد بادچ (علامة) على الكارت بيتحسب من التاريخ ده، مع
+    # صفحة منفصلة (store:new_arrivals) بتجمّعهم (راجع products.new_arrivals).
+    # مفيش جدول أو حالة منفصلة، مجرد فلتر بالتاريخ + المخزون.
     new_arrival_at = models.DateTimeField(null=True, blank=True, db_index=True)
 
     class Meta:

@@ -5,10 +5,10 @@ from django.shortcuts import render, get_object_or_404
 from django.template.loader import render_to_string
 from products.models import Category, Product, ProductUnit
 from products.matching import normalize_name
-from products.new_arrivals import new_arrivals_queryset, NEW_ARRIVALS_WINDOW_DAYS
+from products.new_arrivals import new_arrival_filter, NEW_ARRIVALS_WINDOW_DAYS
 from inventory.models import Inventory
 from orders.cart import Cart
-from django.db.models import Q
+from django.db.models import Q, Case, When, Value, BooleanField
 
 
 def _cart_quantities(request):
@@ -24,21 +24,24 @@ def _cart_quantities(request):
 
 
 PRODUCTS_PER_PAGE = 24
-NEW_ARRIVALS_PREVIEW_COUNT = 8  # عدد المنتجات في شريط المعاينة بصفحة المتجر الرئيسية
 
 
-def store_home(request):
-    categories = Category.objects.filter(is_active=True)
-    selected_category = request.GET.get('category', '')
-    selected_manufacturer = request.GET.get('manufacturer', '')
-    search_q = request.GET.get('q', '').strip()
-
-    # منتجات "الوارد" بتظهر في مكانها (صفحة/شريط الوارد) بس، مش هنا كمان —
-    # عشان الصنف ميبقاش ظاهر في مكانين. لما يخرج من الوارد (كمية أو وقت،
-    # راجع products.new_arrivals) بيرجع يظهر هنا تلقائيًا.
-    products = (
+def _base_products_queryset():
+    """
+    كل المنتجات النشطة، معلَّم عليها is_new_arrival (badge "وارد جديد" في
+    الكارت) — من غير أي استبعاد؛ الصنف الوارد فاضل ظاهر هنا زي أي منتج
+    عادي بالظبط (في الشبكة، البحث، والأقسام)، وده الفرق الأساسي عن
+    التصميم القديم اللي كان بيشيل الصنف من هنا لحد ما يخرج من "الوارد".
+    """
+    return (
         Product.objects.filter(is_active=True)
-        .exclude(pk__in=new_arrivals_queryset().values('pk'))
+        .annotate(
+            is_new_arrival=Case(
+                When(new_arrival_filter(), then=Value(True)),
+                default=Value(False),
+                output_field=BooleanField(),
+            )
+        )
         .select_related('category', 'inventory')
         # 'units__discounts' (مش 'units' بس) — لأن كارت المنتج بيحسب السعر
         # بعد الخصم لكل صنف لو site_config.show_discounted_prices مفعّل،
@@ -46,6 +49,16 @@ def store_home(request):
         # ده، كل منتج في الصفحة (24) كان بيعمل استعلام إضافي منفصل (N+1).
         .prefetch_related('units__discounts')
     )
+
+
+def _apply_filters(products, request):
+    """
+    بحث + فلترة (قسم/شركة مصنعة) مشتركة بين المتجر العادي وصفحة الوارد،
+    عشان صفحة الوارد تدعم نفس البحث والفلاتر بالظبط (كانت ناقصة قبل كده).
+    """
+    selected_category = request.GET.get('category', '')
+    selected_manufacturer = request.GET.get('manufacturer', '')
+    search_q = request.GET.get('q', '').strip()
 
     if selected_category:
         products = products.filter(category__slug=selected_category)
@@ -58,10 +71,25 @@ def store_home(request):
             | Q(name_en__icontains=search_q)
             | Q(name_key__icontains=normalized_q)
         )
-    manufacturers = Product.objects.filter(is_active=True)\
-                           .exclude(manufacturer='')\
-                           .values_list('manufacturer', flat=True)\
-                           .distinct()
+
+    return products, selected_category, selected_manufacturer, search_q
+
+
+def _manufacturers_list():
+    return (
+        Product.objects.filter(is_active=True)
+        .exclude(manufacturer='')
+        .values_list('manufacturer', flat=True)
+        .distinct()
+    )
+
+
+def store_home(request):
+    categories = Category.objects.filter(is_active=True)
+    products, selected_category, selected_manufacturer, search_q = _apply_filters(
+        _base_products_queryset(), request
+    )
+    manufacturers = _manufacturers_list()
 
     paginator = Paginator(products, PRODUCTS_PER_PAGE)
     # لو فلتر (فئة/بحث) اتغيّر ورجع صفحة مش موجودة (مثلاً كنت في صفحة 5
@@ -81,29 +109,8 @@ def store_home(request):
         'cart_quantities': _cart_quantities(request),
     }
 
-    # شريط "الوارد الجديد" — خاص بالعملاء المسجّلين فقط، مش بيظهر لأي زائر
-    # غير مسجّل حتى لو الصفحة نفسها عامة. نفس منتجات المتجر بالظبط، بس
-    # معروضة هنا كمان كمعاينة (مفيش نسخ بيانات، مجرد استعلام تاني).
-    # بيظهر بس في أول صفحة من الصفحة الرئيسية (من غير بحث أو فلتر أو تنقل
-    # لصفحة تانية)، عشان ميظهرش مع نتائج بحث العميل عن منتج معيّن، أو
-    # نتائج فلترة فئة/شركة، أو صفحات لاحقة من نفس القائمة.
-    is_filtered_view = bool(search_q or selected_category or selected_manufacturer)
-    show_new_arrivals = (
-        request.user.is_authenticated
-        and not is_filtered_view
-        and page_obj.number == 1
-    )
-    if show_new_arrivals:
-        context['new_arrivals_preview'] = new_arrivals_queryset()[:NEW_ARRIVALS_PREVIEW_COUNT]
-
-    # لو طلب HTMX (بحث/فلترة/تنقل صفحات)، بنرجّع الشبكة كـ partial، وكمان
-    # نسخة محدّثة من شريط "الوارد الجديد" كـ out-of-band swap — عشان الشريط
-    # ده برّه #product-grid (اللي هو الـ hx-target الوحيد)، ولو سبناه من
-    # غيره كان هيفضل ظاهر زي ما هو حتى لو العميل بيبحث أو بيتنقل لصفحة تانية.
     if request.headers.get('HX-Request'):
-        grid_html = render_to_string('store/partials/product_grid.html', context, request=request)
-        oob_html = render_to_string('store/partials/new_arrivals_block_oob.html', context, request=request)
-        return HttpResponse(grid_html + oob_html)
+        return HttpResponse(render_to_string('store/partials/product_grid.html', context, request=request))
 
     return render(request, 'store/home.html', context)
 
@@ -115,25 +122,36 @@ def store_search(request):
 @login_required
 def new_arrivals(request):
     """
-    صفحة "الوارد الجديد" — أي منتج جديد أو رصيد جديد اتضاف خلال آخر
-    NEW_ARRIVALS_WINDOW_DAYS يوم. خاصة بالعملاء المسجّلين فقط (login_required)،
-    ومش بتاخد أي بيانات مستقلة — هي نفس منتجات المتجر، مجرد فلتر بالتاريخ.
+    صفحة "الوارد الجديد" — كل منتج جديد أو اتزوّد رصيده خلال آخر
+    NEW_ARRIVALS_WINDOW_DAYS يوم (نفس شرط badge الوارد في المتجر العادي
+    بالظبط). خاصة بالعملاء المسجّلين فقط (login_required)، وبتدعم نفس
+    بحث/فلاتر المتجر العادي (قسم، شركة مصنعة، بحث بالاسم) — الصنف هنا
+    فاضل موجود في المتجر العادي كمان، الصفحة دي مجرد تجميعة مفلترة.
     """
-    products_qs = new_arrivals_queryset()
-    paginator = Paginator(products_qs, PRODUCTS_PER_PAGE)
+    categories = Category.objects.filter(is_active=True)
+    base_qs = _base_products_queryset().filter(new_arrival_filter())
+    products, selected_category, selected_manufacturer, search_q = _apply_filters(base_qs, request)
+    manufacturers = _manufacturers_list()
+
+    paginator = Paginator(products.order_by('-new_arrival_at'), PRODUCTS_PER_PAGE)
     page_obj = paginator.get_page(request.GET.get('page'))
 
     context = {
         'products': page_obj,
         'page_obj': page_obj,
         'total_products': paginator.count,
+        'categories': categories,
+        'manufacturers': manufacturers,
+        'selected_category': selected_category,
+        'selected_manufacturer': selected_manufacturer,
+        'search_q': search_q,
         'window_days': NEW_ARRIVALS_WINDOW_DAYS,
         'grid_url': 'store:new_arrivals',
         'cart_quantities': _cart_quantities(request),
     }
 
     if request.headers.get('HX-Request'):
-        return render(request, 'store/partials/product_grid.html', context)
+        return HttpResponse(render_to_string('store/partials/product_grid.html', context, request=request))
 
     return render(request, 'store/new_arrivals.html', context)
 

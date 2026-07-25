@@ -10,8 +10,9 @@ from products.models import Category, Product, ProductUnit
 
 class StoreHomeNewArrivalsFilterTestCase(TestCase):
     """
-    منتج "وارد جديد" (رصيده فوق الحد الأدنى وحديث الإضافة) لازم يظهر في
-    صفحة الوارد بس ويتستبعد من الشبكة العادية، عشان الصنف ميظهرش في مكانين.
+    منتج "وارد جديد" (رصيده فوق الحد الأدنى وحديث الإضافة) لازم يفضل ظاهر
+    في المتجر العادي (بعلامة is_new_arrival)، وكمان يظهر في صفحة الوارد
+    المخصصة (تجميعة بنفس البحث/الفلاتر).
     """
 
     def setUp(self):
@@ -27,11 +28,16 @@ class StoreHomeNewArrivalsFilterTestCase(TestCase):
         self.regular_product.new_arrival_at = None
         self.regular_product.save(update_fields=['new_arrival_at'])
 
-    def test_new_arrival_product_excluded_from_store_home(self):
+    def test_new_arrival_product_still_appears_on_store_home_with_badge(self):
         response = self.http.get(reverse('store:home'))
         products = list(response.context['products'])
-        self.assertNotIn(self.new_product, products)
+        self.assertIn(self.new_product, products)
         self.assertIn(self.regular_product, products)
+
+        new_product = next(p for p in products if p.pk == self.new_product.pk)
+        regular_product = next(p for p in products if p.pk == self.regular_product.pk)
+        self.assertTrue(new_product.is_new_arrival)
+        self.assertFalse(regular_product.is_new_arrival)
 
     def test_new_arrival_product_appears_in_new_arrivals_page(self):
         self.http.force_login(
@@ -46,14 +52,25 @@ class StoreHomeNewArrivalsFilterTestCase(TestCase):
         self.assertNotIn(self.regular_product, products)
 
     def test_low_stock_new_product_is_not_treated_as_new_arrival(self):
-        # لو الرصيد نزل لحد الحد الأدنى أو تحته، الصنف بيرجع للمتجر العادي
-        # حتى لو لسه حديث الإضافة زمنيًا.
+        # لو الرصيد نزل لحد الحد الأدنى أو تحته، الصنف مايتحسبش "وارد"
+        # حتى لو لسه حديث الإضافة زمنيًا: مفيش badge، ومايظهرش في صفحة الوارد.
         low_stock_product = Product.objects.create(category=self.category, name_ar='منتج قليل المخزون')
         Inventory.objects.create(product=low_stock_product, quantity=5, min_quantity=5)
 
         response = self.http.get(reverse('store:home'))
         products = list(response.context['products'])
         self.assertIn(low_stock_product, products)
+        matched = next(p for p in products if p.pk == low_stock_product.pk)
+        self.assertFalse(matched.is_new_arrival)
+
+        self.http.force_login(
+            User.objects.create_user(
+                username='client2', email='client2@example.com',
+                password='testpass123', role=User.Role.CLIENT,
+            )
+        )
+        na_response = self.http.get(reverse('store:new_arrivals'))
+        self.assertNotIn(low_stock_product, list(na_response.context['products']))
 
 
 class StoreHomeFilteringTestCase(TestCase):

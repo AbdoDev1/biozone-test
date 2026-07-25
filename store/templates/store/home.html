@@ -69,16 +69,9 @@ hx-on:cartUpdated="htmx.ajax('GET','{% url 'orders:cart_badge' %}',{target:'#car
     </div>
 </div>
 
-<!-- h2 دائم (visually hidden) بعد الـ h1 مباشرة: لو "الوارد الجديد" مالوش
-     منتجات، البلوك بتاعه (وبالتالي الـ h2 الوحيد اللي كان جاي بعد الـ h1)
-     مابيتعرضش خالص، فالترتيب كان بيقفز من h1 لـ h3 (عنوان "الشركة المصنعة"
-     أو اسم المنتج) على طول — وده بيكسر ترتيب العناوين لقارئ الشاشة. العنصر
-     ده بيضمن إن h2 موجود دايمًا بغض النظر عن وجود وارد جديد أو لأ. -->
+<!-- h2 دائم (visually hidden) بعد الـ h1 مباشرة — عشان ترتيب العناوين
+     يفضل صحيح لقارئ الشاشة (h1 -> h2 -> h3 بدون قفز). -->
 <h2 class="sr-only">تصفح المنتجات</h2>
-
-<div id="new-arrivals-preview">
-    {% include 'store/partials/new_arrivals_block.html' %}
-</div>
 
 <div class="max-w-7xl mx-auto px-4 py-8 flex flex-col md:flex-row gap-6">
 
