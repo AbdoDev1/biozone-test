@@ -244,12 +244,13 @@ class ProductUnit(models.Model):
             )
             if sibling_small is not None:
                 _, small_discount_percent, _ = sibling_small.get_pricing_breakdown_for_account_type(account_type)
-                if not small_discount_percent:
-                    return self.unit_price, Decimal('0'), self.unit_price
-                derived_price = (
-                    self.unit_price * (Decimal('1') - small_discount_percent / Decimal('100'))
-                ).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-                return self.unit_price, small_discount_percent, derived_price
+                if small_discount_percent:
+                    derived_price = (
+                        self.unit_price * (Decimal('1') - small_discount_percent / Decimal('100'))
+                    ).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+                    return self.unit_price, small_discount_percent, derived_price
+                # القطعة الشقيقة مالهاش خصم مسجّل — نكمل تحت ونشوف لو
+                # الكرتونة نفسها عندها صف خصم خاص بيها.
 
         discount = next(
             (d for d in self.discounts.all() if d.account_type_id == account_type.pk),
