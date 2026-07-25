@@ -18,20 +18,35 @@
        class="text-sm text-gray-500 hover:text-primary-600">← رفع ملف تاني</a>
 </div>
 
-<!-- ملخص سريع -->
+<!-- التابات بتاخد حالتها الابتدائية من: صف "قرارك" لو موجود (الأهم)، وإلا
+     من رقم الصفحة اللي جاي في الرابط (?update_page / ?create_page) لو
+     الموظف كان بيقلّب صفحات قسم معيّن، وإلا أول قسم عنده صفوف. -->
+<div x-data="{ tab: (new URLSearchParams(window.location.search).get('update_page') ? 'update'
+              : (new URLSearchParams(window.location.search).get('create_page') ? 'create'
+              : '{% if review_rows %}review{% elif update_rows %}update{% else %}create{% endif %}')) }">
+
+<!-- ملخص سريع — الكروت نفسها بتشتغل كمفاتيح تنقل بين التابات تحت -->
 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
-    <div class="bg-white rounded-2xl shadow-sm p-4">
+    <button type="button" @click="tab = 'update'"
+            :class="tab === 'update' ? 'ring-2 ring-primary-300' : ''"
+            class="bg-white rounded-2xl shadow-sm p-4 text-start hover:shadow-md transition">
         <p class="text-xs text-gray-500">هيتحدّث (تطابق أكيد)</p>
         <p class="text-2xl font-bold text-primary-600">{{ update_rows_total }}</p>
-    </div>
-    <div class="bg-white rounded-2xl shadow-sm p-4">
+    </button>
+    <button type="button" @click="tab = 'create'"
+            :class="tab === 'create' ? 'ring-2 ring-green-300' : ''"
+            class="bg-white rounded-2xl shadow-sm p-4 text-start hover:shadow-md transition">
         <p class="text-xs text-gray-500">هيتضاف كصنف جديد</p>
         <p class="text-2xl font-bold text-green-600">{{ create_rows_total }}</p>
-    </div>
-    <div class="bg-white rounded-2xl shadow-sm p-4 {% if review_rows %}ring-2 ring-yellow-300{% endif %}">
+    </button>
+    <button type="button" @click="tab = 'review'"
+            {% if not review_rows %}disabled{% endif %}
+            :class="tab === 'review' ? 'ring-2 ring-yellow-300' : ''"
+            class="bg-white rounded-2xl shadow-sm p-4 text-start transition
+                   {% if review_rows %}hover:shadow-md{% else %}opacity-50 cursor-not-allowed{% endif %}">
         <p class="text-xs text-gray-500">محتاج قرارك (اسم قريب من صنف موجود)</p>
         <p class="text-2xl font-bold text-yellow-600">{{ review_rows|length }}</p>
-    </div>
+    </button>
 </div>
 
 <!-- إيرورز: مجمّعة حسب نوع المشكلة بدل سطر منفصل لكل صف -->
@@ -63,91 +78,121 @@
 </div>
 {% endif %}
 
-<form method="POST" action="{% url 'staff:import_products_confirm' %}">
+<form method="POST" action="{% url 'staff:import_products_confirm' %}" x-data="{ submitting: false }" @submit="submitting = true">
     {% csrf_token %}
 
-    {% if review_rows %}
-    <div class="bg-white rounded-2xl shadow-sm p-5 mb-6">
-        <h2 class="font-bold text-gray-800 mb-1">أصناف محتاجة قرارك</h2>
-        <p class="text-xs text-gray-500 mb-4">
-            الاسم في الملف قريب جدًا من صنف موجود بالفعل. اختار: ده نفس الصنف الموجود (هيتحدّث)،
-            ولا هو فعلاً صنف مختلف (هيتضاف كصنف جديد).
-        </p>
-        <div class="space-y-5">
-            {% for row in review_rows %}
-            <div class="border border-yellow-200 bg-yellow-50 rounded-lg p-4">
-                <p class="text-sm font-semibold text-gray-800 mb-3">
-                    سطر {{ row.row_num }}: <span class="text-primary-700">{{ row.name_ar }}</span>
-                </p>
-                <div class="space-y-2">
-                    {% for c in row.candidates %}
-                    <label class="flex items-center gap-2 text-sm bg-white rounded-lg px-3 py-2 border border-gray-200 cursor-pointer hover:border-primary-300">
-                        <input type="radio" name="decision_{{ row.row_num }}" value="{{ c.pk }}" required
-                               class="accent-primary-600">
-                        <span>ده نفس <strong>{{ c.name }}</strong>
-                            <span class="text-gray-400">({{ c.code }})</span>
-                            — تشابه {{ c.score }}%</span>
-                    </label>
-                    {% endfor %}
-                    <label class="flex items-center gap-2 text-sm bg-white rounded-lg px-3 py-2 border border-gray-200 cursor-pointer hover:border-green-300">
-                        <input type="radio" name="decision_{{ row.row_num }}" value="new" required
-                               class="accent-green-600">
-                        <span>لأ، ده صنف جديد فعلاً — أضفه منفصل</span>
-                    </label>
+    <!-- شريط التابات -->
+    <div class="bg-white rounded-2xl shadow-sm overflow-hidden mb-6">
+        <div class="flex border-b overflow-x-auto text-sm">
+            {% if review_rows %}
+            <button type="button" @click="tab = 'review'"
+                    :class="tab === 'review' ? 'border-yellow-500 text-yellow-700' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                    class="px-5 py-3 border-b-2 font-medium whitespace-nowrap transition">
+                محتاج قرارك
+                <span class="text-xs text-gray-400">({{ review_rows|length }})</span>
+            </button>
+            {% endif %}
+            {% if update_rows %}
+            <button type="button" @click="tab = 'update'"
+                    :class="tab === 'update' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                    class="px-5 py-3 border-b-2 font-medium whitespace-nowrap transition">
+                هتتحدّث
+                <span class="text-xs text-gray-400">({{ update_rows_total }})</span>
+            </button>
+            {% endif %}
+            {% if create_rows %}
+            <button type="button" @click="tab = 'create'"
+                    :class="tab === 'create' ? 'border-green-600 text-green-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                    class="px-5 py-3 border-b-2 font-medium whitespace-nowrap transition">
+                هتتضاف جديد
+                <span class="text-xs text-gray-400">({{ create_rows_total }})</span>
+            </button>
+            {% endif %}
+        </div>
+
+        <!-- تبويب: أصناف محتاجة قرارك -->
+        {% if review_rows %}
+        <div x-show="tab === 'review'" class="p-5">
+            <p class="text-xs text-gray-500 mb-4">
+                الاسم في الملف قريب جدًا من صنف موجود بالفعل. اختار: ده نفس الصنف الموجود (هيتحدّث)،
+                ولا هو فعلاً صنف مختلف (هيتضاف كصنف جديد).
+            </p>
+            <div class="space-y-5">
+                {% for row in review_rows %}
+                <div class="border border-yellow-200 bg-yellow-50 rounded-lg p-4">
+                    <p class="text-sm font-semibold text-gray-800 mb-3">
+                        سطر {{ row.row_num }}: <span class="text-primary-700">{{ row.name_ar }}</span>
+                    </p>
+                    <div class="space-y-2">
+                        {% for c in row.candidates %}
+                        <label class="flex items-center gap-2 text-sm bg-white rounded-lg px-3 py-2 border border-gray-200 cursor-pointer hover:border-primary-300">
+                            <input type="radio" name="decision_{{ row.row_num }}" value="{{ c.pk }}" required
+                                   class="accent-primary-600">
+                            <span>ده نفس <strong>{{ c.name }}</strong>
+                                <span class="text-gray-400">({{ c.code }})</span>
+                                — تشابه {{ c.score }}%</span>
+                        </label>
+                        {% endfor %}
+                        <label class="flex items-center gap-2 text-sm bg-white rounded-lg px-3 py-2 border border-gray-200 cursor-pointer hover:border-green-300">
+                            <input type="radio" name="decision_{{ row.row_num }}" value="new" required
+                                   class="accent-green-600">
+                            <span>لأ، ده صنف جديد فعلاً — أضفه منفصل</span>
+                        </label>
+                    </div>
                 </div>
+                {% endfor %}
             </div>
-            {% endfor %}
         </div>
+        {% endif %}
+
+        <!-- تبويب: أصناف هتتحدّث -->
+        {% if update_rows %}
+        <div x-show="tab === 'update'" class="p-5" id="update-list">
+            <ul class="text-sm text-gray-600 space-y-1">
+                {% for row in update_rows %}
+                <li>سطر {{ row.row_num }}: {{ row.name_ar }} <span class="text-gray-400">← {{ row.match_name }}</span></li>
+                {% endfor %}
+            </ul>
+            {% if update_rows.paginator.num_pages > 1 %}
+            <div class="flex items-center justify-center gap-2 mt-4 text-sm">
+                {% if update_rows.has_previous %}
+                <a href="?update_page={{ update_rows.previous_page_number }}#update-list"
+                   class="px-3 py-1.5 rounded-lg bg-gray-50 hover:bg-primary-50 text-gray-600">السابق</a>
+                {% endif %}
+                <span class="text-gray-500 px-2">صفحة {{ update_rows.number }} من {{ update_rows.paginator.num_pages }}</span>
+                {% if update_rows.has_next %}
+                <a href="?update_page={{ update_rows.next_page_number }}#update-list"
+                   class="px-3 py-1.5 rounded-lg bg-gray-50 hover:bg-primary-50 text-gray-600">التالي</a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- تبويب: أصناف جديدة هتتضاف -->
+        {% if create_rows %}
+        <div x-show="tab === 'create'" class="p-5" id="create-list">
+            <ul class="text-sm text-gray-600 space-y-1">
+                {% for row in create_rows %}
+                <li>سطر {{ row.row_num }}: {{ row.name_ar }}</li>
+                {% endfor %}
+            </ul>
+            {% if create_rows.paginator.num_pages > 1 %}
+            <div class="flex items-center justify-center gap-2 mt-4 text-sm">
+                {% if create_rows.has_previous %}
+                <a href="?create_page={{ create_rows.previous_page_number }}#create-list"
+                   class="px-3 py-1.5 rounded-lg bg-gray-50 hover:bg-primary-50 text-gray-600">السابق</a>
+                {% endif %}
+                <span class="text-gray-500 px-2">صفحة {{ create_rows.number }} من {{ create_rows.paginator.num_pages }}</span>
+                {% if create_rows.has_next %}
+                <a href="?create_page={{ create_rows.next_page_number }}#create-list"
+                   class="px-3 py-1.5 rounded-lg bg-gray-50 hover:bg-primary-50 text-gray-600">التالي</a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
     </div>
-    {% endif %}
-
-    {% if update_rows %}
-    <details class="bg-white rounded-2xl shadow-sm p-5 mb-6" id="update-list" open>
-        <summary class="font-bold text-gray-800 cursor-pointer">أصناف هتتحدّث ({{ update_rows_total }})</summary>
-        <ul class="mt-3 text-sm text-gray-600 space-y-1">
-            {% for row in update_rows %}
-            <li>سطر {{ row.row_num }}: {{ row.name_ar }} <span class="text-gray-400">← {{ row.match_name }}</span></li>
-            {% endfor %}
-        </ul>
-        {% if update_rows.paginator.num_pages > 1 %}
-        <div class="flex items-center justify-center gap-2 mt-4 text-sm">
-            {% if update_rows.has_previous %}
-            <a href="?update_page={{ update_rows.previous_page_number }}#update-list"
-               class="px-3 py-1.5 rounded-lg bg-gray-50 hover:bg-primary-50 text-gray-600">السابق</a>
-            {% endif %}
-            <span class="text-gray-500 px-2">صفحة {{ update_rows.number }} من {{ update_rows.paginator.num_pages }}</span>
-            {% if update_rows.has_next %}
-            <a href="?update_page={{ update_rows.next_page_number }}#update-list"
-               class="px-3 py-1.5 rounded-lg bg-gray-50 hover:bg-primary-50 text-gray-600">التالي</a>
-            {% endif %}
-        </div>
-        {% endif %}
-    </details>
-    {% endif %}
-
-    {% if create_rows %}
-    <details class="bg-white rounded-2xl shadow-sm p-5 mb-6" id="create-list" open>
-        <summary class="font-bold text-gray-800 cursor-pointer">أصناف جديدة هتتضاف ({{ create_rows_total }})</summary>
-        <ul class="mt-3 text-sm text-gray-600 space-y-1">
-            {% for row in create_rows %}
-            <li>سطر {{ row.row_num }}: {{ row.name_ar }}</li>
-            {% endfor %}
-        </ul>
-        {% if create_rows.paginator.num_pages > 1 %}
-        <div class="flex items-center justify-center gap-2 mt-4 text-sm">
-            {% if create_rows.has_previous %}
-            <a href="?create_page={{ create_rows.previous_page_number }}#create-list"
-               class="px-3 py-1.5 rounded-lg bg-gray-50 hover:bg-primary-50 text-gray-600">السابق</a>
-            {% endif %}
-            <span class="text-gray-500 px-2">صفحة {{ create_rows.number }} من {{ create_rows.paginator.num_pages }}</span>
-            {% if create_rows.has_next %}
-            <a href="?create_page={{ create_rows.next_page_number }}#create-list"
-               class="px-3 py-1.5 rounded-lg bg-gray-50 hover:bg-primary-50 text-gray-600">التالي</a>
-            {% endif %}
-        </div>
-        {% endif %}
-    </details>
-    {% endif %}
 
     <div class="bg-primary-50 border border-primary-200 rounded-xl p-4 mb-6">
         <label class="flex items-start gap-3 cursor-pointer">
@@ -165,12 +210,36 @@
     </div>
 
     <div class="flex gap-3">
-        {% btn "تأكيد وحفظ الكل" type="submit" size="lg" rounded="xl" extra_classes="flex-1" %}
+        {% btn "تأكيد وحفظ الكل" type="submit" size="lg" rounded="xl" extra_classes="flex-1" extra_attrs=':disabled="submitting" x-text="submitting ? \'جاري الحفظ…\' : \'تأكيد وحفظ الكل\'"' %}
         <a href="{% url 'staff:import_products' %}"
            class="px-6 py-3 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 text-center">
             إلغاء
         </a>
     </div>
+
+    <!-- الحفظ الفعلي (commit_import_batch) بيحصل في transaction واحدة لكل
+         الدفعة، فممكن ياخد شوية ثواني مع دفعة كبيرة — نفس فكرة مؤشر
+         التحميل في صفحة الرفع، عشان محدش يضغط تأكيد أكتر من مرة. -->
+    <div x-show="submitting" x-cloak class="mt-4">
+        <div class="h-1.5 w-full bg-primary-100 rounded-full overflow-hidden">
+            <div class="h-full w-1/3 bg-primary-500 rounded-full animate-import-progress"></div>
+        </div>
+        <p class="text-xs text-gray-500 mt-2 text-center">
+            جاري حفظ الأصناف في قاعدة البيانات — من فضلك متقفلش الصفحة.
+        </p>
+    </div>
 </form>
+
+</div>
+
+<style>
+    @keyframes import-progress-slide {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(300%); }
+    }
+    .animate-import-progress {
+        animation: import-progress-slide 1.1s ease-in-out infinite;
+    }
+</style>
 
 {% endblock %}
