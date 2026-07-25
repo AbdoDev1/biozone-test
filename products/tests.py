@@ -98,8 +98,8 @@ class ProductUnitsForClientTestCase(TestCase):
         self.small_account_type = AccountType.objects.create(
             name='قطاعي', default_unit_size=AccountType.UnitSize.SMALL,
         )
-        self.large_account_type = AccountType.objects.create(
-            name='جملة', default_unit_size=AccountType.UnitSize.LARGE,
+        self.large_account_type, _ = AccountType.objects.get_or_create(
+            name='جملة', defaults={'default_unit_size': AccountType.UnitSize.LARGE},
         )
 
     def _client_with_account_type(self, account_type, username):
@@ -154,7 +154,7 @@ class ProductUnitPricingTestCase(TestCase):
             product=self.product, size=ProductUnit.Size.LARGE, name='كرتونة',
             qty_in_small=50, unit_price=Decimal('480.00'),
         )
-        self.account_type = AccountType.objects.create(name='جملة')
+        self.account_type, _ = AccountType.objects.get_or_create(name='جملة')
 
     def test_no_account_type_returns_public_price_without_discount(self):
         price, discount, final = self.small_unit.get_pricing_breakdown_for_account_type(None)
@@ -221,7 +221,7 @@ class UnitDiscountTestCase(TestCase):
             product=product, size=ProductUnit.Size.SMALL, name='قطعة',
             qty_in_small=1, unit_price=Decimal('9.99'),
         )
-        account_type = AccountType.objects.create(name='جملة')
+        account_type, _ = AccountType.objects.get_or_create(name='جملة')
         discount = UnitDiscount.objects.create(
             unit=unit, account_type=account_type, discount_percent=Decimal('15.00'),
         )

@@ -121,7 +121,7 @@ class EmployeeManagerTestCase(TestCase):
 
 class ClientProfileTestCase(TestCase):
     def test_client_profile_str_includes_business_name_and_username(self):
-        account_type = AccountType.objects.create(name='جملة')
+        account_type, _ = AccountType.objects.get_or_create(name='جملة')
         user = User.objects.create_user(
             username='client1', email='client1@example.com',
             password='testpass123', role=User.Role.CLIENT,
