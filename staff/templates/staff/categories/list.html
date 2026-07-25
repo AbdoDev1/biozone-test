@@ -1,0 +1,107 @@
+{% extends 'staff/base.html' %}
+{% load staff_ui %}
+{% block title %}الأقسام — Biozone{% endblock %}
+{% block content %}
+
+<div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
+    <h1 class="text-2xl font-bold text-gray-800">الأقسام</h1>
+    {% if perms.products.add_category %}
+    {% url 'staff:category_add' as category_add_url %}
+    {% btn "+ إضافة قسم" href=category_add_url variant="success" %}
+    {% endif %}
+</div>
+
+<!-- بحث -->
+<form method="GET" class="bg-white rounded-2xl shadow-sm p-4 mb-6 flex gap-3 items-end">
+    <div class="flex-1">
+        <label class="text-xs text-gray-500 mb-1 block">بحث</label>
+        <input type="text" name="q" value="{{ search_q }}"
+               placeholder="اسم القسم..."
+               class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary-400">
+    </div>
+    <button type="submit"
+            class="bg-gray-800 text-white text-sm px-4 py-2 rounded-lg hover:bg-gray-700 transition">
+        بحث
+    </button>
+</form>
+
+<!-- جدول الأقسام -->
+<div class="bg-white rounded-2xl shadow-sm overflow-x-auto">
+    <table class="w-full text-sm min-w-[480px]">
+        <thead class="bg-gray-50 text-gray-600 border-b border-gray-200">
+            <tr>
+                <th class="px-4 py-3 text-right">القسم</th>
+                <th class="px-4 py-3 text-right">عدد الأصناف</th>
+                <th class="px-4 py-3 text-right">الحالة</th>
+                <th class="px-4 py-3 text-right">إجراءات</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            {% for category in categories %}
+            <tr class="hover:bg-gray-50 transition">
+                <td class="px-4 py-3">
+                    <div class="flex items-center gap-3">
+                        {% if category.image %}
+                            <img src="{{ category.image.url }}" class="w-10 h-10 rounded-lg object-cover">
+                        {% else %}
+                            <div class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-300 text-xs">
+                                لا صورة
+                            </div>
+                        {% endif %}
+                        <div>
+                            <p class="font-medium text-gray-800">{{ category.name }}</p>
+                            <p class="text-xs text-gray-400 num">{{ category.slug }}</p>
+                        </div>
+                    </div>
+                </td>
+                <td class="px-4 py-3 text-gray-600">{{ category.products_count }}</td>
+                <td class="px-4 py-3">
+                    {% if category.is_active %}
+                        <span class="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full">نشط</span>
+                    {% else %}
+                        <span class="bg-red-100 text-red-600 text-xs px-2 py-1 rounded-full">معطل</span>
+                    {% endif %}
+                </td>
+                <td class="px-4 py-3">
+                    <div class="flex gap-2">
+                        {% if perms.products.change_category %}
+                        <a href="{% url 'staff:category_edit' category.pk %}"
+                           class="bg-primary-50 hover:bg-primary-100 text-primary-600 text-xs px-3 py-1 rounded-lg transition">
+                            تعديل
+                        </a>
+                        {% endif %}
+                        {% if perms.products.delete_category %}
+                        <a href="{% url 'staff:category_delete' category.pk %}"
+                           class="bg-red-50 hover:bg-red-100 text-red-600 text-xs px-3 py-1 rounded-lg transition">
+                            حذف
+                        </a>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" class="text-center py-10 text-gray-400">لا توجد أقسام</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if page_obj.paginator.num_pages > 1 %}
+<div class="flex items-center justify-center gap-2 mt-4 text-sm">
+    {% if page_obj.has_previous %}
+    <a href="?q={{ search_q }}&page={{ page_obj.previous_page_number }}"
+       class="px-3 py-2 rounded-lg bg-white shadow-sm hover:bg-primary-50 text-gray-600">السابق</a>
+    {% endif %}
+    <span class="text-gray-500 px-2">صفحة {{ page_obj.number }} من {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+    <a href="?q={{ search_q }}&page={{ page_obj.next_page_number }}"
+       class="px-3 py-2 rounded-lg bg-white shadow-sm hover:bg-primary-50 text-gray-600">التالي</a>
+    {% endif %}
+</div>
+{% endif %}
+
+<p class="text-xs text-gray-400 mt-3">إجمالي: {{ total_categories }} قسم</p>
+
+{% endblock %}

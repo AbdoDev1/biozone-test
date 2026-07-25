@@ -7,6 +7,7 @@
 لـ products.services.import_export عشان يبقى قابل للاختبار من غير ما نمر
 بـ request/session — هنا بس تنسيق الـ HTTP request/response وrenders.
 """
+from django.core.paginator import Paginator
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.db import transaction
@@ -18,6 +19,7 @@ from staff.permissions import perm_required
 from staff.excel_utils import workbook_response
 
 IMPORT_SESSION_KEY = 'product_import_batch'
+IMPORT_ERRORS_SESSION_KEY = 'product_import_last_errors'
 # حماية من ملف إكسل ضخم بالغلط (أو مقصود): الدفعة بالكامل بتتخزن مؤقتًا في
 # الـ session (قاعدة البيانات) بين شاشة المراجعة وشاشة التأكيد، فملف بعشرات
 # الآلاف من الصفوف كان بيعمل صف session ضخم ويشغل الـ worker وقت طويل في
@@ -25,6 +27,15 @@ IMPORT_SESSION_KEY = 'product_import_batch'
 # أكبر فعلاً، يقسّم الملف على أكتر من دفعة).
 IMPORT_MAX_FILE_SIZE_MB = 5
 IMPORT_MAX_ROWS = 3000
+
+# قبل كده كانت شاشة المراجعة بترندر كل صفوف "هيتحدّث"/"هيتضاف" (لحد آلاف
+# السطور مع ملف كبير) في قائمة واحدة من غير أي تقسيم — الحل: نفس Paginator
+# المستخدم في قائمة المنتجات العادية (crud.py)، بس بيقرا رقم صفحة مختلف
+# لكل قسم (?update_page=.. / ?create_page=..) عشان الاتنين يتقسموا صفحات
+# مستقلة عن بعض في نفس الشاشة.
+REVIEW_LIST_PAGE_SIZE = 50
+# عدد مجموعات الإيرورز (بعد التجميع) المعروضة افتراضيًا قبل الحاجة لـ "عرض الكل".
+REVIEW_ERRORS_PREVIEW_COUNT = 15
 
 # Backward-compat: بعض الكود القديم (أو أي كود خارجي) كان بيستورد الثوابت
 # دي من هنا مباشرة قبل الفصل — بتفضل متاحة كـ alias للمصدر الحقيقي.
@@ -87,11 +98,27 @@ def import_products_review(request):
         return redirect('staff:import_products')
 
     rows = batch['rows']
+    all_update_rows = [r for r in rows if r['action'] == 'update']
+    all_create_rows = [r for r in rows if r['action'] == 'create']
+    # review_rows (فيها radio inputs لازم تتبعت كلها في الفورم) مش بتتقسّم —
+    # طبيعتها محدودة أصلًا (بس الصفوف اللي محتاجة قرار بشري لتشابه الاسم).
+    review_rows = [r for r in rows if r['action'] == 'review']
+
+    update_paginator = Paginator(all_update_rows, REVIEW_LIST_PAGE_SIZE)
+    update_page = update_paginator.get_page(request.GET.get('update_page'))
+    create_paginator = Paginator(all_create_rows, REVIEW_LIST_PAGE_SIZE)
+    create_page = create_paginator.get_page(request.GET.get('create_page'))
+
+    grouped_errors = import_export_service.group_import_errors(batch['errors'])
+
     context = {
-        'errors': batch['errors'],
-        'update_rows': [r for r in rows if r['action'] == 'update'],
-        'create_rows': [r for r in rows if r['action'] == 'create'],
-        'review_rows': [r for r in rows if r['action'] == 'review'],
+        'grouped_errors': grouped_errors,
+        'errors_preview_count': REVIEW_ERRORS_PREVIEW_COUNT,
+        'update_rows': update_page,
+        'update_rows_total': len(all_update_rows),
+        'create_rows': create_page,
+        'create_rows_total': len(all_create_rows),
+        'review_rows': review_rows,
         'new_arrivals_window_days': NEW_ARRIVALS_WINDOW_DAYS,
     }
     return render(request, 'staff/products/import_review.html', context)
@@ -131,8 +158,10 @@ def import_products_confirm(request):
         messages.success(request, f'تم إضافة {created_count} صنف جديد.')
     if updated_count:
         messages.success(request, f'تم تحديث {updated_count} صنف موجود.')
-    for err in batch['errors']:
-        messages.warning(request, err)
+    # قبل كده كان بيتحط toast منفصل لكل سطر فيه مشكلة (ممكن تبقى مئات
+    # التوستات فوق بعض مع ملف كبير) — دلوقتي بنحفظ التفاصيل الكاملة
+    # (مجمّعة حسب نوع المشكلة) في الـ session ونوجّه الموظف لصفحة مخصصة
+    # يراجعها فيها براحته، بدل ما تتفرقع كلها كـ toasts فوق بعض.
 
     # إشعار العملاء بالوارد الجديد — اختياري، الموظف بيحدده من شاشة المراجعة.
     # new_arrival_at اتحدّث تلقائيًا لكل صنف جديد أو اتزوّد رصيده (راجع
@@ -149,7 +178,30 @@ def import_products_confirm(request):
         )
         messages.success(request, 'تم إرسال إشعار الوارد الجديد لكل العملاء.')
 
+    if batch['errors']:
+        request.session[IMPORT_ERRORS_SESSION_KEY] = batch['errors']
+        messages.warning(request, f'تم تجاهل {len(batch["errors"])} صف فيهم مشكلة أثناء القراءة — التفاصيل تحت.')
+        return redirect('staff:import_products_errors')
+
     return redirect('staff:product_list')
+
+
+@perm_required('products.add_product')
+def import_products_errors(request):
+    """
+    تفاصيل التحذيرات (صفوف اتجاهلت) بعد آخر عملية استيراد اتأكّدت — بديل
+    عن رميهم كـ toasts منفصلة. مجمّعة حسب نوع المشكلة (راجع
+    group_import_errors) ومقسّمة صفحات لو كانت المجموعات كتير.
+    """
+    errors = request.session.get(IMPORT_ERRORS_SESSION_KEY, [])
+    grouped_errors = import_export_service.group_import_errors(errors)
+    paginator = Paginator(grouped_errors, REVIEW_LIST_PAGE_SIZE)
+    page_obj = paginator.get_page(request.GET.get('page'))
+    return render(request, 'staff/products/import_errors.html', {
+        'grouped_errors': page_obj,
+        'total_errors': len(errors),
+        'total_groups': paginator.count,
+    })
 
 
 @perm_required('products.view_product')

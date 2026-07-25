@@ -1,7 +1,45 @@
 from django import forms
 from django.forms import inlineformset_factory
 from django.forms.models import BaseInlineFormSet
+from django.utils.text import slugify
 from .models import Product, ProductUnit, Category
+
+
+class CategoryForm(forms.ModelForm):
+    class Meta:
+        model = Category
+        fields = ['name', 'image', 'is_active']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400',
+                'placeholder': 'اسم القسم'
+            }),
+            'is_active': forms.CheckboxInput(attrs={
+                'class': 'accent-blue-600'
+            }),
+        }
+        labels = {
+            'name': 'اسم القسم',
+            'image': 'صورة القسم',
+            'is_active': 'نشط',
+        }
+
+    def save(self, commit=True):
+        # الـ slug بيتولّد تلقائيًا من الاسم (مش حقل يدوي في الفورم) — لو
+        # الاسم اتغيّر في التعديل، الـ slug مش بيتغيّر تاني عشان أي رابط أو
+        # فلتر قديم متخزن (زي ?category=slug) يفضل شغال صح.
+        category = super().save(commit=False)
+        if not category.slug:
+            base_slug = slugify(category.name, allow_unicode=True) or 'category'
+            slug = base_slug
+            i = 1
+            while Category.objects.filter(slug=slug).exclude(pk=category.pk).exists():
+                i += 1
+                slug = f'{base_slug}-{i}'
+            category.slug = slug
+        if commit:
+            category.save()
+        return category
 
 
 class ProductForm(forms.ModelForm):

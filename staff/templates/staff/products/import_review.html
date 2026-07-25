@@ -22,11 +22,11 @@
 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
     <div class="bg-white rounded-2xl shadow-sm p-4">
         <p class="text-xs text-gray-500">هيتحدّث (تطابق أكيد)</p>
-        <p class="text-2xl font-bold text-primary-600">{{ update_rows|length }}</p>
+        <p class="text-2xl font-bold text-primary-600">{{ update_rows_total }}</p>
     </div>
     <div class="bg-white rounded-2xl shadow-sm p-4">
         <p class="text-xs text-gray-500">هيتضاف كصنف جديد</p>
-        <p class="text-2xl font-bold text-green-600">{{ create_rows|length }}</p>
+        <p class="text-2xl font-bold text-green-600">{{ create_rows_total }}</p>
     </div>
     <div class="bg-white rounded-2xl shadow-sm p-4 {% if review_rows %}ring-2 ring-yellow-300{% endif %}">
         <p class="text-xs text-gray-500">محتاج قرارك (اسم قريب من صنف موجود)</p>
@@ -34,11 +34,32 @@
     </div>
 </div>
 
-{% if errors %}
-<div class="mb-6 space-y-2">
-    {% for err in errors %}
-    <div class="px-4 py-2 rounded-lg text-sm bg-red-50 text-red-700 border border-red-200">{{ err }}</div>
-    {% endfor %}
+<!-- إيرورز: مجمّعة حسب نوع المشكلة بدل سطر منفصل لكل صف -->
+{% if grouped_errors %}
+<div class="mb-6 bg-white rounded-2xl shadow-sm p-5" x-data="{ showAll: false }">
+    <h2 class="font-bold text-gray-800 mb-3">
+        مشاكل في {{ grouped_errors|length }} نوع صف اتجاهلوا من الملف
+    </h2>
+    <div class="space-y-2">
+        {% for group in grouped_errors %}
+        <div class="px-4 py-2 rounded-lg text-sm bg-red-50 text-red-700 border border-red-200"
+             {% if forloop.counter0 >= errors_preview_count %}x-show="showAll" x-cloak{% endif %}>
+            {{ group.message }}
+            {% if group.count > 1 %}
+                <span class="font-semibold">({{ group.count }} صف)</span>
+                <span class="text-red-400 text-xs">— سطور: {{ group.row_nums|slice:":10"|join:", " }}{% if group.row_nums|length > 10 %} …{% endif %}</span>
+            {% else %}
+                <span class="text-red-400 text-xs">— سطر {{ group.row_nums.0 }}</span>
+            {% endif %}
+        </div>
+        {% endfor %}
+        {% if grouped_errors|length > errors_preview_count %}
+        <button type="button" @click="showAll = !showAll"
+                class="text-sm text-primary-600 hover:underline"
+                x-text="showAll ? 'إخفاء الباقي' : 'عرض كل الأنواع'">
+        </button>
+        {% endif %}
+    </div>
 </div>
 {% endif %}
 
@@ -81,24 +102,50 @@
     {% endif %}
 
     {% if update_rows %}
-    <details class="bg-white rounded-2xl shadow-sm p-5 mb-6">
-        <summary class="font-bold text-gray-800 cursor-pointer">أصناف هتتحدّث ({{ update_rows|length }})</summary>
+    <details class="bg-white rounded-2xl shadow-sm p-5 mb-6" id="update-list" open>
+        <summary class="font-bold text-gray-800 cursor-pointer">أصناف هتتحدّث ({{ update_rows_total }})</summary>
         <ul class="mt-3 text-sm text-gray-600 space-y-1">
             {% for row in update_rows %}
             <li>سطر {{ row.row_num }}: {{ row.name_ar }} <span class="text-gray-400">← {{ row.match_name }}</span></li>
             {% endfor %}
         </ul>
+        {% if update_rows.paginator.num_pages > 1 %}
+        <div class="flex items-center justify-center gap-2 mt-4 text-sm">
+            {% if update_rows.has_previous %}
+            <a href="?update_page={{ update_rows.previous_page_number }}#update-list"
+               class="px-3 py-1.5 rounded-lg bg-gray-50 hover:bg-primary-50 text-gray-600">السابق</a>
+            {% endif %}
+            <span class="text-gray-500 px-2">صفحة {{ update_rows.number }} من {{ update_rows.paginator.num_pages }}</span>
+            {% if update_rows.has_next %}
+            <a href="?update_page={{ update_rows.next_page_number }}#update-list"
+               class="px-3 py-1.5 rounded-lg bg-gray-50 hover:bg-primary-50 text-gray-600">التالي</a>
+            {% endif %}
+        </div>
+        {% endif %}
     </details>
     {% endif %}
 
     {% if create_rows %}
-    <details class="bg-white rounded-2xl shadow-sm p-5 mb-6">
-        <summary class="font-bold text-gray-800 cursor-pointer">أصناف جديدة هتتضاف ({{ create_rows|length }})</summary>
+    <details class="bg-white rounded-2xl shadow-sm p-5 mb-6" id="create-list" open>
+        <summary class="font-bold text-gray-800 cursor-pointer">أصناف جديدة هتتضاف ({{ create_rows_total }})</summary>
         <ul class="mt-3 text-sm text-gray-600 space-y-1">
             {% for row in create_rows %}
             <li>سطر {{ row.row_num }}: {{ row.name_ar }}</li>
             {% endfor %}
         </ul>
+        {% if create_rows.paginator.num_pages > 1 %}
+        <div class="flex items-center justify-center gap-2 mt-4 text-sm">
+            {% if create_rows.has_previous %}
+            <a href="?create_page={{ create_rows.previous_page_number }}#create-list"
+               class="px-3 py-1.5 rounded-lg bg-gray-50 hover:bg-primary-50 text-gray-600">السابق</a>
+            {% endif %}
+            <span class="text-gray-500 px-2">صفحة {{ create_rows.number }} من {{ create_rows.paginator.num_pages }}</span>
+            {% if create_rows.has_next %}
+            <a href="?create_page={{ create_rows.next_page_number }}#create-list"
+               class="px-3 py-1.5 rounded-lg bg-gray-50 hover:bg-primary-50 text-gray-600">التالي</a>
+            {% endif %}
+        </div>
+        {% endif %}
     </details>
     {% endif %}
 

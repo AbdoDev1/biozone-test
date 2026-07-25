@@ -1,0 +1,60 @@
+{% extends 'staff/base.html' %}
+{% block title %}تفاصيل تحذيرات الاستيراد — Biozone{% endblock %}
+{% block breadcrumbs %}
+{% load staff_ui %}
+<nav class="flex items-center text-sm text-gray-500 mb-4">
+    {% crumb "الرئيسية" "staff:dashboard" %}
+    {% crumb "المنتجات" "staff:product_list" %}
+    {% crumb "تفاصيل تحذيرات الاستيراد" %}
+</nav>
+{% endblock %}
+
+{% block content %}
+
+<div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
+    <h1 class="text-2xl font-bold text-gray-800">تفاصيل صفوف اتجاهلت أثناء آخر استيراد</h1>
+    {% url 'staff:product_list' as product_list_url %}
+    {% btn "الرجوع لقائمة المنتجات" href=product_list_url variant="secondary" %}
+</div>
+
+<p class="text-sm text-gray-500 mb-6">
+    إجمالي {{ total_errors }} صف اتجاهل، مجمّعين هنا في {{ total_groups }} نوع مشكلة (بدل ما يتكرروا سطر بسطر).
+</p>
+
+{% if grouped_errors %}
+<div class="space-y-2 mb-6">
+    {% for group in grouped_errors %}
+    <div class="px-4 py-3 rounded-lg text-sm bg-red-50 text-red-700 border border-red-200">
+        <p>{{ group.message }}</p>
+        {% if group.count > 1 %}
+        <p class="text-red-400 text-xs mt-1">
+            {{ group.count }} صف — سطور: {{ group.row_nums|slice:":20"|join:", " }}{% if group.row_nums|length > 20 %} …{% endif %}
+        </p>
+        {% else %}
+        <p class="text-red-400 text-xs mt-1">سطر {{ group.row_nums.0 }}</p>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+
+{% if grouped_errors.paginator.num_pages > 1 %}
+<div class="flex items-center justify-center gap-2 mt-4 text-sm">
+    {% if grouped_errors.has_previous %}
+    <a href="?page={{ grouped_errors.previous_page_number }}"
+       class="px-3 py-2 rounded-lg bg-white shadow-sm hover:bg-primary-50 text-gray-600">السابق</a>
+    {% endif %}
+    <span class="text-gray-500 px-2">صفحة {{ grouped_errors.number }} من {{ grouped_errors.paginator.num_pages }}</span>
+    {% if grouped_errors.has_next %}
+    <a href="?page={{ grouped_errors.next_page_number }}"
+       class="px-3 py-2 rounded-lg bg-white shadow-sm hover:bg-primary-50 text-gray-600">التالي</a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<div class="bg-white rounded-2xl shadow-sm p-8 text-center text-gray-400">
+    مفيش تحذيرات محفوظة من آخر استيراد (أو الصفحة دي اتفتحت بعد ما الجلسة انتهت).
+</div>
+{% endif %}
+
+{% endblock %}

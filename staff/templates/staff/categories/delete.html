@@ -1,0 +1,47 @@
+{% extends 'staff/base.html' %}
+{% block title %}حذف قسم — Biozone{% endblock %}
+{% block breadcrumbs %}
+{% load staff_ui %}
+<nav class="flex items-center text-sm text-gray-500 mb-4">
+    {% crumb "الرئيسية" "staff:dashboard" %}
+    {% crumb "الأقسام" "staff:category_list" %}
+    {% crumb "حذف" %}
+</nav>
+{% endblock %}
+
+{% block content %}
+
+<div class="max-w-md mx-auto">
+    <div class="bg-white rounded-2xl shadow-sm p-8 text-center">
+        {% if has_products %}
+        <svg class="w-14 h-14 mx-auto mb-4 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
+        <h1 class="text-xl font-bold text-gray-800 mb-2">تعطيل القسم</h1>
+        <p class="text-gray-500 mb-2">
+            القسم <span class="font-bold text-yellow-600">{{ category.name }}</span>
+            له أصناف مرتبطة به.
+        </p>
+        <p class="text-sm text-yellow-600 bg-yellow-50 rounded-lg px-4 py-2 mb-6">
+            سيتم تعطيله وإخفاؤه من الفلاتر بدل الحذف (الأصناف نفسها هتفضل موجودة).
+        </p>
+        {% else %}
+        <svg class="w-14 h-14 mx-auto mb-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>
+        <h1 class="text-xl font-bold text-gray-800 mb-2">تأكيد الحذف</h1>
+        <p class="text-gray-500 mb-6">
+            سيتم حذف القسم <span class="font-bold text-red-600">{{ category.name }}</span> نهائيًا، ولا يمكن التراجع عن هذا الإجراء.
+        </p>
+        {% endif %}
+
+        <form method="POST" class="flex gap-3 justify-center">
+            {% csrf_token %}
+            {% if has_products %}
+            {% btn "تعطيل" type="submit" variant="caution" %}
+            {% else %}
+            {% btn "حذف نهائي" type="submit" variant="danger" %}
+            {% endif %}
+            {% url 'staff:category_list' as category_list_url %}
+            {% btn "إلغاء" href=category_list_url variant="secondary" %}
+        </form>
+    </div>
+</div>
+
+{% endblock %}

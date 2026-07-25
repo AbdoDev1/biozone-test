@@ -222,9 +222,17 @@
         {% if perms.products.view_product %}
         <a href="{% url 'staff:product_list' %}"
            class="flex items-center gap-3 px-3 py-2 rounded-lg border-l-4
-           {% if url_name == 'product_list' or url_name == 'product_add' or url_name == 'product_edit' or url_name == 'product_delete' or url_name == 'import_products' or url_name == 'import_products_review' or url_name == 'export_products_select' %}bg-primary-50 text-primary-600 font-semibold border-primary-600{% else %}border-transparent hover:bg-primary-50 text-gray-700 hover:text-primary-600{% endif %}">
+           {% if url_name == 'product_list' or url_name == 'product_add' or url_name == 'product_edit' or url_name == 'product_delete' or url_name == 'import_products' or url_name == 'import_products_review' or url_name == 'import_products_errors' or url_name == 'export_products_select' %}bg-primary-50 text-primary-600 font-semibold border-primary-600{% else %}border-transparent hover:bg-primary-50 text-gray-700 hover:text-primary-600{% endif %}">
             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007z"/></svg>
             المنتجات
+        </a>
+        {% endif %}
+        {% if perms.products.view_category %}
+        <a href="{% url 'staff:category_list' %}"
+           class="flex items-center gap-3 px-3 py-2 rounded-lg border-l-4
+           {% if url_name == 'category_list' or url_name == 'category_add' or url_name == 'category_edit' or url_name == 'category_delete' %}bg-primary-50 text-primary-600 font-semibold border-primary-600{% else %}border-transparent hover:bg-primary-50 text-gray-700 hover:text-primary-600{% endif %}">
+            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z"/></svg>
+            الأقسام
         </a>
         {% endif %}
         {% if perms.staff.view_reports %}
