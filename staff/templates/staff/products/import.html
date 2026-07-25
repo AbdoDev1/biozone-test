@@ -30,29 +30,25 @@
 </div>
 {% endif %}
 
-<!-- تحميل القالب / تصدير الأصناف الحالية -->
+<!-- تحميل القالب: ده الوحيد اللي فعلاً جزء من رحلة "الاستيراد" نفسها.
+     تصدير الأصناف الحالية (كل الأصناف / أصناف محددة) بقى منفصل تمامًا
+     ومتاح مباشرة من قائمة المنتجات (زرار "تصدير Excel")، مش هنا — عشان
+     أي حد عنده صلاحية عرض المنتجات بس (من غير صلاحية استيراد) يقدر
+     يوصله برضه. -->
 <div class="bg-primary-50 border border-primary-200 rounded-xl p-4 mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
     <div>
         <p class="font-semibold text-primary-800 text-sm">قالب Excel الجاهز</p>
         <p class="text-primary-600 text-xs mt-1">حمّل القالب، ثم قم بتعبئته ورفعه مرة أخرى</p>
     </div>
-    <div class="flex flex-wrap gap-2">
-        <a href="{% url 'staff:export_products_select' %}"
-           class="bg-white border border-primary-300 text-primary-700 hover:bg-primary-100 text-sm px-4 py-2 rounded-lg transition">
-            تصدير أصناف محددة
-        </a>
-        <a href="{% url 'staff:export_products' %}" hx-boost="false"
-           class="bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 text-sm px-4 py-2 rounded-lg transition">
-            تصدير كل الأصناف
-        </a>
-        {% url 'staff:download_template' as download_template_url %}
-        {% btn "تحميل القالب" href=download_template_url extra_attrs='hx-boost="false"' %}
-    </div>
+    {% url 'staff:download_template' as download_template_url %}
+    {% btn "تحميل القالب" href=download_template_url extra_attrs='hx-boost="false"' %}
 </div>
 <p class="text-xs text-gray-500 -mt-3 mb-6">
-    لو هتحدّث أصناف موجودة بالفعل (خصوصًا لو محتمل تعدّل اسم الصنف)، الأفضل تستخدم
-    "تصدير الأصناف الحالية" بدل ما تكتب من الصفر — الملف هيجيلك فيه كود كل صنف جاهز،
-    وده بيضمن إن التحديث يحصل على نفس الصنف حتى لو غيّرت اسمه بالكامل.
+    لو هتحدّث أصناف موجودة بالفعل (خصوصًا لو محتمل تعدّل اسم الصنف)، الأفضل تصدّر
+    الأصناف الحالية الأول من
+    <a href="{% url 'staff:product_list' %}" class="text-primary-600 hover:underline">قائمة المنتجات</a>
+    (زرار "تصدير Excel" ← "تصدير أصناف محددة") بدل ما تكتب من الصفر — الملف هيجيلك
+    فيه كود كل صنف جاهز، وده بيضمن إن التحديث يحصل على نفس الصنف حتى لو غيّرت اسمه بالكامل.
 </p>
 
 <!-- الأعمدة -->

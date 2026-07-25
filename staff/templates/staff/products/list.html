@@ -5,11 +5,36 @@
 
 <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
     <h1 class="text-2xl font-bold text-gray-800">المنتجات</h1>
-    <div class="flex flex-col sm:flex-row gap-2">
+    <div class="flex flex-col sm:flex-row gap-2" x-data="{ exportOpen: false }">
         {% url 'staff:product_add' as product_add_url %}
         {% btn "+ إضافة منتج" href=product_add_url variant="success" %}
         {% url 'staff:import_products' as import_products_url %}
         {% btn "استيراد من Excel" href=import_products_url %}
+        <!-- تصدير منفصل تمامًا عن الاستيراد: صلاحية "عرض المنتجات" (نفس صلاحية
+             هذه الصفحة) كافية للتصدير، مش لازم صلاحية "إضافة منتج" الخاصة
+             بالاستيراد — قبل كده كان زرار التصدير موجود بس جوه صفحة الاستيراد
+             نفسها، فأي حد عنده صلاحية عرض بس (من غير صلاحية استيراد) كان
+             مينفعش يوصله خالص. -->
+        <div class="relative">
+            <button type="button" @click="exportOpen = !exportOpen" @click.outside="exportOpen = false"
+                    class="w-full sm:w-auto bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 text-sm px-4 py-2 rounded-lg transition inline-flex items-center justify-center gap-1.5 font-semibold">
+                تصدير Excel
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
+                    <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                </svg>
+            </button>
+            <div x-show="exportOpen" x-cloak x-transition
+                 class="absolute z-20 mt-1 w-56 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden left-0 sm:left-auto sm:right-0">
+                <a href="{% url 'staff:export_products_select' %}"
+                   class="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
+                    تصدير أصناف محددة
+                </a>
+                <a href="{% url 'staff:export_products' %}" hx-boost="false"
+                   class="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 border-t border-gray-100">
+                    تصدير كل الأصناف
+                </a>
+            </div>
+        </div>
     </div>
 </div>
 
