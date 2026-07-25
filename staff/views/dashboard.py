@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from inventory.models import Inventory
 from accounts.models import ClientProfile
-from accounts.security import is_login_blocked, record_failed_login, reset_login_attempts
+from accounts.security import is_login_blocked, record_failed_login, reset_login_attempts, LOGIN_BLOCKED_MESSAGE
 from orders.models import Order
 
 # أول قدر أصناف بيتعرضوا في كارت "مخزون منخفض" بلوحة التحكم — الباقي
@@ -24,10 +24,7 @@ def staff_login(request):
 
         # نفس حماية brute-force المستخدمة في بوابة العملاء (accounts/security.py).
         if is_login_blocked(request, username):
-            messages.error(
-                request,
-                'محاولات دخول كتيرة فشلت. حاول تاني بعد ربع ساعة تقريبًا.'
-            )
+            messages.error(request, LOGIN_BLOCKED_MESSAGE)
             return render(request, 'staff/login.html')
 
         user = authenticate(request, username=username, password=password)

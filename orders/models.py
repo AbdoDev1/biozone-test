@@ -205,8 +205,17 @@ class Order(models.Model):
 
         item.quantity = new_quantity
         if new_quantity > 0:
-            new_subtotal = item.product_unit.get_price(new_quantity, client=self.client)
-            item.unit_price = new_subtotal / new_quantity
+            # بنجيب سعر الجمهور ونسبة الخصم مع سعر الوحدة الفعلي مع بعض من
+            # نفس المصدر (get_pricing_breakdown_for_client)، ونحدّث التلاتة
+            # حقول مع بعض — لو حدّثنا unit_price بس (زي ما كان قبل كده)،
+            # public_price/discount_percent كانوا بيفضلوا واقفين على قيمة
+            # وقت إنشاء الطلب حتى لو الأدمن غيّر نسبة الخصم بعد كده، فيبقى
+            # كشف السعر (سعر جمهور + نسبة خصم + سعر نهائي) متضارب مع بعضه
+            # ومايطلعش صح في تفاصيل الطلب ولا الفاتورة.
+            public_price, discount_percent, unit_price = item.product_unit.get_pricing_breakdown_for_client(self.client)
+            item.public_price = public_price
+            item.discount_percent = discount_percent
+            item.unit_price = unit_price
         item.save()
 
         direction_word = 'بالزيادة' if new_quantity > old_quantity else 'بالنقص'

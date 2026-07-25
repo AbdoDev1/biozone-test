@@ -3,7 +3,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from .forms import RegisterForm, LoginForm
 from .models import User
-from .security import is_login_blocked, record_failed_login, reset_login_attempts
+from .security import is_login_blocked, record_failed_login, reset_login_attempts, LOGIN_BLOCKED_MESSAGE
 
 
 def register_view(request):
@@ -42,10 +42,7 @@ def login_view(request):
             # حماية بسيطة ضد brute-force: بعد عدد محاولات فاشلة كبير على
             # نفس (IP + username) بنوقف قبول المحاولات مؤقتًا.
             if is_login_blocked(request, username):
-                messages.error(
-                    request,
-                    'محاولات دخول كتيرة فشلت. حاول تاني بعد ربع ساعة تقريبًا.'
-                )
+                messages.error(request, LOGIN_BLOCKED_MESSAGE)
                 return render(request, 'accounts/login.html', {'form': form})
 
             user = authenticate(

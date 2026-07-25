@@ -11,6 +11,21 @@ from django.http import HttpResponse
 
 XLSX_CONTENT_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 
+# محارف لو خلية Excel بدأت بيها، برنامج زي Excel/LibreOffice بيعتبرها بداية
+# فورمولا مش نص عادي (=, +, -, @) — لو فتحنا خلية زيها هتتنفذ كفورمولا وقت
+# فتح الملف. المشكلة إن بعض القيم اللي بتتصدّر هنا (زي اسم نشاط العميل،
+# business_name) بيكتبها العميل نفسه وقت التسجيل، فمينفعش نثق فيها زي ما هي.
+# الحماية المعروفة (OWASP CSV Injection): لو القيمة نص وبادئة بواحد من
+# المحارف دي، نحط علامة اقتباس (') قبلها — كده Excel بيتعامل معاها كنص خام
+# مش فورمولا، والشكل المعروض للمستخدم مايتأثرش عمليًا.
+_FORMULA_TRIGGER_CHARS = ('=', '+', '-', '@')
+
+
+def _sanitize_cell(value):
+    if isinstance(value, str) and value.startswith(_FORMULA_TRIGGER_CHARS):
+        return "'" + value
+    return value
+
 
 def workbook_response(wb, filename):
     """
@@ -39,7 +54,7 @@ def build_simple_workbook(sheet_title, headers, rows, column_width=22):
     ws.title = sheet_title
     ws.append(list(headers))
     for row in rows:
-        ws.append(list(row))
+        ws.append([_sanitize_cell(v) for v in row])
     for col in ws.columns:
         ws.column_dimensions[col[0].column_letter].width = column_width
     return wb
