@@ -51,12 +51,15 @@ def inventory_list(request):
 @perm_required('inventory.view_inventory')
 def inventory_detail(request, pk):
     item = get_object_or_404(Inventory, pk=pk)
-    movements = item.movements.select_related('created_by', 'unit').order_by('-created_at')[:20]
+    movements_qs = item.movements.select_related('created_by', 'unit').order_by('-created_at')
+    movements_count = movements_qs.count()
+    movements = movements_qs[:20]
     units = list(item.product.units.all())
 
     return render(request, 'staff/inventory/detail.html', {
         'item': item,
         'movements': movements,
+        'movements_count': movements_count,
         'units': units,
         # بيحافظ على رقم صفحة/بحث قائمة المخزون اللي جاي منها المستخدم،
         # عشان رابط "المخزون" في breadcrumb يرجعه لنفس المكان بدل صفحة 1.

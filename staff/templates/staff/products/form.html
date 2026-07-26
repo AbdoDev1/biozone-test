@@ -17,11 +17,29 @@
        class="text-sm text-gray-500 hover:text-primary-600">← قائمة المنتجات</a>
 </div>
 
+<div x-data="{ tab: '{% if formset.is_bound and not formset.is_valid %}units{% else %}info{% endif %}' }">
+
+<div class="bg-white rounded-2xl shadow overflow-hidden mb-6">
+    <div class="flex border-b overflow-x-auto text-sm">
+        <button type="button" @click="tab = 'info'"
+                :class="tab === 'info' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                class="px-5 py-3 border-b-2 font-medium whitespace-nowrap transition">
+            بيانات المنتج
+        </button>
+        <button type="button" @click="tab = 'units'"
+                :class="tab === 'units' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                class="px-5 py-3 border-b-2 font-medium whitespace-nowrap transition">
+            الوحدات والأسعار
+            <span class="text-xs text-gray-400">({{ formset.forms|length }})</span>
+        </button>
+    </div>
+</div>
+
 <form method="POST" action="{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}" enctype="multipart/form-data" class="space-y-6">
     {% csrf_token %}
 
     <!-- بيانات المنتج -->
-    <div class="bg-white rounded-2xl shadow-sm p-6">
+    <div x-show="tab === 'info'" class="bg-white rounded-2xl shadow-sm p-6">
         <h2 class="font-bold text-gray-700 mb-4 pb-2 border-b border-gray-100">بيانات المنتج</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
@@ -99,7 +117,7 @@
     </div>
 
     <!-- الوحدات -->
-    <div class="bg-white rounded-2xl shadow-sm p-6">
+    <div x-show="tab === 'units'" class="bg-white rounded-2xl shadow-sm p-6">
         <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-100">
             <h2 class="font-bold text-gray-700">الوحدات والأسعار</h2>
             <button type="button" id="add-unit-row"
@@ -245,6 +263,8 @@
     </div>
 
 </form>
+
+</div>
 
 <script>
 (function () {

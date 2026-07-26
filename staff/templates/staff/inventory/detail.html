@@ -11,159 +11,199 @@
 
 {% block content %}
 
-<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-    <div class="bg-white rounded-2xl shadow-sm p-6">
-        <p class="text-gray-500 text-sm">الرصيد الكلي</p>
-        <p class="text-3xl font-bold text-gray-800 mt-1">{{ item.quantity_display }}</p>
-        <p class="text-xs text-gray-400 mt-1">{{ item.quantity }} بالقطعة</p>
-    </div>
-    <div class="bg-white rounded-2xl shadow-sm p-6">
-        <p class="text-gray-500 text-sm">المحجوز</p>
-        <p class="text-3xl font-bold text-yellow-500 mt-1">{{ item.reserved_display }}</p>
-        <p class="text-xs text-gray-400 mt-1">{{ item.reserved }} بالقطعة</p>
-    </div>
-    <div class="bg-white rounded-2xl shadow-sm p-6">
-        <p class="text-gray-500 text-sm">المتاح</p>
-        <p class="text-3xl font-bold {% if item.is_low %}text-red-500{% else %}text-green-500{% endif %} mt-1">
-            {{ item.available_display }}
-        </p>
-        <p class="text-xs text-gray-400 mt-1">{{ item.available }} بالقطعة</p>
-    </div>
-</div>
+<div x-data="{ tab: 'info' }">
 
-<!-- الوحدات المتاحة لهذا المنتج -->
-<div class="bg-white rounded-2xl shadow-sm p-6 mb-6">
-    <h2 class="font-semibold text-gray-700 mb-4">بيانات الصنف</h2>
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm mb-4">
+<!-- ملخص الأرصدة — ظاهر دايمًا فوق التابات، زي هيدر بيانات العميل -->
+<div class="bg-white rounded-2xl shadow p-6 md:p-8 mb-4">
+    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-4">
         <div>
-            <span class="text-gray-500">المنتج</span>
-            <p class="font-medium mt-1">{{ item.product.display_name }}</p>
+            <h1 class="text-2xl font-bold text-gray-800">{{ item.product.display_name }}</h1>
+            <p class="text-gray-500 text-sm mt-1">آخر تحديث {{ item.updated_at|date:"Y-m-d H:i" }}</p>
         </div>
-        <div>
-            <span class="text-gray-500">آخر تحديث</span>
-            <p class="font-medium mt-1">{{ item.updated_at|date:"Y-m-d H:i" }}</p>
-        </div>
+        {% if item.is_low %}
+        {% status_badge "منخفض" color="red" %}
+        {% endif %}
     </div>
-    <div class="border-t pt-4">
-        <span class="text-gray-500 text-sm">الوحدات وعامل التحويل بالقطعة</span>
-        <div class="flex flex-wrap gap-2 mt-2">
-            {% for unit in units %}
-            <span class="bg-gray-100 text-gray-700 text-xs px-3 py-1.5 rounded-full">
-                {{ unit.name }} = {{ unit.qty_in_small }} قطعة
-                (الرصيد ≈ {% widthratio item.quantity unit.qty_in_small 1 %} {{ unit.name }})
-            </span>
-            {% endfor %}
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-gray-50 rounded-xl p-4">
+            <p class="text-gray-500 text-sm">الرصيد الكلي</p>
+            <p class="text-2xl font-bold text-gray-800 mt-1">{{ item.quantity_display }}</p>
+            <p class="text-xs text-gray-400 mt-1">{{ item.quantity }} بالقطعة</p>
+        </div>
+        <div class="bg-gray-50 rounded-xl p-4">
+            <p class="text-gray-500 text-sm">المحجوز</p>
+            <p class="text-2xl font-bold text-yellow-500 mt-1">{{ item.reserved_display }}</p>
+            <p class="text-xs text-gray-400 mt-1">{{ item.reserved }} بالقطعة</p>
+        </div>
+        <div class="bg-gray-50 rounded-xl p-4">
+            <p class="text-gray-500 text-sm">المتاح</p>
+            <p class="text-2xl font-bold {% if item.is_low %}text-red-500{% else %}text-green-500{% endif %} mt-1">
+                {{ item.available_display }}
+            </p>
+            <p class="text-xs text-gray-400 mt-1">{{ item.available }} بالقطعة</p>
         </div>
     </div>
 </div>
 
-<!-- إعدادات الصنف: الحد الأدنى وظهوره في المتجر -->
-<div class="bg-white rounded-2xl shadow-sm p-6 mb-6">
-    <h2 class="font-semibold text-gray-700 mb-4">إعدادات الصنف</h2>
-    <form method="post" hx-push-url="false" action="{% url 'staff:inventory_update_settings' item.pk %}{% if list_qs %}?{{ list_qs }}{% endif %}"
-          class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-        {% csrf_token %}
-        <div>
-            <label class="block text-sm text-gray-600 mb-1">الحد الأدنى (بالقطعة)</label>
-            <input type="number" name="min_quantity" min="0" value="{{ item.min_quantity }}"
-                   class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
-        </div>
-        <div class="flex items-center gap-2 pb-2">
-            <input type="checkbox" id="is_available" name="is_available" {% if item.is_available %}checked{% endif %}
-                   class="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500">
-            <label for="is_available" class="text-sm text-gray-700">متوفر في المتجر</label>
-        </div>
-        <div>
-            <button type="submit"
-                    class="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold py-2 rounded-lg transition text-sm">
-                حفظ الإعدادات
-            </button>
-        </div>
-    </form>
-</div>
+<!-- التابات -->
+<div class="bg-white rounded-2xl shadow overflow-hidden">
+    <div class="flex border-b overflow-x-auto text-sm">
+        <button @click="tab = 'info'"
+                :class="tab === 'info' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                class="px-5 py-3 border-b-2 font-medium whitespace-nowrap transition">
+            بيانات الصنف
+        </button>
+        <button @click="tab = 'settings'"
+                :class="tab === 'settings' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                class="px-5 py-3 border-b-2 font-medium whitespace-nowrap transition">
+            الإعدادات
+        </button>
+        <button @click="tab = 'add_movement'"
+                :class="tab === 'add_movement' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                class="px-5 py-3 border-b-2 font-medium whitespace-nowrap transition">
+            تسجيل حركة
+        </button>
+        <button @click="tab = 'movements'"
+                :class="tab === 'movements' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                class="px-5 py-3 border-b-2 font-medium whitespace-nowrap transition">
+            الحركات
+            <span class="text-xs text-gray-400">({{ movements_count }})</span>
+        </button>
+    </div>
 
-<!-- إضافة حركة -->
-<div class="bg-white rounded-2xl shadow-sm p-6 mb-6">
-    <h2 class="font-semibold text-gray-700 mb-4">تسجيل حركة</h2>
-    <form method="post" hx-push-url="false" action="{% url 'staff:add_movement' item.pk %}{% if list_qs %}?{{ list_qs }}{% endif %}" class="grid grid-cols-1 md:grid-cols-5 gap-4">
-        {% csrf_token %}
-        <div>
-            <label class="block text-sm text-gray-600 mb-1">نوع الحركة</label>
-            <select name="movement_type"
-                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
-                <option value="IN">وارد</option>
-                <option value="OUT">صادر</option>
-                <option value="RESERVE">حجز</option>
-                <option value="RELEASE">إلغاء حجز</option>
-            </select>
+    <!-- تبويب: بيانات الصنف -->
+    <div x-show="tab === 'info'" class="p-6 md:p-8 text-sm">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+            <div>
+                <span class="text-gray-500">المنتج</span>
+                <p class="font-medium mt-1">{{ item.product.display_name }}</p>
+            </div>
+            <div>
+                <span class="text-gray-500">آخر تحديث</span>
+                <p class="font-medium mt-1">{{ item.updated_at|date:"Y-m-d H:i" }}</p>
+            </div>
         </div>
-        <div>
-            <label class="block text-sm text-gray-600 mb-1">الوحدة</label>
-            <select name="unit_id"
-                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+        <div class="border-t pt-4">
+            <span class="text-gray-500 text-sm">الوحدات وعامل التحويل بالقطعة</span>
+            <div class="flex flex-wrap gap-2 mt-2">
                 {% for unit in units %}
-                <option value="{{ unit.pk }}">{{ unit.name }}{% if unit.qty_in_small > 1 %} ({{ unit.qty_in_small }} قطعة){% endif %}</option>
+                <span class="bg-gray-100 text-gray-700 text-xs px-3 py-1.5 rounded-full">
+                    {{ unit.name }} = {{ unit.qty_in_small }} قطعة
+                    (الرصيد ≈ {% widthratio item.quantity unit.qty_in_small 1 %} {{ unit.name }})
+                </span>
                 {% endfor %}
-            </select>
+            </div>
         </div>
-        <div>
-            <label class="block text-sm text-gray-600 mb-1">الكمية (بالوحدة المختارة)</label>
-            <input type="number" name="quantity" min="1"
-                   class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+    </div>
+
+    <!-- تبويب: الإعدادات -->
+    <div x-show="tab === 'settings'" class="p-6 md:p-8">
+        <form method="post" hx-push-url="false" action="{% url 'staff:inventory_update_settings' item.pk %}{% if list_qs %}?{{ list_qs }}{% endif %}"
+              class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end max-w-2xl">
+            {% csrf_token %}
+            <div>
+                <label class="block text-sm text-gray-600 mb-1">الحد الأدنى (بالقطعة)</label>
+                <input type="number" name="min_quantity" min="0" value="{{ item.min_quantity }}"
+                       class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+            </div>
+            <div class="flex items-center gap-2 pb-2">
+                <input type="checkbox" id="is_available" name="is_available" {% if item.is_available %}checked{% endif %}
+                       class="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500">
+                <label for="is_available" class="text-sm text-gray-700">متوفر في المتجر</label>
+            </div>
+            <div>
+                <button type="submit"
+                        class="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold py-2 rounded-lg transition text-sm">
+                    حفظ الإعدادات
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- تبويب: تسجيل حركة -->
+    <div x-show="tab === 'add_movement'" class="p-6 md:p-8">
+        <form method="post" hx-push-url="false" action="{% url 'staff:add_movement' item.pk %}{% if list_qs %}?{{ list_qs }}{% endif %}" class="grid grid-cols-1 md:grid-cols-5 gap-4">
+            {% csrf_token %}
+            <div>
+                <label class="block text-sm text-gray-600 mb-1">نوع الحركة</label>
+                <select name="movement_type"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+                    <option value="IN">وارد</option>
+                    <option value="OUT">صادر</option>
+                    <option value="RESERVE">حجز</option>
+                    <option value="RELEASE">إلغاء حجز</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm text-gray-600 mb-1">الوحدة</label>
+                <select name="unit_id"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+                    {% for unit in units %}
+                    <option value="{{ unit.pk }}">{{ unit.name }}{% if unit.qty_in_small > 1 %} ({{ unit.qty_in_small }} قطعة){% endif %}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm text-gray-600 mb-1">الكمية (بالوحدة المختارة)</label>
+                <input type="number" name="quantity" min="1"
+                       class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+            </div>
+            <div>
+                <label class="block text-sm text-gray-600 mb-1">ملاحظة</label>
+                <input type="text" name="note"
+                       class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+            </div>
+            <div class="flex items-end">
+                <button type="submit"
+                        class="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold py-2 rounded-lg transition text-sm">
+                    تسجيل
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- تبويب: الحركات -->
+    <div x-show="tab === 'movements'">
+        <div class="overflow-x-auto">
+        <table class="w-full text-sm min-w-[640px]">
+            <thead class="bg-gray-50 text-gray-600">
+                <tr>
+                    <th class="px-4 py-3 text-right sticky-col">النوع</th>
+                    <th class="px-4 py-3 text-right">الوحدة</th>
+                    <th class="px-4 py-3 text-right">الكمية</th>
+                    <th class="px-4 py-3 text-right">= بالقطعة</th>
+                    <th class="px-4 py-3 text-right">ملاحظة</th>
+                    <th class="px-4 py-3 text-right">بواسطة</th>
+                    <th class="px-4 py-3 text-right">التاريخ</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for movement in movements %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-3 sticky-col">
+                        {% status_badge movement.get_movement_type_display group="movement_type" key=movement.movement_type %}
+                    </td>
+                    <td class="px-4 py-3 text-gray-500">{{ movement.unit.name }}</td>
+                    <td class="px-4 py-3 font-medium">{{ movement.quantity }}</td>
+                    <td class="px-4 py-3 text-gray-500">{{ movement.stock_qty }}</td>
+                    <td class="px-4 py-3 text-gray-500">{{ movement.note|default:"—" }}</td>
+                    <td class="px-4 py-3">{{ movement.created_by.username|default:"—" }}</td>
+                    <td class="px-4 py-3 text-gray-500">{{ movement.created_at|date:"Y-m-d H:i" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="px-4 py-8 text-center text-gray-400">لا يوجد حركات</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
         </div>
-        <div>
-            <label class="block text-sm text-gray-600 mb-1">ملاحظة</label>
-            <input type="text" name="note"
-                   class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
-        </div>
-        <div class="flex items-end">
-            <button type="submit"
-                    class="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold py-2 rounded-lg transition text-sm">
-                تسجيل
-            </button>
-        </div>
-    </form>
+        {% if movements_count > 20 %}
+        <p class="text-xs text-gray-400 text-center py-3">بيعرض آخر 20 حركة من إجمالي {{ movements_count }}.</p>
+        {% endif %}
+    </div>
 </div>
 
-<!-- آخر الحركات -->
-<div class="bg-white rounded-2xl shadow-sm overflow-hidden">
-    <div class="p-4 border-b">
-        <h2 class="font-semibold text-gray-700">آخر الحركات</h2>
-    </div>
-    <div class="overflow-x-auto">
-    <table class="w-full text-sm min-w-[640px]">
-        <thead class="bg-gray-50 text-gray-600">
-            <tr>
-                <th class="px-4 py-3 text-right sticky-col">النوع</th>
-                <th class="px-4 py-3 text-right">الوحدة</th>
-                <th class="px-4 py-3 text-right">الكمية</th>
-                <th class="px-4 py-3 text-right">= بالقطعة</th>
-                <th class="px-4 py-3 text-right">ملاحظة</th>
-                <th class="px-4 py-3 text-right">بواسطة</th>
-                <th class="px-4 py-3 text-right">التاريخ</th>
-            </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-100">
-            {% for movement in movements %}
-            <tr class="hover:bg-gray-50">
-                <td class="px-4 py-3 sticky-col">
-                    {% status_badge movement.get_movement_type_display group="movement_type" key=movement.movement_type %}
-                </td>
-                <td class="px-4 py-3 text-gray-500">{{ movement.unit.name }}</td>
-                <td class="px-4 py-3 font-medium">{{ movement.quantity }}</td>
-                <td class="px-4 py-3 text-gray-500">{{ movement.stock_qty }}</td>
-                <td class="px-4 py-3 text-gray-500">{{ movement.note|default:"—" }}</td>
-                <td class="px-4 py-3">{{ movement.created_by.username|default:"—" }}</td>
-                <td class="px-4 py-3 text-gray-500">{{ movement.created_at|date:"Y-m-d H:i" }}</td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="7" class="px-4 py-8 text-center text-gray-400">لا يوجد حركات</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    </div>
 </div>
 
 {% endblock %}
