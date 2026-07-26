@@ -9,8 +9,7 @@
     <link rel="apple-touch-icon" href="{% static 'icons/apple-touch-icon.png' %}">
     <link rel="manifest" href="{% static 'manifest.json' %}">
     <meta name="theme-color" content="#1d4ed8">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/fonts.css' %}">
     <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
     <!-- htmx بيعالج عناصر الصفحة (hx-get, hx-trigger...) لما DOMContentLoaded
          يطلق، فـ defer آمن هنا (بيأجل تحميل/تنفيذ السكريبت لحد ما الـ HTML
