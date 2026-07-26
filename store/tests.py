@@ -39,6 +39,23 @@ class StoreHomeNewArrivalsFilterTestCase(TestCase):
         self.assertTrue(new_product.is_new_arrival)
         self.assertFalse(regular_product.is_new_arrival)
 
+    def test_new_arrival_badge_hidden_from_anonymous_visitor(self):
+        # is_new_arrival يفضل True للمنتج حتى لزائر مش مسجل دخوله (الفلترة
+        # والـ annotate عامة)، لكن شارة الكارت "🆕 وارد جديد" نفسها في
+        # القالب لازم تتخفي عن أي حد مش عميل مسجّل دخوله.
+        response = self.http.get(reverse('store:home'))
+        self.assertNotContains(response, '🆕 وارد جديد')
+
+    def test_new_arrival_badge_visible_to_logged_in_client(self):
+        self.http.force_login(
+            User.objects.create_user(
+                username='client3', email='client3@example.com',
+                password='testpass123', role=User.Role.CLIENT,
+            )
+        )
+        response = self.http.get(reverse('store:home'))
+        self.assertContains(response, '🆕 وارد جديد')
+
     def test_new_arrival_product_appears_in_new_arrivals_page(self):
         self.http.force_login(
             User.objects.create_user(
