@@ -153,8 +153,26 @@ class Order(models.Model):
         صنف. لو الكمية بقت غير متوفرة فعليًا وقت التسليم (اتباعت لعميل تاني
         مثلاً في الفترة من إرسال الطلب لحد المراجعة)، الحركة هترفض تلقائيًا
         (StockMovement.clean()) وهيرجع ValidationError للموظف.
+
+        حماية ضد double-submit/سباق: الفحص "الطلب لسه CONFIRMED" في الـ view
+        بيحصل *قبل* الدخول هنا (شرط مستوى الـ view بس، مش شرط هنا في الموديل —
+        الميثود دي أصلًا مصممة تتنادى من أي حالة، شوف اختبارات orders/tests.py).
+        المشكلة الفعلية: لو طلبين POST جم مع بعض (دبل كليك، أو تابين لموظفين
+        مختلفين) ممكن الاتنين يعدّوا فحص الـ view قبل ما أي واحد يغيّر الحالة
+        فعليًا، فالاتنين ينادوا mark_delivered() ويخصموا من المخزون مرتين لنفس
+        الطلب. عشان كده لازم نقفل صف الطلب نفسه (select_for_update) ونتأكد إنه
+        مش DELIVERED بالفعل *بعد* أخذ القفل — الطلب التاني هيستنى القفل، ولما
+        ياخده هيلاقي الحالة بقت DELIVERED فيتوقف بدل ما يسجّل حركة مخزون
+        تانية (خصم مزدوج) على نفس الطلب. الفاتورة كانت محمية أصلًا (hasattr
+        check في Invoice.issue_for_order)، لكن حركة المخزون ماكانتش.
         """
+        from django.core.exceptions import ValidationError
         from inventory.models import Inventory, StockMovement
+
+        locked_self = Order.objects.select_for_update().get(pk=self.pk)
+        if locked_self.status == self.Status.DELIVERED:
+            raise ValidationError('الطلب ده اتسلّم بالفعل، لا يمكن تكرار التسليم.')
+
         items = list(self.items.select_related('product_unit').all())
         product_ids = [item.product_unit.product_id for item in items]
         locked_inventories = {
