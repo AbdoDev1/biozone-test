@@ -144,7 +144,7 @@ def group_unit_rows(unit_rows):
         discount_source = small or large
         category_slug = next((r['category_slug'] for r in rows if r['category_slug']), '')
         code = next((r['code'] for r in rows if r['code']), '')
-        barcode = next((r['barcode'] for r in rows if r['barcode']), '')
+        barcode = next((r.get('barcode') for r in rows if r.get('barcode')), '')
         products_data.append({
             'row_num': rows[0]['row_num'],
             'row_nums': [r['row_num'] for r in rows],

@@ -38,15 +38,16 @@
     </div>
 </div>
 
-<!-- بحث وفلتر -->
-<form method="GET" class="bg-white rounded-2xl shadow-sm p-4 mb-6 flex flex-col sm:flex-row gap-3 sm:items-end">
-    <div class="flex-1">
+<!-- لوحة البحث والفلاتر (مرحلة 3: أضيف فلتر الحالة، فلتر المخزون، وخيار
+     التجميع حسب القسم — البحث والفلتر بالقسم كانوا موجودين قبل كده) -->
+<form method="GET" class="bg-white rounded-2xl shadow-sm p-4 mb-6 flex flex-col sm:flex-row gap-3 sm:items-end sm:flex-wrap">
+    <div class="flex-1 min-w-[180px]">
         <label class="text-xs text-gray-500 mb-1 block">بحث</label>
         <input type="text" name="q" value="{{ search_q }}"
                placeholder="اسم المنتج، الباركود، أو كود الصنف..."
                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary-400">
     </div>
-    <div class="w-full sm:w-48">
+    <div class="w-full sm:w-40">
         <label class="text-xs text-gray-500 mb-1 block">القسم</label>
         <select name="category"
                 class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary-400">
@@ -58,101 +59,162 @@
             {% endfor %}
         </select>
     </div>
+    <div class="w-full sm:w-36">
+        <label class="text-xs text-gray-500 mb-1 block">الحالة</label>
+        <select name="status"
+                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary-400">
+            <option value="" {% if not status_filter %}selected{% endif %}>الكل</option>
+            <option value="active" {% if status_filter == 'active' %}selected{% endif %}>نشط</option>
+            <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>معطل</option>
+        </select>
+    </div>
+    <div class="w-full sm:w-40">
+        <label class="text-xs text-gray-500 mb-1 block">المخزون</label>
+        <select name="stock"
+                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary-400">
+            <option value="" {% if not stock_filter %}selected{% endif %}>الكل</option>
+            <option value="low" {% if stock_filter == 'low' %}selected{% endif %}>منخفض</option>
+            <option value="out" {% if stock_filter == 'out' %}selected{% endif %}>غير متاح (نفذ)</option>
+        </select>
+    </div>
+    <label class="flex items-center gap-1.5 text-xs text-gray-600 pb-2 whitespace-nowrap">
+        <input type="checkbox" name="group" value="1" {% if group_by_category %}checked{% endif %}
+               class="rounded border-gray-300 text-primary-600 focus:ring-primary-400">
+        تجميع حسب القسم
+    </label>
     <button type="submit"
             class="bg-gray-800 text-white text-sm px-4 py-2 rounded-lg hover:bg-gray-700 transition">
         بحث
     </button>
 </form>
 
-<!-- جدول المنتجات -->
-<div class="bg-white rounded-2xl shadow-sm overflow-x-auto">
-    <table class="w-full text-sm min-w-[640px]">
-        <thead class="bg-gray-50 text-gray-600 border-b border-gray-200">
-            <tr>
-                <th class="px-4 py-3 text-right sticky-col">المنتج</th>
-                <th class="px-4 py-3 text-right">القسم</th>
-                <th class="px-4 py-3 text-right">الشركة</th>
-                <th class="px-4 py-3 text-right">سعر القطعة</th>
-                <th class="px-4 py-3 text-right">المخزون</th>
-                <th class="px-4 py-3 text-right">الحالة</th>
-                <th class="px-4 py-3 text-right">إجراءات</th>
-            </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-100">
-            {% for product in products %}
-            <tr class="hover:bg-gray-50 transition">
-                <td class="px-4 py-3 sticky-col">
-                    <div class="flex items-center gap-3">
-                        {% if product.image %}
-                            <img src="{{ product.image.url }}" class="w-10 h-10 rounded-lg object-cover">
-                        {% else %}
-                            <div class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-300 text-xs">
-                                لا صورة
-                            </div>
-                        {% endif %}
-                        <div>
-                            <p class="font-medium text-gray-800">{{ product.name_ar }}</p>
-                            {% if product.name_en %}
-                                <p class="text-xs text-gray-400">{{ product.name_en }}</p>
+<!-- شريط الإجراءات الجماعية (Bulk actions — مرحلة 3): بيظهر بس لو فيه
+     صنف واحد على الأقل محدد. مربوط بالجدول تحت عن طريق form="bulk-products-form"
+     على كل checkbox صف (بدل ما نحوّط الجدول كله في <form> ونتعارض مع
+     فورم التعديل السريع للسعر جوه الخلية — الفورمز مينفعش تتعشش في HTML). -->
+<div x-data="{ selected: [] }">
+    <div x-show="selected.length > 0" x-cloak x-transition
+         class="bg-primary-50 border border-primary-200 rounded-xl px-4 py-2.5 mb-3 flex items-center gap-3 text-sm">
+        <span class="text-primary-700 font-semibold" x-text="selected.length + ' صنف محدد'"></span>
+        <form id="bulk-products-form" method="post" action="{% url 'staff:product_bulk_action' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}"
+              class="flex items-center gap-2">
+            {% csrf_token %}
+            <button type="submit" name="bulk_action" value="activate"
+                    class="bg-green-100 hover:bg-green-200 text-green-700 text-xs font-semibold px-3 py-1.5 rounded-lg transition">
+                تفعيل المحدد
+            </button>
+            <button type="submit" name="bulk_action" value="deactivate"
+                    class="bg-red-100 hover:bg-red-200 text-red-600 text-xs font-semibold px-3 py-1.5 rounded-lg transition">
+                تعطيل المحدد
+            </button>
+        </form>
+        <button type="button" @click="selected = []" class="text-gray-400 hover:text-gray-600 text-xs mr-auto">إلغاء التحديد</button>
+    </div>
+
+    <!-- جدول المنتجات -->
+    <div class="bg-white rounded-2xl shadow-sm overflow-x-auto max-h-[70vh] overflow-y-auto">
+        <table class="w-full text-sm min-w-[720px]">
+            <thead class="bg-gray-50 text-gray-600 border-b border-gray-200 sticky top-0 z-10">
+                <tr>
+                    <th class="px-4 py-3 text-right w-10">
+                        <input type="checkbox"
+                               class="rounded border-gray-300 text-primary-600 focus:ring-primary-400"
+                               :checked="selected.length === {{ page_ids|length }} && {{ page_ids|length }} > 0"
+                               @change="selected = $event.target.checked ? [{% for id in page_ids %}{{ id }}{% if not forloop.last %},{% endif %}{% endfor %}] : []">
+                    </th>
+                    {% sortable_th "المنتج" "name" "sticky-col" %}
+                    {% sortable_th "القسم" "category" %}
+                    <th class="px-4 py-3 text-right">الشركة</th>
+                    {% sortable_th "سعر القطعة" "price" %}
+                    {% sortable_th "المخزون" "stock" %}
+                    {% sortable_th "الحالة" "status" %}
+                    <th class="px-4 py-3 text-right">إجراءات</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for product in products %}
+                {% ifchanged product.category_id %}
+                {% if group_by_category %}
+                <tr class="bg-gray-50/80">
+                    <td colspan="8" class="px-4 py-1.5 text-xs font-bold text-gray-500">{{ product.category.name }}</td>
+                </tr>
+                {% endif %}
+                {% endifchanged %}
+                <tr class="hover:bg-gray-50 transition">
+                    <td class="px-4 py-3">
+                        <input type="checkbox" class="row-check rounded border-gray-300 text-primary-600 focus:ring-primary-400"
+                               form="bulk-products-form" name="product_ids" value="{{ product.pk }}"
+                               x-model.number="selected">
+                    </td>
+                    <td class="px-4 py-3 sticky-col">
+                        <div class="flex items-center gap-3">
+                            {% if product.image %}
+                                <img src="{{ product.image.url }}" class="w-10 h-10 rounded-lg object-cover">
+                            {% else %}
+                                <div class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-300 text-xs">
+                                    لا صورة
+                                </div>
                             {% endif %}
-                            <p class="text-xs text-gray-400 num">{{ product.code }}</p>
+                            <div>
+                                <p class="font-medium text-gray-800">{{ product.name_ar }}</p>
+                                {% if product.name_en %}
+                                    <p class="text-xs text-gray-400">{{ product.name_en }}</p>
+                                {% endif %}
+                                <p class="text-xs text-gray-400 num">{{ product.code }}</p>
+                            </div>
                         </div>
-                    </div>
-                </td>
-                <td class="px-4 py-3 text-gray-600">{{ product.category.name }}</td>
-                <td class="px-4 py-3 text-gray-500">{{ product.manufacturer|default:"—" }}</td>
-                <td class="px-4 py-3 font-semibold text-primary-700">
-                    {% with unit=product.units.all|first %}
-                        {% if unit %}{{ unit.unit_price }} ج.م{% else %}—{% endif %}
-                    {% endwith %}
-                </td>
-                <td class="px-4 py-3">
-                    {% if product.inventory %}
-                        <span class="{% if product.inventory.is_low %}text-red-600 font-bold{% else %}text-green-600{% endif %}">
-                            {{ product.inventory.available }}
-                        </span>
-                    {% else %}—{% endif %}
-                </td>
-                <td class="px-4 py-3">
-                    {% if product.is_active %}
-                        <span class="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full">نشط</span>
-                    {% else %}
-                        <span class="bg-red-100 text-red-600 text-xs px-2 py-1 rounded-full">معطل</span>
-                    {% endif %}
-                </td>
-                <td class="px-4 py-3">
-                    <div class="flex gap-2">
-                        <a href="{% url 'staff:product_edit' product.pk %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}"
-                           class="bg-primary-50 hover:bg-primary-100 text-primary-600 text-xs px-3 py-1 rounded-lg transition">
-                            تعديل
-                        </a>
-                        {% if request.user.role == 'ADMIN' %}
-                        <a href="{% url 'staff:product_delete' product.pk %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}"
-                           class="bg-red-50 hover:bg-red-100 text-red-600 text-xs px-3 py-1 rounded-lg transition">
-                            حذف
-                        </a>
+                    </td>
+                    <td class="px-4 py-3 text-gray-600">{{ product.category.name }}</td>
+                    <td class="px-4 py-3 text-gray-500">{{ product.manufacturer|default:"—" }}</td>
+                    {% include 'staff/products/partials/price_cell.html' with unit=product.smallest_unit %}
+                    <td class="px-4 py-3">
+                        {% if product.inventory %}
+                            <span class="{% if product.inventory.is_low %}text-red-600 font-bold{% else %}text-green-600{% endif %}">
+                                {{ product.inventory.available }}
+                            </span>
+                        {% else %}—{% endif %}
+                    </td>
+                    <td class="px-4 py-3">
+                        {% if product.is_active %}
+                            <span class="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full">نشط</span>
+                        {% else %}
+                            <span class="bg-red-100 text-red-600 text-xs px-2 py-1 rounded-full">معطل</span>
                         {% endif %}
-                    </div>
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="7" class="text-center py-10 text-gray-400">لا توجد منتجات</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                    </td>
+                    <td class="px-4 py-3">
+                        <div class="flex gap-2">
+                            <a href="{% url 'staff:product_edit' product.pk %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}"
+                               class="bg-primary-50 hover:bg-primary-100 text-primary-600 text-xs px-3 py-1 rounded-lg transition">
+                                تعديل
+                            </a>
+                            {% if request.user.role == 'ADMIN' %}
+                            <a href="{% url 'staff:product_delete' product.pk %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}"
+                               class="bg-red-50 hover:bg-red-100 text-red-600 text-xs px-3 py-1 rounded-lg transition">
+                                حذف
+                            </a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center py-10 text-gray-400">لا توجد منتجات</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 
 {% if page_obj.paginator.num_pages > 1 %}
 <div class="flex items-center justify-center gap-2 mt-4 text-sm">
     {% if page_obj.has_previous %}
-    <a href="?q={{ search_q }}&category={{ selected_category }}&page={{ page_obj.previous_page_number }}"
+    <a href="?{{ request.GET|without_page }}&page={{ page_obj.previous_page_number }}"
        class="px-3 py-2 rounded-lg bg-white shadow-sm hover:bg-primary-50 text-gray-600">السابق</a>
     {% endif %}
     <span class="text-gray-500 px-2">صفحة {{ page_obj.number }} من {{ page_obj.paginator.num_pages }}</span>
     {% if page_obj.has_next %}
-    <a href="?q={{ search_q }}&category={{ selected_category }}&page={{ page_obj.next_page_number }}"
+    <a href="?{{ request.GET|without_page }}&page={{ page_obj.next_page_number }}"
        class="px-3 py-2 rounded-lg bg-white shadow-sm hover:bg-primary-50 text-gray-600">التالي</a>
     {% endif %}
 </div>

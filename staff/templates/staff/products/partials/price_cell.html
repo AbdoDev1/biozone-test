@@ -1,0 +1,38 @@
+<!--
+    خلية سعر القطعة القابلة للتعديل السريع (Quick Edit — مرحلة 3). partial
+    منفصل عشان يُستخدم في رندر أول للجدول (list.html) وكرد htmx بعد الحفظ
+    بنفس الشكل بالظبط — مصدر واحد للـ markup، مش نسخة مكررة في مكانين.
+
+    x-data محلي على مستوى الخلية نفسها (مش على الجدول كله) عشان فتح خلية
+    تعديل ميأثرش على باقي الصفوف، وعشان لما htmx يستبدل الخلية دي بعد
+    الحفظ، الحالة ترجع "عرض" تلقائيًا (الرد الجديد فيه editing: false
+    كقيمة ابتدائية دايمًا).
+-->
+<td class="px-4 py-3 font-semibold text-primary-700" x-data="{ editing: false }">
+    {% if unit %}
+    <div x-show="!editing" @click="editing = true"
+         class="cursor-pointer hover:underline inline-flex items-center gap-1 group"
+         title="اضغط للتعديل السريع">
+        <span>{{ unit.unit_price }} ج.م</span>
+        <svg class="w-3 h-3 text-gray-300 group-hover:text-primary-400" fill="none" stroke="currentColor"
+             viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"/>
+        </svg>
+    </div>
+    <form x-show="editing" x-cloak
+          hx-post="{% url 'staff:product_quick_price' unit.pk %}"
+          hx-target="closest td" hx-swap="outerHTML"
+          class="flex items-center gap-1">
+        {% csrf_token %}
+        <input type="number" step="0.01" min="0" name="unit_price" value="{{ unit.unit_price }}"
+               x-ref="priceInput" x-init="$watch('editing', v => v && $nextTick(() => $refs.priceInput.focus()))"
+               @keydown.escape="editing = false"
+               class="w-20 border border-primary-300 rounded px-2 py-1 text-xs outline-none focus:border-primary-500">
+        <button type="submit" class="text-green-600 hover:text-green-700 text-xs font-bold px-1">حفظ</button>
+        <button type="button" @click="editing = false" class="text-gray-400 hover:text-gray-600 text-xs px-1">إلغاء</button>
+    </form>
+    {% if error %}<p class="text-red-500 text-xs mt-1">{{ error }}</p>{% endif %}
+    {% else %}
+    <span class="text-gray-400">—</span>
+    {% endif %}
+</td>

@@ -121,6 +121,42 @@ def btn(text, href=None, variant='primary', size='md', full_width=False,
     }
 
 
+@register.simple_tag(takes_context=True)
+def sortable_th(context, label, field, extra_classes=''):
+    """
+    <th> قابل للترتيب لأي جدول (مرحلة 3 — ترقية الجداول). بيولّد رابط
+    بيبدّل اتجاه الترتيب (تصاعدي/تنازلي) على الحقل ده، وبيحافظ على باقي
+    querystring الحالي (بحث/فلاتر) من غير تكرار — بس بيصفّر 'page' لأن
+    تغيير الترتيب لازم يرجعك لأول صفحة من النتائج الجديدة.
+
+    محتاج 'sort' و'dir' موجودين في سياق الصفحة (زي ما product_list بيرجعهم
+    حاليًا) عشان يعرف الحقل الحالي المرتب عليه ويعكس اتجاهه، ويرسم سهم
+    صغير يوضح الاتجاه الفعلي. أي view تاني هيستخدم نفس النمط لازم يرجّع
+    نفس المفتاحين بالاسم ده بالظبط في context.
+    الاستخدام: {% sortable_th "الاسم" "name" %} داخل <thead><tr>...</tr></thead>
+    """
+    request = context['request']
+    current_sort = context.get('sort', '')
+    current_dir = context.get('dir', 'asc')
+    qd = request.GET.copy()
+    qd.pop('page', None)
+    is_current = current_sort == field
+    new_dir = 'desc' if (is_current and current_dir == 'asc') else 'asc'
+    qd['sort'] = field
+    qd['dir'] = new_dir
+    url = f'?{qd.urlencode()}'
+    if is_current:
+        arrow = '▲' if current_dir == 'asc' else '▼'
+        arrow_html = f'<span class="text-[10px] text-primary-500">{arrow}</span>'
+    else:
+        arrow_html = '<span class="text-[10px] text-gray-300">↕</span>'
+    classes = f'px-4 py-3 text-right {extra_classes}'.strip()
+    return format_html(
+        '<th class="{}"><a href="{}" class="inline-flex items-center gap-1 hover:text-primary-600">{}{}</a></th>',
+        classes, url, label, mark_safe(arrow_html),
+    )
+
+
 @register.filter
 def without_page(querydict):
     """

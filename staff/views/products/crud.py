@@ -4,13 +4,17 @@
 للتوثيق الكامل لسبب الفصل.
 """
 
+from decimal import Decimal, InvalidOperation
+
 from django.core.paginator import Paginator
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.db import IntegrityError, transaction
-from django.db.models import ProtectedError, Q
+from django.db.models import ProtectedError, Q, F, Value, OuterRef, Subquery
+from django.db.models.functions import Coalesce
+from django.views.decorators.http import require_POST
 
-from products.models import Product, Category
+from products.models import Product, Category, ProductUnit
 from products.forms import ProductForm, ProductUnitFormSet
 from products.pricing import autofill_small_unit_price
 from products.matching import normalize_name
@@ -29,6 +33,20 @@ PRODUCT_TRACKED_FIELDS = ['name_ar', 'name_en', 'category', 'barcode', 'manufact
 STAFF_LIST_PAGE_SIZE = 30
 
 
+# مرحلة 3 (ترقية الجداول) — أعمدة الترتيب المسموحة وربطها بحقل/تعبير
+# فعلي على مستوى الاستعلام. 'price'/'stock' مش حقول مباشرة على Product،
+# فمحتاجين annotate تحتهم (شوف small_unit_price/available_qty تحت) —
+# الترتيب في بايثون على product.units.all()|first مايصحّش لأنه بيترتب
+# صفحة واحدة بس بعد التقطيع (pagination)، مش الاستعلام الكامل.
+PRODUCT_SORT_FIELDS = {
+    'name': 'name_ar',
+    'category': 'category__name',
+    'price': 'small_unit_price',
+    'stock': 'available_qty',
+    'status': 'is_active',
+}
+
+
 @perm_required('products.view_product')
 def product_list(request):
     products = Product.objects.select_related('category', 'inventory').prefetch_related('units').all()
@@ -38,6 +56,16 @@ def product_list(request):
     # (تاب على الشيفت بالغلط، أو نسخ/لصق) كانت بتخلي name_ar__icontains
     # مايلاقيش أي نتيجة رغم إن الصنف موجود فعلاً بنفس الاسم بالظبط.
     search_q = request.GET.get('q', '').strip()
+    status_filter = request.GET.get('status', '')  # '' / 'active' / 'inactive'
+    stock_filter = request.GET.get('stock', '')  # '' / 'low' / 'out'
+    group_by_category = request.GET.get('group') == '1'
+    sort = request.GET.get('sort', 'name')
+    if sort not in PRODUCT_SORT_FIELDS:
+        sort = 'name'
+    direction = request.GET.get('dir', 'asc')
+    if direction not in ('asc', 'desc'):
+        direction = 'asc'
+
     if selected_category:
         products = products.filter(category__slug=selected_category)
     if search_q:
@@ -54,6 +82,39 @@ def product_list(request):
             | Q(barcode__iexact=search_q)
             | Q(code__iexact=search_q)
         )
+    if status_filter == 'active':
+        products = products.filter(is_active=True)
+    elif status_filter == 'inactive':
+        products = products.filter(is_active=False)
+    if stock_filter == 'low':
+        # نفس شرط Inventory.is_low بس على مستوى الاستعلام — راجع
+        # InventoryQuerySet.low_stock() في inventory/models.py لنفس المنطق.
+        products = products.filter(inventory__quantity__lte=F('inventory__reserved') + F('inventory__min_quantity'))
+    elif stock_filter == 'out':
+        products = products.filter(inventory__quantity__lte=F('inventory__reserved'))
+
+    # سعر أصغر وحدة (القطعة عادةً، أو الوحدة الوحيدة لو المنتج بوحدة كبرى
+    # بس) — بنفس منطق Product.smallest_unit، لكن كـ Subquery عشان يترتب
+    # على مستوى قاعدة البيانات، مش بس يُعرض. متاح كترتيب فوري (بدون query
+    # إضافي لكل صف) لأن الوحدات متعمول لها prefetch_related فوق أصلاً.
+    smallest_unit_price = Subquery(
+        ProductUnit.objects.filter(product=OuterRef('pk')).order_by('qty_in_small').values('unit_price')[:1]
+    )
+    products = products.annotate(
+        small_unit_price=smallest_unit_price,
+        available_qty=Coalesce(F('inventory__quantity') - F('inventory__reserved'), Value(0)),
+    )
+
+    order_field = PRODUCT_SORT_FIELDS[sort]
+    order = order_field if direction == 'asc' else f'-{order_field}'
+    if group_by_category and sort != 'category':
+        # لو التجميع حسب القسم مفعّل، القسم هو المفتاح الأساسي للترتيب
+        # (عشان صفوف نفس القسم تتجاور)، والترتيب المطلوب من المستخدم بيبقى
+        # ثانوي جوه كل قسم.
+        ordering = ['category__name', order, 'pk']
+    else:
+        ordering = [order, 'pk']  # 'pk' كترتيب ثابت ثانوي يمنع تغيّر ترتيب الصفوف بين الصفحات لو فيه تعادل
+    products = products.order_by(*ordering)
 
     paginator = Paginator(products, STAFF_LIST_PAGE_SIZE)
     page_obj = paginator.get_page(request.GET.get('page'))
@@ -65,6 +126,87 @@ def product_list(request):
         'categories': categories,
         'selected_category': selected_category,
         'search_q': search_q,
+        'status_filter': status_filter,
+        'stock_filter': stock_filter,
+        'group_by_category': group_by_category,
+        'sort': sort,
+        'dir': direction,
+        'page_ids': [p.pk for p in page_obj],
+    })
+
+
+@perm_required('products.change_product')
+@require_POST
+def product_bulk_action(request):
+    """
+    تفعيل/تعطيل جماعي لعدة منتجات محددة من قائمة المنتجات (معيار قبول
+    مرحلة 3). بنستخدم .update() (تحديث واحد بالقاعدة) مش حفظ كل منتج
+    لوحده، لأن مفيش أي منطق إضافي في Product.save() مربوط بـ is_active
+    حاليًا (لا signals ولا side effects) — لو ده تغيّر مستقبلًا، الكود ده
+    محتاج يتحول لـ loop بيستخدم .save() بدل .update().
+    """
+    ids = [pk for pk in request.POST.getlist('product_ids') if pk.isdigit()]
+    action = request.POST.get('bulk_action')
+    if not ids:
+        messages.warning(request, 'لازم تحدد صنف واحد على الأقل قبل تنفيذ الإجراء.')
+        return redirect_with_qs(request, 'staff:product_list')
+    if action not in ('activate', 'deactivate'):
+        messages.error(request, 'إجراء غير معروف.')
+        return redirect_with_qs(request, 'staff:product_list')
+
+    new_status = action == 'activate'
+    to_update = Product.objects.filter(pk__in=ids).exclude(is_active=new_status)
+    changed_products = list(to_update)
+    updated_count = to_update.update(is_active=new_status)
+
+    status_label = 'نشط' if new_status else 'معطل'
+    old_status_label = 'معطل' if new_status else 'نشط'
+    for product in changed_products:
+        log_activity(
+            product, ActivityLog.Event.UPDATED, user=request.user,
+            changes_summary=f'الحالة: {old_status_label} → {status_label} (إجراء جماعي)',
+        )
+
+    if updated_count:
+        action_label = 'تفعيل' if new_status else 'تعطيل'
+        messages.success(request, f'تم {action_label} {updated_count} منتج.')
+    else:
+        messages.info(request, 'الأصناف المحددة كانت بالفعل بنفس الحالة المطلوبة.')
+    return redirect_with_qs(request, 'staff:product_list')
+
+
+@perm_required('products.change_product')
+@require_POST
+def product_quick_update_price(request, unit_pk):
+    """
+    تعديل سعر وحدة واحدة (Quick Edit inline — مرحلة 3) من صف الجدول
+    مباشرة من غير فتح صفحة تعديل المنتج الكاملة. بيرجّع partial واحد
+    (الخلية بس) عشان htmx يستبدلها في مكانها (hx-target/hx-swap في
+    التمبلت) من غير أي reload لباقي الصفحة.
+    """
+    unit = get_object_or_404(ProductUnit, pk=unit_pk)
+    raw_price = (request.POST.get('unit_price') or '').strip()
+    error = None
+    try:
+        new_price = Decimal(raw_price)
+        if new_price < 0:
+            raise InvalidOperation
+    except InvalidOperation:
+        error = 'قيمة غير صحيحة'
+        new_price = unit.unit_price
+    else:
+        old_price = unit.unit_price
+        if old_price != new_price:
+            unit.unit_price = new_price
+            unit.save(update_fields=['unit_price'])
+            log_activity(
+                unit.product, ActivityLog.Event.UPDATED, user=request.user,
+                changes_summary=f'سعر {unit.name}: {old_price} → {new_price} (تعديل سريع)',
+            )
+
+    return render(request, 'staff/products/partials/price_cell.html', {
+        'unit': unit,
+        'error': error,
     })
 
 

@@ -16,6 +16,8 @@
 from .crud import (
     STAFF_LIST_PAGE_SIZE,
     product_list,
+    product_bulk_action,
+    product_quick_update_price,
     product_add,
     product_edit,
     product_delete,
@@ -50,6 +52,8 @@ from .import_export import (
 __all__ = [
     'STAFF_LIST_PAGE_SIZE',
     'product_list',
+    'product_bulk_action',
+    'product_quick_update_price',
     'product_add',
     'product_edit',
     'product_delete',
