@@ -7,6 +7,8 @@
 from decimal import Decimal
 
 from accounts.models import AccountType
+from activity.models import ActivityLog
+from activity.services import log_activity
 from inventory.models import Inventory, StockMovement
 from products.models import Product, ProductUnit, UnitDiscount
 
@@ -36,13 +38,32 @@ def commit_product(row_data, target_pk, user, account_types_by_pk):
         product.name_ar = row_data['name_ar']
         if category:
             product.category = category
+        # الباركود بيتحدّث بس لو الملف فيه قيمة فعلية للصف ده (بعد ما اتفلتر
+        # من أي تعارض في parsing.py) — عمود فاضي وقت التحديث معناه "سيب
+        # الباركود المسجّل زي ما هو"، مش "امسحه"، عكس الاسم/القسم اللي
+        # بيتكتبوا دايمًا زي ما هما في الملف.
+        if row_data.get('barcode'):
+            product.barcode = row_data['barcode']
         product.save()
         created = False
     else:
         if not category:
             raise ValueError(f'صنف جديد "{row_data["name_ar"]}" لازم يكون له قسم (category_slug)')
-        product = Product.objects.create(name_ar=row_data['name_ar'], category=category, is_active=True)
+        product = Product.objects.create(
+            name_ar=row_data['name_ar'], category=category, is_active=True,
+            barcode=row_data.get('barcode') or None,
+        )
         created = True
+
+    # تسجيل النشاط (مرحلة 2) — كان ناقص تمامًا لمسار الاستيراد الجماعي لأنه
+    # بيحفظ مباشرة عن طريق commit_product مش عن طريق product_add/product_edit
+    # views، فمكنش بيمر على نفس أماكن التسجيل. ملخص عام (مش diff تفصيلي لكل
+    # حقل) كافٍ هنا لأن السطر التالي في الاستيراد نفسه (اسم الملف) هو مصدر
+    # الحقيقة التفصيلي، وده بس مؤشر "الصنف ده جه من استيراد Excel".
+    if created:
+        log_activity(product, ActivityLog.Event.CREATED, user=user, note='تم الإنشاء عبر استيراد ملف Excel')
+    else:
+        log_activity(product, ActivityLog.Event.UPDATED, user=user, changes_summary='تحديث بيانات/أسعار من ملف Excel')
 
     inventory, _ = Inventory.objects.get_or_create(
         product=product, defaults={'quantity': 0, 'reserved': 0, 'min_quantity': 0},

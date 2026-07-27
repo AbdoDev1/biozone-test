@@ -1,0 +1,40 @@
+{% load static %}
+<div class="space-y-6">
+
+    <!-- إضافة ملاحظة (Chatter) -->
+    <form method="post" hx-push-url="false"
+          action="{% url 'activity:add_note' app_label model_name object_id %}"
+          class="border border-gray-100 rounded-xl p-4">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+        <label class="block text-sm font-semibold text-gray-700 mb-2">إضافة ملاحظة داخلية</label>
+        <textarea name="note" rows="2" required placeholder="اكتب ملاحظة تفضل ظاهرة للموظفين الآخرين..."
+                  class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary-400"></textarea>
+        <button type="submit"
+                class="mt-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-semibold px-5 py-2 rounded-lg transition">
+            حفظ الملاحظة
+        </button>
+    </form>
+
+    <!-- تايم لاين النشاط -->
+    <div class="space-y-3">
+        {% for log in logs %}
+        <div class="text-sm border-b border-gray-100 pb-3 last:border-0">
+            {% if log.event == 'NOTE' %}
+                <p class="text-gray-700 whitespace-pre-line">{{ log.note }}</p>
+            {% elif log.event == 'CREATED' %}
+                <p class="text-gray-500">تم إنشاء السجل</p>
+            {% else %}
+                <p class="text-gray-500">{{ log.changes_summary|default:"تعديل بيانات" }}</p>
+            {% endif %}
+            <p class="text-xs text-gray-400 mt-1">
+                {{ log.created_at|date:"Y-m-d H:i" }}
+                {% if log.created_by %} — بواسطة {{ log.created_by.username }}{% endif %}
+                <span class="inline-block bg-gray-100 text-gray-500 rounded-full px-2 py-0.5 mr-1">{{ log.get_event_display }}</span>
+            </p>
+        </div>
+        {% empty %}
+        <p class="text-gray-400 text-sm py-6 text-center">لا يوجد نشاط مسجّل على هذا السجل حتى الآن.</p>
+        {% endfor %}
+    </div>
+</div>

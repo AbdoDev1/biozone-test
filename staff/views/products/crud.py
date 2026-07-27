@@ -17,6 +17,14 @@ from products.matching import normalize_name
 from products.services import stock_setup
 from staff.permissions import perm_required
 from staff.utils import list_qs, url_with_qs, redirect_with_qs
+from django.contrib.contenttypes.models import ContentType
+from activity.models import ActivityLog
+from activity.services import log_activity, diff_summary, delete_activity_logs_for
+
+# الحقول اللي بتتراقب في تايم لاين النشاط (مرحلة 2) — نفس الحقول الأساسية
+# الظاهرة في تاب "بيانات المنتج"، مش كل حقول الموديل (مفيش داعي نسجّل
+# تغييرات على حقول داخلية زي updated_at).
+PRODUCT_TRACKED_FIELDS = ['name_ar', 'name_en', 'category', 'barcode', 'manufacturer', 'is_active']
 
 STAFF_LIST_PAGE_SIZE = 30
 
@@ -90,6 +98,7 @@ def product_add(request):
             stock_setup.apply_initial_stock(
                 product, formset, request.user, note='كمية ابتدائية عند إضافة المنتج',
             )
+            log_activity(product, ActivityLog.Event.CREATED, user=request.user)
             messages.success(request, f'تم إضافة المنتج "{product.name_ar}" بنجاح.')
             return redirect_with_qs(request, 'staff:product_list')
     else:
@@ -104,6 +113,76 @@ def product_add(request):
     })
 
 
+def _product_activity_count(product):
+    return ActivityLog.objects.filter(
+        content_type=ContentType.objects.get_for_model(Product), object_id=product.pk,
+    ).count()
+
+
+def _product_related_orders(product, limit=8):
+    """
+    آخر الطلبات اللي فيها صنف من هذا المنتج (أي وحدة منه) — Related
+    Documents (مرحلة 2). بنعدي على OrderItem مش على Order مباشرة لأن
+    الربط الفعلي بالمنتج عن طريق ProductUnit، وبنستخدم distinct عشان
+    الطلب اللي فيه أكتر من وحدة لنفس المنتج (قطعة وكرتونة مثلاً) ميتكررش.
+    """
+    from orders.models import OrderItem
+    order_ids = (
+        OrderItem.objects
+        .filter(product_unit__product=product)
+        .order_by('-order__created_at')
+        .values_list('order_id', flat=True)
+        .distinct()[:limit]
+    )
+    from orders.models import Order
+    return Order.objects.filter(pk__in=list(order_ids)).order_by('-created_at')
+
+
+# الحقول اللي بتتراقب على كل وحدة (ProductUnit) — السعر مش موجود على
+# Product نفسه (شوف PRODUCT_TRACKED_FIELDS فوق)، فمحتاج تتبع منفصل هنا
+# وإلا تغيير السعر مايتسجلش خالص في تايم لاين النشاط.
+UNIT_TRACKED_FIELDS = ['unit_price', 'cost_price']
+UNIT_FIELD_LABELS = {'unit_price': 'سعر الجمهور', 'cost_price': 'سعر التكلفة'}
+
+
+def _snapshot_unit_prices(product):
+    """قاموس {unit_id: {'name': ..., field: value, ...}} لأسعار وأسماء الوحدات *الحالية في القاعدة* قبل أي حفظ."""
+    return {
+        u['id']: {'name': u['name'], **{f: u[f] for f in UNIT_TRACKED_FIELDS}}
+        for u in product.units.values('id', 'name', *UNIT_TRACKED_FIELDS)
+    }
+
+
+def _unit_prices_diff_summary(old_snapshot, product):
+    """
+    بيقارن اللقطة القديمة لأسعار الوحدات بالقيم الحالية بعد الحفظ، ويرجع
+    سطر عربي مختصر لكل وحدة اتغيّر سعرها فعلًا (سواء وحدة موجودة اتعدّلت،
+    وحدة جديدة اتضافت من الصفر، أو وحدة موجودة اتمسحت أثناء التعديل —
+    الحذف ده كان بيحصل بصمت من غير أي أثر في تايم لاين النشاط قبل كده).
+    """
+    parts = []
+    current_units = product.units.all()
+    seen_ids = set()
+    for unit in current_units:
+        seen_ids.add(unit.id)
+        old = old_snapshot.get(unit.id)
+        for field in UNIT_TRACKED_FIELDS:
+            new_value = getattr(unit, field)
+            old_value = old.get(field) if old else None
+            if old_value != new_value:
+                label = UNIT_FIELD_LABELS[field]
+                if old is None:
+                    parts.append(f'{label} ({unit.name}): جديد — {new_value}')
+                else:
+                    parts.append(f'{label} ({unit.name}): {old_value} → {new_value}')
+
+    for unit_id, old in old_snapshot.items():
+        if unit_id not in seen_ids:
+            parts.append(f'تم حذف وحدة ({old["name"]})')
+
+    return '، '.join(parts)
+
+
 @perm_required('products.change_product')
 def product_edit(request, pk):
     product = get_object_or_404(Product, pk=pk)
@@ -112,6 +191,10 @@ def product_edit(request, pk):
         post_data = autofill_small_unit_price(request.POST)
         form = ProductForm(post_data, request.FILES, instance=product)
         formset = ProductUnitFormSet(post_data, instance=product)
+        # بناخد نسخة من القيم القديمة *قبل* الحفظ عشان نقدر نقارنها بعدين
+        # ونطلع منها ملخص التغيير الظاهر في تايم لاين النشاط (مرحلة 2).
+        old_values = {f: getattr(product, f) for f in PRODUCT_TRACKED_FIELDS}
+        old_unit_prices = _snapshot_unit_prices(product)
         if form.is_valid() and formset.is_valid():
             try:
                 with transaction.atomic():
@@ -127,6 +210,7 @@ def product_edit(request, pk):
                     'form': form, 'formset': formset,
                     'title': f'تعديل: {product.name_ar}', 'is_edit': True, 'product': product,
                     'back_url': url_with_qs(request, 'staff:product_list'),
+                    'activity_count': _product_activity_count(product),
                 })
             except IntegrityError:
                 messages.error(
@@ -140,12 +224,19 @@ def product_edit(request, pk):
                     'form': form, 'formset': formset,
                     'title': f'تعديل: {product.name_ar}', 'is_edit': True, 'product': product,
                     'back_url': url_with_qs(request, 'staff:product_list'),
+                    'activity_count': _product_activity_count(product),
                 })
 
             # أي وحدة جديدة اتضافت أثناء التعديل ومعاها كمية ابتدائية
             stock_setup.apply_initial_stock(
                 product, formset, request.user, note='كمية ابتدائية عند إضافة وحدة جديدة للمنتج',
             )
+
+            summary = diff_summary(old_values, product, PRODUCT_TRACKED_FIELDS)
+            unit_summary = _unit_prices_diff_summary(old_unit_prices, product)
+            combined_summary = '، '.join(part for part in [summary, unit_summary] if part)
+            if combined_summary:
+                log_activity(product, ActivityLog.Event.UPDATED, user=request.user, changes_summary=combined_summary)
 
             messages.success(request, f'تم تعديل المنتج "{product.name_ar}" بنجاح.')
             return redirect_with_qs(request, 'staff:product_list')
@@ -159,6 +250,9 @@ def product_edit(request, pk):
         'is_edit': True,
         'product': product,
         'back_url': url_with_qs(request, 'staff:product_list'),
+        'activity_count': _product_activity_count(product),
+        'related_orders': _product_related_orders(product),
+        'inventory_item': getattr(product, 'inventory', None),
     })
 
 
@@ -175,6 +269,7 @@ def product_delete(request, pk):
             product.save()
             messages.warning(request, f'المنتج "{name}" له مخزون — تم تعطيله بدل الحذف.')
         else:
+            delete_activity_logs_for(product)
             product.delete()
             messages.success(request, f'تم حذف المنتج "{name}".')
         return redirect_with_qs(request, 'staff:product_list')

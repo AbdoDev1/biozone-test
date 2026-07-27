@@ -32,8 +32,23 @@
             الوحدات والأسعار
             <span class="text-xs text-gray-400">({{ formset.forms|length }})</span>
         </button>
+        {% if is_edit %}
+        <button type="button" @click="tab = 'activity'"
+                :class="tab === 'activity' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                class="px-5 py-3 border-b-2 font-medium whitespace-nowrap transition">
+            النشاط
+            <span class="text-xs text-gray-400">({{ activity_count }})</span>
+        </button>
+        {% endif %}
     </div>
 </div>
+
+{% if is_edit %}
+{% load activity_tags %}
+<div x-show="tab === 'activity'" class="bg-white rounded-2xl shadow-sm p-6 mb-6">
+    {% activity_panel product %}
+</div>
+{% endif %}
 
 <form method="POST" action="{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}" enctype="multipart/form-data" class="space-y-6">
     {% csrf_token %}
@@ -114,6 +129,42 @@
             </div>
 
         </div>
+
+        {% if is_edit %}
+        <!-- مستندات ذات صلة (Related Documents — مرحلة 2) -->
+        <div class="border-t border-gray-100 mt-6 pt-4">
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">مستندات ذات صلة</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div>
+                    <p class="text-gray-500 mb-1">المخزون</p>
+                    {% if inventory_item %}
+                    <a href="{% url 'staff:inventory_detail' inventory_item.pk %}" class="text-primary-600 hover:underline">
+                        عرض رصيد المخزون ({{ inventory_item.quantity_display|default:inventory_item.quantity }})
+                    </a>
+                    {% else %}
+                    <span class="text-gray-400">لا يوجد سجل مخزون لهذا المنتج بعد</span>
+                    {% endif %}
+                </div>
+                <div>
+                    <p class="text-gray-500 mb-1">آخر الطلبات ({{ related_orders|length }})</p>
+                    {% if related_orders %}
+                    <ul class="space-y-1">
+                        {% for order in related_orders %}
+                        <li>
+                            <a href="{% url 'staff:order_detail' order.pk %}" class="text-primary-600 hover:underline">
+                                طلب #{{ order.pk }}
+                            </a>
+                            <span class="text-gray-400 text-xs">— {{ order.created_at|date:"Y-m-d" }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <span class="text-gray-400">لا يوجد طلبات على هذا المنتج بعد</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
     </div>
 
     <!-- الوحدات -->

@@ -31,7 +31,7 @@ def build_products_export_workbook(products):
     ws = wb.active
     ws.title = 'المنتجات'
     headers = [
-        'code', 'category_slug', 'name_ar', 'unit_name',
+        'code', 'barcode', 'category_slug', 'name_ar', 'unit_name',
         'qty_in_small', 'unit_price', 'quantity',
     ] + [discount_col_name(at) for at in account_types]
     ws.append(headers)
@@ -51,12 +51,12 @@ def build_products_export_workbook(products):
 
         if small:
             ws.append([
-                product.code, product.category.slug, product.name_ar, small.name,
+                product.code, product.barcode or '', product.category.slug, product.name_ar, small.name,
                 1, float(small.unit_price), 0,
             ] + discount_cells)
         if large:
             ws.append([
-                product.code, product.category.slug, product.name_ar, large.name,
+                product.code, product.barcode or '', product.category.slug, product.name_ar, large.name,
                 large.qty_in_small, float(large.unit_price), 0,
             ] + (blank_discounts if small else discount_cells))
 
@@ -74,7 +74,7 @@ def build_import_template_workbook():
     ws = wb.active
     ws.title = 'المنتجات'
     headers = [
-        'code', 'category_slug', 'name_ar', 'unit_name',
+        'code', 'barcode', 'category_slug', 'name_ar', 'unit_name',
         'qty_in_small', 'unit_price', 'quantity',
     ] + discount_headers
     ws.append(headers)
@@ -85,11 +85,13 @@ def build_import_template_workbook():
 
     # مثال 1: صنف بوحدتين — الخصم بيتكتب على صف الوحدة الصغرى بس (قطعة)،
     # وصف الكرتونة بيتسيب فاضي لأن سعرها بيتحسب تلقائيًا من نسبة القطعة.
-    ws.append(['', 'gauze', 'شاش طبي', 'قطعة', 1, 2.00, 200] + small_discounts)
-    ws.append(['', 'gauze', 'شاش طبي', 'كرتونة', 50, 100.00, 0] + blank_discounts)
+    # الباركود (اختياري) بيتكتب في صف واحد بس من صفوف نفس الصنف (بيتلمّ
+    # تلقائيًا للصنف كله عند القراءة، زي category_slug بالظبط).
+    ws.append(['', '', 'gauze', 'شاش طبي', 'قطعة', 1, 2.00, 200] + small_discounts)
+    ws.append(['', '', 'gauze', 'شاش طبي', 'كرتونة', 50, 100.00, 0] + blank_discounts)
 
     # مثال 2: صنف بوحدة واحدة بس (كبرى) — الخصم بيتكتب على صفها هي نفسها.
-    ws.append(['', 'gloves', 'قفازات لاتكس', 'كرتونة', 10, 250.00, 100] + large_discounts)
+    ws.append(['', '', 'gloves', 'قفازات لاتكس', 'كرتونة', 10, 250.00, 100] + large_discounts)
 
     for col in ws.columns:
         ws.column_dimensions[col[0].column_letter].width = 20

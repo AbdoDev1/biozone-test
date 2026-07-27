@@ -66,6 +66,12 @@
                 المرتجعات
                 <span class="text-xs">قريبًا</span>
             </button>
+            <button @click="tab = 'activity'"
+                    :class="tab === 'activity' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                    class="px-5 py-3 border-b-2 font-medium whitespace-nowrap transition">
+                النشاط
+                <span class="text-xs text-gray-400">({{ activity_count }})</span>
+            </button>
         </div>
 
         <!-- تبويب: بيانات العميل -->
@@ -343,6 +349,12 @@
 
         <div x-show="tab === 'returns'" class="p-8 text-center text-gray-400 text-sm">
             المرتجعات — سيتم تفعيل هذه الخاصية في مرحلة لاحقة.
+        </div>
+
+        <!-- تبويب: النشاط -->
+        <div x-show="tab === 'activity'" class="p-4 md:p-6">
+            {% load activity_tags %}
+            {% activity_panel profile %}
         </div>
     </div>
 </div>

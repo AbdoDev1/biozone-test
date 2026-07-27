@@ -2,6 +2,7 @@ from django.core.paginator import Paginator
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.decorators.http import require_POST
 from django.contrib import messages
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from decimal import Decimal, InvalidOperation
@@ -10,6 +11,8 @@ from orders.models import Order
 from invoices.models import Invoice
 from accounting.models import AccountTransaction
 from staff.permissions import perm_required
+from activity.models import ActivityLog
+from activity.services import log_activity
 
 STAFF_LIST_PAGE_SIZE = 30
 CLIENT_ORDERS_PAGE_SIZE = 20
@@ -90,6 +93,9 @@ def client_detail(request, pk):
         'balance': balance,
         'balance_abs': abs(balance),
         'payment_methods': AccountTransaction.PaymentMethod.choices,
+        'activity_count': ActivityLog.objects.filter(
+            content_type=ContentType.objects.get_for_model(ClientProfile), object_id=profile.pk,
+        ).count(),
     })
 
 
@@ -195,6 +201,10 @@ def client_approve(request, pk):
         profile.verified_at = timezone.now()
         user.save()
         profile.save()
+        log_activity(
+            profile, ActivityLog.Event.UPDATED, user=request.user,
+            changes_summary=f'تفعيل الحساب (نوع الحساب: {profile.account_type})',
+        )
         messages.success(request, f'تم تفعيل حساب {profile.business_name}')
         return redirect('staff:clients')
 
@@ -213,5 +223,6 @@ def client_reject(request, pk):
     user.status = User.Status.REJECTED
     user.is_active = False
     user.save()
+    log_activity(profile, ActivityLog.Event.UPDATED, user=request.user, changes_summary='رفض الحساب')
     messages.error(request, f'تم رفض حساب {profile.business_name}')
     return redirect('staff:clients')

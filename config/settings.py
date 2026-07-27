@@ -74,6 +74,7 @@ INSTALLED_APPS = [
     'invoices',
     'accounting',
     'notifications',
+    'activity',
     'channels',
 ]
 
