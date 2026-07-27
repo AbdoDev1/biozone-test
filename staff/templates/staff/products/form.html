@@ -306,10 +306,9 @@
         {% endif %}
         {% btn "إلغاء" href=back_url variant="secondary" size="lg" rounded="xl" %}
         {% if is_edit %}
-        <a href="{% url 'staff:product_delete' product.pk %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}"
-           class="text-center sm:mr-auto bg-red-50 hover:bg-red-100 text-red-600 font-semibold px-8 py-3 rounded-xl transition">
-            حذف المنتج
-        </a>
+        <div class="sm:mr-auto">
+            {% action_menu product_actions label="إجراءات أخرى" %}
+        </div>
         {% endif %}
     </div>
 

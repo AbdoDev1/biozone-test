@@ -10,6 +10,9 @@ ICONS = {
     'check': '<svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>',
     'truck': '<svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.091-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 0h-12"/></svg>',
     'printer': '<svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M6.34 18H4.5A2.25 2.25 0 012.25 15.75V9.377c0-.996.61-1.89 1.534-2.256l.847-.336M17.66 18h1.84a2.25 2.25 0 002.25-2.25v-6.373c0-.996-.61-1.89-1.534-2.256l-4.94-1.96m-9.94 1.96l4.94-1.96m5 0v-.815a2.25 2.25 0 00-1.183-1.981l-1.5-.815a2.25 2.25 0 00-2.134 0l-1.5.815a2.25 2.25 0 00-1.183 1.98v.816m5 0h-5M6.34 18l.529 4.752c.062.559.53.983 1.09.983h8.084c.559 0 1.028-.424 1.09-.983L17.66 18M6.34 18h11.32"/></svg>',
+    'dots': '<svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75h.007v.008H12V6.75zm0 5.25h.007v.008H12V12zm0 5.25h.007v.008H12v-.008z"/></svg>',
+    'duplicate': '<svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75"/></svg>',
+    'archive': '<svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m6 4.125h4.5m-8.625-6h12.75c.621 0 1.125.504 1.125 1.125v1.5c0 .621-.504 1.125-1.125 1.125H3.375A1.125 1.125 0 012.25 8.25v-1.5c0-.621.504-1.125 1.125-1.125z"/></svg>',
 }
 
 # خرائط: قيمة الحالة -> اسم اللون. مركزية عشان أي حالة جديدة تتضاف مكان واحد بس.
@@ -53,6 +56,43 @@ COLOR_CLASSES = {
     'purple': 'bg-purple-100 text-purple-700',
     'gray': 'bg-gray-100 text-gray-500',
 }
+
+
+@register.filter
+def color_classes(color):
+    """
+    بترجع كلاسات Tailwind لأي 'color' (نفس أسماء ألوان BADGE_COLOR_MAPS/
+    tags.Tag.Color) — مستخدمة في شارات الوسوم (مرحلة 4) بدل ما كل تمبليت
+    يكرر خريطة الألوان بنفسه. الاستخدام: {{ tag.color|color_classes }}
+    """
+    return COLOR_CLASSES.get(color, COLOR_CLASSES['gray'])
+
+
+@register.filter
+def icon_svg(name):
+    """بترجع SVG خام من ICONS بالاسم — مستخدمة في {% action_menu %} (مرحلة 4) لأن الأيقونة بتيجي كنص جوه dict مُمرر للتمبليت. الاستخدام: {{ action.icon|icon_svg }}"""
+    return mark_safe(ICONS.get(name, ''))
+
+
+@register.inclusion_tag('staff/components/action_menu.html')
+def action_menu(actions, label='خيارات إضافية'):
+    """
+    قائمة إجراءات ثانوية منسدلة (مرحلة 4) — بديل عن تكديس أزرار/روابط
+    متفرقة (طباعة، تصدير، أرشفة، تكرار...) في الصفحة. كل صفحة تفاصيل
+    (طلب/منتج/...) تقدر تستخدمها بدل ما تخترع تصميم قائمة منسدلة بنفسها.
+
+    actions: قائمة dicts، كل واحد فيها:
+        - label: النص الظاهر
+        - href: الرابط (لازم GET — أي إجراء خطير زي حذف/تكرار لازم يوديك
+          لصفحة تأكيد بزرار submit بتاعها، مش يتنفذ مباشرة من هنا؛ نفس
+          نمط product_delete/product_duplicate الحاليين)
+        - icon: اسم من ICONS (اختياري)
+        - target: '_blank' لفتح في تاب جديد (اختياري)
+        - variant: 'danger' لتلوين النص أحمر (اختياري، افتراضي عادي)
+
+    الاستخدام: {% action_menu actions_list %} أو {% action_menu actions_list label="طباعة/تصدير" %}
+    """
+    return {'actions': actions, 'menu_label': label}
 
 
 @register.simple_tag

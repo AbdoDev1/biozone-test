@@ -50,6 +50,7 @@ urlpatterns = [
     path('invoices/', include('invoices.urls')),
     path('notifications/', include('notifications.urls')),
     path('activity/', include('activity.urls')),
+    path('tags/', include('tags.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 if settings.DEBUG:

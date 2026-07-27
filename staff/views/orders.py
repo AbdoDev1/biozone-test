@@ -3,6 +3,7 @@ from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 
 from orders.models import Order, OrderItem
 from staff.permissions import perm_required
@@ -145,7 +146,27 @@ def order_detail(request, pk):
     items_paginator = Paginator(items_qs, ITEMS_PER_DETAIL_PAGE)
     items_page = items_paginator.get_page(request.GET.get('page'))
 
+    # قائمة الإجراءات الموحدة (مرحلة 4) — كانت روابط طباعة متفرقة
+    # (نسخة المراجعة اليدوية + الفاتورة) متبعثرة في أماكن مختلفة من
+    # الصفحة، دلوقتي مجمّعة في قائمة منسدلة واحدة.
+    order_actions = []
+    if order.status in (Order.Status.PENDING, Order.Status.NEEDS_APPROVAL, Order.Status.CONFIRMED):
+        order_actions.append({
+            'label': 'طباعة الطلب للمراجعة اليدوية',
+            'href': reverse('staff:order_print', args=[order.pk]),
+            'icon': 'printer',
+            'target': '_blank',
+        })
+    if order.status == Order.Status.DELIVERED and hasattr(order, 'invoice'):
+        order_actions.append({
+            'label': f'عرض/طباعة الفاتورة ({order.invoice.invoice_number})',
+            'href': reverse('invoices:print', args=[order.invoice.pk]),
+            'icon': 'printer',
+            'target': '_blank',
+        })
+
     return render(request, 'staff/orders/detail.html', {
         'order': order,
         'items_page': items_page,
+        'order_actions': order_actions,
     })

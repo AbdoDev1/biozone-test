@@ -21,6 +21,7 @@ from .crud import (
     product_add,
     product_edit,
     product_delete,
+    product_duplicate,
 )
 
 from .categories import (
@@ -57,6 +58,7 @@ __all__ = [
     'product_add',
     'product_edit',
     'product_delete',
+    'product_duplicate',
     'CATEGORY_LIST_PAGE_SIZE',
     'category_list',
     'category_add',

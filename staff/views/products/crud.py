@@ -385,6 +385,21 @@ def product_edit(request, pk):
     else:
         form = ProductForm(instance=product)
         formset = ProductUnitFormSet(instance=product)
+    product_actions = []
+    if request.user.has_perm('products.add_product'):
+        product_actions.append({
+            'label': 'تكرار المنتج (نسخة جديدة بنفس البيانات)',
+            'href': url_with_qs(request, 'staff:product_duplicate', pk=product.pk),
+            'icon': 'duplicate',
+        })
+    if request.user.has_perm('products.delete_product'):
+        product_actions.append({
+            'label': 'حذف المنتج',
+            'href': url_with_qs(request, 'staff:product_delete', pk=product.pk),
+            'icon': 'archive',
+            'variant': 'danger',
+        })
+
     return render(request, 'staff/products/form.html', {
         'form': form,
         'formset': formset,
@@ -395,6 +410,62 @@ def product_edit(request, pk):
         'activity_count': _product_activity_count(product),
         'related_orders': _product_related_orders(product),
         'inventory_item': getattr(product, 'inventory', None),
+        'product_actions': product_actions,
+    })
+
+
+@perm_required('products.add_product')
+def product_duplicate(request, pk):
+    """
+    تكرار منتج موجود كنقطة بداية بدل ملء فورم من الصفر (مرحلة 4 — نفس
+    فكرة "Duplicate Post" في WordPress). النسخة الجديدة بتاخد اسم القسم/
+    الاسم/المصنّع/الوصف ووحداتها (بالاسم والسعر والحجم)، لكن عن قصد
+    مابتاخدش:
+    - الباركود: unique في الموديل، فمينفعش يتكرر على منتجين.
+    - الصورة: بتُرفع يدويًا لو الموظف عايز نفس الصورة أو صورة مختلفة.
+    - المخزون/الحركات: النسخة الجديدة تبدأ من غير أي رصيد مسجّل عليها.
+    وبتتحفظ 'is_active=False' افتراضيًا عشان الموظف يراجع البيانات
+    (خصوصًا الاسم والباركود) قبل ما تظهر فعليًا في المتجر.
+
+    زي product_delete، GET بيعرض صفحة تأكيد بسيطة، وPOST هو اللي بينفّذ
+    التكرار فعليًا — أي إجراء بينشئ سجل جديد في القاعدة لازم يمر عبر
+    تأكيد صريح من الموظف، مش ينفّذ من مجرد رابط GET (زي روابط قائمة
+    الإجراءات في staff/components/action_menu.html).
+    """
+    source = get_object_or_404(Product, pk=pk)
+
+    if request.method == 'POST':
+        with transaction.atomic():
+            new_product = Product.objects.create(
+                category=source.category,
+                name_ar=f'{source.name_ar} (نسخة)',
+                name_en=source.name_en,
+                manufacturer=source.manufacturer,
+                description=source.description,
+                is_active=False,
+            )
+            for unit in source.units.all():
+                ProductUnit.objects.create(
+                    product=new_product,
+                    size=unit.size,
+                    name=unit.name,
+                    qty_in_small=unit.qty_in_small,
+                    unit_price=unit.unit_price,
+                    cost_price=unit.cost_price,
+                )
+            log_activity(
+                new_product, ActivityLog.Event.CREATED, user=request.user,
+                note=f'تم إنشاؤه كنسخة من المنتج "{source.name_ar}" (كود {source.code}).',
+            )
+        messages.success(
+            request,
+            f'تم إنشاء نسخة من "{source.name_ar}". راجع البيانات (الاسم/الباركود) وفعّل الصنف عند الانتهاء.',
+        )
+        return redirect_with_qs(request, 'staff:product_edit', pk=new_product.pk)
+
+    return render(request, 'staff/products/duplicate_confirm.html', {
+        'product': source,
+        'back_url': url_with_qs(request, 'staff:product_edit', pk=source.pk),
     })
 
 

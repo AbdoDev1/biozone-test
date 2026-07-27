@@ -75,6 +75,7 @@ INSTALLED_APPS = [
     'accounting',
     'notifications',
     'activity',
+    'tags',
     'channels',
 ]
 
@@ -131,13 +132,8 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('DB_NAME'),
-        'USER': config('DB_USER'),
-        'PASSWORD': config('DB_PASSWORD'),
-        'HOST': config('DB_HOST'),
-        'PORT': config('DB_PORT'),
-        'CONN_MAX_AGE': config('DB_CONN_MAX_AGE', default=60, cast=int),
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': '/tmp/test_db.sqlite3',
     }
 }
 
