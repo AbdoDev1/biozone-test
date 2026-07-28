@@ -9,7 +9,7 @@
         </svg>
     </button>
     <div x-show="open" x-cloak x-transition
-         class="absolute left-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-100 z-20 py-1">
+         class="absolute left-0 {% if direction == 'up' %}bottom-full mb-2{% else %}mt-2{% endif %} w-64 bg-white rounded-lg shadow-lg border border-gray-100 z-20 py-1">
         {% for action in actions %}
         <a href="{{ action.href }}" {% if action.target %}target="{{ action.target }}"{% endif %}
            class="flex items-center gap-2 px-4 py-2 text-sm transition

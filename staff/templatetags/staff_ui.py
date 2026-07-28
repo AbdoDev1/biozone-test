@@ -86,7 +86,7 @@ def icon_svg(name):
 
 
 @register.inclusion_tag('staff/components/action_menu.html')
-def action_menu(actions, label='خيارات إضافية'):
+def action_menu(actions, label='خيارات إضافية', direction='down'):
     """
     قائمة إجراءات ثانوية منسدلة (مرحلة 4) — بديل عن تكديس أزرار/روابط
     متفرقة (طباعة، تصدير، أرشفة، تكرار...) في الصفحة. كل صفحة تفاصيل
@@ -101,9 +101,16 @@ def action_menu(actions, label='خيارات إضافية'):
         - target: '_blank' لفتح في تاب جديد (اختياري)
         - variant: 'danger' لتلوين النص أحمر (اختياري، افتراضي عادي)
 
-    الاستخدام: {% action_menu actions_list %} أو {% action_menu actions_list label="طباعة/تصدير" %}
+    direction: 'down' (افتراضي) تفتح القائمة لتحت الزرار — مناسبة لو
+        الزرار في أعلى/منتصف الصفحة. 'up' تفتح القائمة لفوق الزرار —
+        استخدمها لو الزرار في آخر الصفحة (زي "إجراءات أخرى" في فورم
+        المنتج)، عشان القائمة متطلعش برّه حدود الشاشة لتحت.
+
+    الاستخدام: {% action_menu actions_list %}
+    أو {% action_menu actions_list label="طباعة/تصدير" %}
+    أو {% action_menu actions_list label="إجراءات أخرى" direction="up" %}
     """
-    return {'actions': actions, 'menu_label': label}
+    return {'actions': actions, 'menu_label': label, 'direction': direction}
 
 
 @register.simple_tag
