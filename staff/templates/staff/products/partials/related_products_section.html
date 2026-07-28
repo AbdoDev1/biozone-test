@@ -1,0 +1,26 @@
+{# مرحلة 5 (ROADMAP.md) — منتجات مشابهة/مكمّلة + مقاسات/تنويعات.
+   قسم بصري منفصل، بالظبط زي كارت "الوحدات والأسعار" الموجود أصلًا —
+   بيتضم بـ include في form.html (تاب "روابط")، مش جوه فورم المنتج نفسه
+   (مفيش أي حقل من هنا بيتبعت مع POST الفورم الرئيسي، كل زرار هنا فورم
+   مستقل بيحفظ فورًا). #}
+<div class="space-y-8">
+
+    <div class="border-b border-gray-100 pb-6">
+        {% include "staff/products/partials/product_picker.html" with title="منتجات مشابهة" relation="similar" current_items=similar_products placeholder="ابحث عن منتج لإضافته كمشابه..." search_url=similar_search_url results_id="similar-picker-results" %}
+    </div>
+
+    <div class="border-b border-gray-100 pb-6">
+        {% include "staff/products/partials/product_picker.html" with title="منتجات مكمّلة" relation="complementary" current_items=complementary_products placeholder="ابحث عن منتج لإضافته كمكمّل..." search_url=complementary_search_url results_id="complementary-picker-results" %}
+    </div>
+
+    <div>
+        <div class="flex items-center justify-between mb-1">
+            <p class="text-sm font-semibold text-gray-700">مقاسات/تنويعات هذا الصنف</p>
+        </div>
+        <p class="text-xs text-gray-400 mb-2">
+            نفس الصنف بالظبط بمقاس مختلف (مش توصية بيع لمنتج تاني) — كل مقاس منتج مستقل بمخزونه ووحداته وكوده الخاص.
+        </p>
+        {% include "staff/products/partials/product_picker.html" with title="" relation="variant" current_items=variant_siblings placeholder="ابحث عن منتج لربطه كمقاس بديل..." search_url=variant_search_url results_id="variant-picker-results" %}
+    </div>
+
+</div>

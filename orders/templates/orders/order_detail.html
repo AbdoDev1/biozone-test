@@ -112,7 +112,15 @@
         </div>
       </div>
 
-      <div class="mt-6 flex gap-3">
+      <div class="mt-6 flex flex-wrap gap-3 items-center">
+        <form method="POST" action="{% url 'orders:order_reorder' order.pk %}">
+          {% csrf_token %}
+          <button type="submit"
+                  class="inline-flex items-center gap-1.5 bg-primary-600 hover:bg-primary-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
+            إعادة الطلب لسلة جديدة
+          </button>
+        </form>
         <a href="{% url 'orders:order_list' %}"
            class="text-sm text-primary-600 hover:underline">← الطلبات</a>
         <a href="{% url 'store:home' %}"

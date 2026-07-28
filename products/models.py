@@ -75,6 +75,41 @@ class Product(models.Model):
     # مفيش جدول أو حالة منفصلة، مجرد فلتر بالتاريخ + المخزون.
     new_arrival_at = models.DateTimeField(null=True, blank=True, db_index=True)
 
+    # مقاس المنتج (لبس/هدوم، مثلاً "L" أو "XL") — نص حر اختياري، مختلف
+    # تمامًا عن ProductUnit.size (S/L اللي بيوصف حجم وحدة البيع قطعة/كرتونة).
+    # ده الحل النهائي لمشكلة bidi اللي كانت بتحصل لما المقاس كان بيتكتب
+    # كجزء من name_ar نفسه (راجع ROADMAP.md قسم 0 لتفاصيل القرار).
+    size = models.CharField(
+        max_length=50, blank=True,
+        verbose_name='المقاس',
+        help_text='مقاس المنتج (لبس/هدوم) إن وجد — غير حجم الوحدة (قطعة/كرتونة) تمامًا',
+    )
+    # لو المنتج له مقاسات/تنويعات تانية (نفس الصنف بالظبط، مقاس مختلف بس)،
+    # كلهم بيتربطوا بنفس المجموعة دي عشان يظهروا مع بعض كخيارات مقاس في
+    # المتجر. مختلف تمامًا عن similar_products/complementary_products تحت
+    # (دي منتجات تانية بالكامل، مش نفس الصنف بمقاس مختلف).
+    variant_group = models.ForeignKey(
+        'ProductVariantGroup',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='products',
+        verbose_name='مجموعة المقاسات',
+    )
+    # منتجات مشابهة يدويًا (Cross-sell) — اختيار الموظف بحت، مفيش اشتقاق
+    # تلقائي من category حاليًا. symmetrical=False لأن "أ شبيه بـ ب" مش
+    # لازم يعني "ب شبيه بـ أ" بالضرورة (مثلاً منتج أرخص بديل لمنتج أغلى).
+    similar_products = models.ManyToManyField(
+        'self', blank=True, symmetrical=False, related_name='similar_of',
+        verbose_name='منتجات مشابهة',
+    )
+    # منتجات مكمّلة (Cross-sell) — حقل منفصل تمامًا عن similar_products
+    # لأن المنطق مختلف (شراء مع الصنف ده، مش بديل عنه)، حتى لو الشكل
+    # التقني للحقلين متطابق.
+    complementary_products = models.ManyToManyField(
+        'self', blank=True, symmetrical=False, related_name='complementary_of',
+        verbose_name='منتجات مكمّلة',
+    )
+
     class Meta:
         verbose_name = 'منتج'
         verbose_name_plural = 'المنتجات'
@@ -158,6 +193,44 @@ class Product(models.Model):
         """أصغر وحدة بيع متاحة للمنتج (القطعة عادةً). None لو مفيش وحدات."""
         units = sorted(self.units.all(), key=lambda u: u.qty_in_small)
         return units[0] if units else None
+
+    @property
+    def variant_siblings(self):
+        """
+        باقي أصناف نفس مجموعة المقاسات (variant_group) غير هذا الصنف نفسه،
+        مرتبة بالمقاس. list فاضية لو المنتج مالوش variant_group أصلًا.
+        ملحوظة أداء: بتعتمد على self.variant_group.products.all() — لو
+        الـ view عامل prefetch_related('variant_group__products')، مفيش
+        استعلام إضافي هنا.
+        """
+        if not self.variant_group_id:
+            return []
+        return sorted(
+            (p for p in self.variant_group.products.all() if p.pk != self.pk),
+            key=lambda p: p.size,
+        )
+
+
+class ProductVariantGroup(models.Model):
+    """
+    مجموعة خفيفة تربط أصناف مختلفة تمثّل نفس المنتج بمقاسات مختلفة (فكرة
+    من Odoo). موديل منفصل تمامًا عن similar_products/complementary_products
+    عشان محدش يلخبط بينهم — ده مش توصية بيع لمنتج تاني، ده نفس الصنف
+    بمقاس مختلف (كل واحد منهم Product مستقل بمخزونه ووحداته وكوده الخاص).
+    """
+    internal_name = models.CharField(
+        max_length=255, blank=True,
+        verbose_name='اسم داخلي (للإدارة فقط)',
+        help_text='اختياري — للتمييز في لوحة الإدارة فقط، لا يظهر للعميل',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'مجموعة مقاسات'
+        verbose_name_plural = 'مجموعات المقاسات'
+
+    def __str__(self):
+        return self.internal_name or f'مجموعة مقاسات #{self.pk}'
 
 
 class ProductUnit(models.Model):

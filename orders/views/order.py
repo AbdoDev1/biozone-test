@@ -3,11 +3,12 @@ from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
-from ..models import Order
+from ..cart import Cart
+from ..models import Cart as CartModel, Order
 from .decorators import client_required
 
 __all__ = [
-    'order_detail', 'order_items', 'order_list',
+    'order_detail', 'order_items', 'order_list', 'order_reorder',
     'order_approve_amendment', 'order_reject_amendment',
 ]
 
@@ -43,6 +44,49 @@ def order_list(request):
     paginator = Paginator(orders_qs, 20)
     page_obj = paginator.get_page(request.GET.get('page'))
     return render(request, 'orders/order_list.html', {'orders': page_obj, 'page_obj': page_obj})
+
+
+@client_required
+@require_POST
+def order_reorder(request, pk):
+    """
+    إعادة الطلب بضغطة واحدة (مرحلة 5 بند 3) — بتملي السلة النشطة الحالية
+    بنفس أصناف الطلب القديم. بتستخدم Cart.add() نفسه المستخدم في زرار
+    "أضف للسلة" العادي، فكل بوابات الأمان (الوحدة مسموحة لنوع حساب
+    العميل الحالي، الصنف متوفر في المخزون) بتتطبّق تلقائيًا هنا كمان —
+    مفيش تكرار منطق. لو حال العميل اتغيّر من وقت الطلب القديم (مثلاً
+    بقى نوع حسابه يشتري بالكرتونة بدل القطعة)، الوحدة القديمة مش هتتضاف
+    وهيظهر ضمن "لم تُضَف" بدل ما تتضاف بصمت بوحدة غير مسموحة.
+    """
+    order = get_object_or_404(Order, pk=pk, client=request.user)
+
+    # سلة جديدة مخصّصة لإعادة الطلب دي، بدل ما نضيف على السلة النشطة
+    # الحالية (لو العميل عنده طلبية تانية شغّال عليها فعلًا، مش عايزين
+    # نخلط أصناف الطلب القديم فيها من غير قصد). Cart.save() بيتكفّل
+    # تلقائيًا بإلغاء تفعيل أي سلة نشطة قديمة (سلة واحدة نشطة بس لكل عميل).
+    CartModel.objects.create(client=request.user, name=f'إعادة طلب #{order.pk}', is_active=True)
+    cart = Cart(request)
+
+    added_count = 0
+    skipped = []
+    for item in order.items.select_related('product_unit__product'):
+        if cart.add(item.product_unit_id, item.quantity):
+            added_count += 1
+        else:
+            skipped.append(item.product_unit.product.name_ar)
+
+    if added_count:
+        messages.success(request, f'تمت إضافة {added_count} صنف من الطلب #{order.pk} إلى سلتك الحالية.')
+    if skipped:
+        messages.warning(
+            request,
+            'لم تتم إضافة الأصناف التالية (غير متوفرة حاليًا أو لم تعد مناسبة لنوع حسابك): '
+            + '، '.join(skipped),
+        )
+    if not added_count and not skipped:
+        messages.info(request, 'هذا الطلب لا يحتوي على أصناف.')
+
+    return redirect('orders:cart')
 
 
 @client_required

@@ -1,0 +1,22 @@
+{# نتائج البحث (htmx) لمنتقي المنتجات العام — بيتستخدم لثلاث علاقات:
+   similar / complementary / variant. كل نتيجة زرار submit لفورم منفصل
+   بيبعت مباشرة لـ endpoint الإضافة المناسب حسب relation. #}
+<div class="border border-gray-100 rounded-lg mt-1 divide-y divide-gray-50 max-h-56 overflow-y-auto bg-white shadow-sm">
+    {% for result in results %}
+    <form method="post"
+          action="{% if relation == 'variant' %}{% url 'staff:product_variant_link' product.pk %}{% else %}{% url 'staff:product_relation_add' product.pk relation %}{% endif %}"
+          class="w-full">
+        {% csrf_token %}
+        <input type="hidden" name="target_id" value="{{ result.pk }}">
+        <button type="submit"
+                class="w-full text-right px-3 py-2 text-sm hover:bg-gray-50 transition flex items-center justify-between gap-2">
+            <span class="text-gray-700">{{ result.name_ar }}</span>
+            <span class="text-xs text-gray-400">{{ result.code }}{% if result.category %} — {{ result.category.name }}{% endif %}</span>
+        </button>
+    </form>
+    {% empty %}
+    <p class="px-3 py-2 text-xs text-gray-400">
+        {% if request.GET.q %}لا توجد نتائج مطابقة{% else %}اكتب حرفين على الأقل للبحث{% endif %}
+    </p>
+    {% endfor %}
+</div>

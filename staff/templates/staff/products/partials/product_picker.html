@@ -1,0 +1,39 @@
+{% load staff_ui %}
+{# مكوّن "منتقي منتج" عام (بحث htmx + شرائح) — بيتستخدم 3 مرات في
+   related_products_section.html (مشابه/مكمّل/تنويع مقاس)، ومفروض يتاح
+   لأي علاقة اختيار مستقبلية تانية (Tags جوّه tags/_panel.html له نمط
+   مشابه لكن مبني على datalist بسيط؛ ده بيدعم بحث حي عن سجلات كاملة). #}
+<div>
+    {% if title %}<p class="text-sm font-semibold text-gray-700 mb-2">{{ title }}</p>{% endif %}
+
+    <div class="flex flex-wrap gap-2 mb-3">
+        {% for item in current_items %}
+        <form method="post"
+              action="{% if relation == 'variant' %}{% url 'staff:product_variant_unlink' product.pk item.pk %}{% else %}{% url 'staff:product_relation_remove' product.pk relation %}{% endif %}"
+              class="inline">
+            {% csrf_token %}
+            {% if relation != 'variant' %}<input type="hidden" name="target_id" value="{{ item.pk }}">{% endif %}
+            <button type="submit" title="إزالة"
+                    class="group inline-flex items-center gap-1 bg-gray-100 text-gray-700 px-2.5 py-1 rounded-full text-xs font-medium transition hover:bg-red-50 hover:text-red-600">
+                {{ item.name_ar }}{% if relation == 'variant' and item.size %} <span class="text-gray-400">({{ item.size }})</span>{% endif %}
+                <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </form>
+        {% empty %}
+        <span class="text-xs text-gray-400">لا يوجد حاليًا</span>
+        {% endfor %}
+    </div>
+
+    <div x-data="{ q: '' }" class="relative">
+        <input type="text" name="q" x-model="q" placeholder="{{ placeholder }}" autocomplete="off"
+               class="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm outline-none focus:border-primary-400"
+               hx-get="{{ search_url }}"
+               hx-trigger="keyup changed delay:300ms, focus"
+               hx-target="#{{ results_id }}"
+               hx-include="this"
+               name="q">
+        <div id="{{ results_id }}"></div>
+    </div>
+</div>

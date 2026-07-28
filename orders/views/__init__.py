@@ -35,6 +35,7 @@ from .order import (
     order_items,
     order_list,
     order_reject_amendment,
+    order_reorder,
 )
 
 __all__ = [
@@ -44,6 +45,6 @@ __all__ = [
     'cart_plus', 'cart_minus', 'cart_controls', 'cart_new', 'cart_switch',
     'cart_rename', 'cart_delete',
     'checkout',
-    'order_detail', 'order_items', 'order_list',
+    'order_detail', 'order_items', 'order_list', 'order_reorder',
     'order_approve_amendment', 'order_reject_amendment',
 ]

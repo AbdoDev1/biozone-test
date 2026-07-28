@@ -29,7 +29,7 @@ from tags.services import tags_for, tags_for_many
 # الحقول اللي بتتراقب في تايم لاين النشاط (مرحلة 2) — نفس الحقول الأساسية
 # الظاهرة في تاب "بيانات المنتج"، مش كل حقول الموديل (مفيش داعي نسجّل
 # تغييرات على حقول داخلية زي updated_at).
-PRODUCT_TRACKED_FIELDS = ['name_ar', 'name_en', 'category', 'barcode', 'manufacturer', 'is_active']
+PRODUCT_TRACKED_FIELDS = ['name_ar', 'name_en', 'category', 'barcode', 'manufacturer', 'size', 'is_active']
 
 STAFF_LIST_PAGE_SIZE = 30
 
@@ -338,7 +338,12 @@ def _unit_prices_diff_summary(old_snapshot, product):
 
 @perm_required('products.change_product')
 def product_edit(request, pk):
-    product = get_object_or_404(Product, pk=pk)
+    product = get_object_or_404(
+        Product.objects.prefetch_related(
+            'similar_products', 'complementary_products', 'variant_group__products',
+        ),
+        pk=pk,
+    )
     if request.method == 'POST':
         # نفس منطق الحساب التلقائي المستخدم في الإضافة (شوف autofill_small_unit_price)
         post_data = autofill_small_unit_price(request.POST)
@@ -425,6 +430,15 @@ def product_edit(request, pk):
         'related_orders': _product_related_orders(product),
         'inventory_item': getattr(product, 'inventory', None),
         'product_actions': product_actions,
+        'similar_products': product.similar_products.all(),
+        'complementary_products': product.complementary_products.all(),
+        'variant_siblings': product.variant_siblings,
+        'relations_count': (
+            len(product.similar_products.all()) + len(product.complementary_products.all()) + len(product.variant_siblings)
+        ),
+        'similar_search_url': url_with_qs(request, 'staff:product_relation_search', pk=product.pk, relation='similar'),
+        'complementary_search_url': url_with_qs(request, 'staff:product_relation_search', pk=product.pk, relation='complementary'),
+        'variant_search_url': url_with_qs(request, 'staff:product_variant_search', pk=product.pk),
     })
 
 

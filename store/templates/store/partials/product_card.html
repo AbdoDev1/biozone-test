@@ -41,7 +41,18 @@
 
   <a href="{% url 'store:product_detail' product.pk %}" class="block">
     {# صورة #}
-    <div class="w-full h-48 bg-gray-100 overflow-hidden">
+    <div class="relative w-full h-48 bg-gray-100 overflow-hidden">
+      {# شارة "تفاصيل أكتر" — ظاهرة دايمًا (مش hover-only)، عشان تشتغل
+         بنفس الوضوح على الموبايل والديسكتوب (الـ hover أصلًا مبيشتغلش
+         على تاتش/موبايل، وده أهم قناة طلب لعميل B2B). ثابتة على كل
+         الكروت بدون شرط، فمفيش أي حساب أو query إضافي على شبكة المتجر
+         (راجع ROADMAP.md مرحلة 5 بند 2). #}
+      <div class="pointer-events-none absolute bottom-1.5 left-1.5 z-[5]">
+        <span class="bg-white/90 text-gray-600 text-[10px] font-semibold px-2 py-0.5 rounded-full shadow-sm inline-flex items-center gap-1">
+          <svg class="w-2.5 h-2.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/></svg>
+          تفاصيل أكتر
+        </span>
+      </div>
       {% if product.image %}
         <img src="{{ product.image.url }}"
              alt="{{ product.name_ar }}"

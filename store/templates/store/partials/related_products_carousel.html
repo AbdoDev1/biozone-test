@@ -1,0 +1,20 @@
+{# كاروسيل عام لعرض منتجات مقترحة (بدائل/إكمال شراء) في صفحة تفاصيل
+   المنتج — نفس المكوّن بيتعاد استخدامه مرتين بفرق العنوان والقائمة بس.
+   القائمة نفسها متقصورة على 6 عناصر كحد أقصى من store/views.py (عمدًا —
+   عدد ثابت صغير بدل صفحة تانية أو "عرض المزيد"، حفاظًا على بساطة صفحة
+   الشراء لعميل B2B). تمرير يمين-لشمال يدوي بس (سحب/سكرول العميل نفسه)
+   — **بدون أي auto-scroll أو حركة تلقائية**، لأن أي حركة تلقائية في
+   صفحة شراء بتتفسّر كإعلان مش كأداة. لا يوجد أي query إضافي هنا — القائمة
+   جاهزة بالكامل من الـ prefetch_related في store/views.py::product_detail. #}
+{% if products %}
+<div class="mt-10">
+    <h2 class="font-bold text-gray-700 mb-4">{{ heading }}</h2>
+    <div class="flex gap-4 overflow-x-auto pb-2" style="scroll-snap-type: x proximity;">
+        {% for p in products %}
+        <div class="w-44 shrink-0" style="scroll-snap-align: start;">
+            {% include "store/partials/product_card.html" with product=p %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}

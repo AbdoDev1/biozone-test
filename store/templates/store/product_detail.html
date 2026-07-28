@@ -40,6 +40,11 @@ hx-on:cartUpdated="htmx.ajax('GET','{% url 'orders:cart_badge' %}',{target:'#car
       <div class="flex-1">
         <p class="text-primary-600 text-sm mb-1">{{ product.category.name }}</p>
         <h1 class="text-2xl font-bold text-gray-800 mb-1">{{ product.name_ar }}</h1>
+        {% if product.size %}
+          <span class="inline-block bg-gray-100 text-gray-600 text-xs font-semibold px-2 py-0.5 rounded-full mb-2">
+            مقاس {{ product.size }}
+          </span>
+        {% endif %}
         {% if product.name_en %}
           <p class="text-gray-400 text-sm mb-2">{{ product.name_en }}</p>
         {% endif %}
@@ -49,6 +54,35 @@ hx-on:cartUpdated="htmx.ajax('GET','{% url 'orders:cart_badge' %}',{target:'#car
         {% if product.description %}
           <p class="text-gray-600 text-sm leading-relaxed mb-6">{{ product.description }}</p>
         {% endif %}
+
+        {% if variant_siblings %}
+        <div class="mb-6">
+          <p class="text-sm font-semibold text-gray-700 mb-2">المقاسات المتاحة</p>
+          <div class="flex flex-wrap gap-2">
+            {# المقاس الحالي (غير قابل للضغط) #}
+            <span class="px-3 py-1.5 rounded-lg text-sm font-semibold bg-primary-600 text-white">
+              {{ product.size|default:"الحالي" }}
+            </span>
+            {% for sibling in variant_siblings %}
+              {% with sibling_available=sibling.inventory.is_available %}
+              {% if sibling_available %}
+                <a href="{% url 'store:product_detail' sibling.pk %}"
+                   class="px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition">
+                  {{ sibling.size|default:sibling.name_ar }}
+                </a>
+              {% else %}
+                {# متاح دايمًا في الشاشة (مش مخفي)، بس معطّل بصريًا لو مفيش رصيد #}
+                <span title="غير متوفر حاليًا"
+                      class="px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-50 text-gray-300 line-through cursor-not-allowed">
+                  {{ sibling.size|default:sibling.name_ar }}
+                </span>
+              {% endif %}
+              {% endwith %}
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
 
         <!-- الوحدات والأسعار -->
         <div class="space-y-3">
@@ -99,6 +133,10 @@ hx-on:cartUpdated="htmx.ajax('GET','{% url 'orders:cart_badge' %}',{target:'#car
 
       </div>
     </div>
+
+    {% include "store/partials/related_products_carousel.html" with products=similar_products heading="منتجات مشابهة" %}
+    {% include "store/partials/related_products_carousel.html" with products=complementary_products heading="غالبًا ما يُطلب معه" %}
+
 </div>
 
 {% endblock %}

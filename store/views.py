@@ -157,7 +157,17 @@ def new_arrivals(request):
 
 
 def product_detail(request, pk):
-    product = get_object_or_404(Product, pk=pk, is_active=True)
+    product = get_object_or_404(
+        Product.objects.filter(is_active=True)
+        .select_related('category')
+        .prefetch_related(
+            'units__discounts',
+            'similar_products__units__discounts', 'similar_products__category', 'similar_products__inventory',
+            'complementary_products__units__discounts', 'complementary_products__category', 'complementary_products__inventory',
+            'variant_group__products', 'variant_group__products__inventory',
+        ),
+        pk=pk,
+    )
     # صفحة منتج واحد بس (مش شبكة متجر)، فمفيش قلق أداء من استعلام إضافي هنا.
     # units_for_client بيحدد الوحدة (أو الوحدات) اللي تظهر لنوع الحساب ده:
     # قطاعي = أصغر وحدة، جملة = أكبر وحدة.
@@ -167,8 +177,16 @@ def product_detail(request, pk):
     # بأمان (Django بيتعامل مع الغياب ده silently جوه التمبليت).
     client = request.user if request.user.is_authenticated else None
     units = product.units_for_client(client)
+    # نفلتر على is_active بايثونيًا (مش .filter() جديد) عشان نستفيد من
+    # الـ prefetch_related الجاهز فوق بدل ما نضرب استعلام إضافي لكل قسم.
+    similar_products = [p for p in product.similar_products.all() if p.is_active][:6]
+    complementary_products = [p for p in product.complementary_products.all() if p.is_active][:6]
+    variant_siblings = [p for p in product.variant_siblings if p.is_active]
     return render(request, 'store/product_detail.html', {
         'product': product,
         'units': units,
         'cart_quantities': _cart_quantities(request),
+        'similar_products': similar_products,
+        'complementary_products': complementary_products,
+        'variant_siblings': variant_siblings,
     })
