@@ -1,6 +1,12 @@
 {% extends 'staff/base.html' %}
 {% load staff_ui %}
 {% block title %}الأقسام — Biozone{% endblock %}
+{% block breadcrumbs %}
+<nav class="flex items-center text-sm text-gray-500 mb-4">
+    {% crumb "الرئيسية" "staff:dashboard" %}
+    {% crumb "الأقسام" %}
+</nav>
+{% endblock %}
 {% block content %}
 
 <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">

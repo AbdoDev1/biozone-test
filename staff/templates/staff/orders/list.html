@@ -2,6 +2,12 @@
 {% load staff_ui %}
 {% load tag_tags %}
 {% block title %}الطلبات — Biozone{% endblock %}
+{% block breadcrumbs %}
+<nav class="flex items-center text-sm text-gray-500 mb-4">
+    {% crumb "الرئيسية" "staff:dashboard" %}
+    {% crumb "الطلبات" %}
+</nav>
+{% endblock %}
 {% block content %}
 
 <div class="flex justify-between items-center mb-6">

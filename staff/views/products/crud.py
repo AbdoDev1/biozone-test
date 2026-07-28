@@ -24,7 +24,7 @@ from staff.utils import list_qs, url_with_qs, redirect_with_qs
 from django.contrib.contenttypes.models import ContentType
 from activity.models import ActivityLog
 from activity.services import log_activity, diff_summary, delete_activity_logs_for
-from tags.services import tags_for
+from tags.services import tags_for, tags_for_many
 
 # الحقول اللي بتتراقب في تايم لاين النشاط (مرحلة 2) — نفس الحقول الأساسية
 # الظاهرة في تاب "بيانات المنتج"، مش كل حقول الموديل (مفيش داعي نسجّل
@@ -119,6 +119,12 @@ def product_list(request):
 
     paginator = Paginator(products, STAFF_LIST_PAGE_SIZE)
     page_obj = paginator.get_page(request.GET.get('page'))
+
+    # وسم كل منتج في الصفحة الحالية باستعلام واحد بدل ما نستدعي tags_for
+    # لكل صف على حدة (N+1) — نفس أسلوب staff.views.orders.order_list.
+    tags_by_product_id = tags_for_many(Product, [p.pk for p in page_obj])
+    for product in page_obj:
+        product.tag_list = tags_by_product_id.get(product.pk, [])
 
     return render(request, 'staff/products/list.html', {
         'products': page_obj,

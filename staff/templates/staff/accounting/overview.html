@@ -1,6 +1,12 @@
 {% extends 'staff/base.html' %}
 {% load staff_ui %}
 {% block title %}الحسابات — Biozone{% endblock %}
+{% block breadcrumbs %}
+<nav class="flex items-center text-sm text-gray-500 mb-4">
+    {% crumb "الرئيسية" "staff:dashboard" %}
+    {% crumb "الحسابات" %}
+</nav>
+{% endblock %}
 {% block content %}
 
 <div x-data="{ tab: 'overview' }" class="max-w-6xl">
