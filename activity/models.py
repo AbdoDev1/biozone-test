@@ -22,6 +22,7 @@ class ActivityLog(models.Model):
     class Event(models.TextChoices):
         CREATED = 'CREATED', 'تم الإنشاء'
         UPDATED = 'UPDATED', 'تعديل بيانات'
+        DELETED = 'DELETED', 'تم الحذف'
         NOTE = 'NOTE', 'ملاحظة'
 
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)

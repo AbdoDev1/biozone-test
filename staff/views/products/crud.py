@@ -24,6 +24,7 @@ from staff.utils import list_qs, url_with_qs, redirect_with_qs
 from django.contrib.contenttypes.models import ContentType
 from activity.models import ActivityLog
 from activity.services import log_activity, diff_summary, delete_activity_logs_for
+from tags.services import tags_for
 
 # الحقول اللي بتتراقب في تايم لاين النشاط (مرحلة 2) — نفس الحقول الأساسية
 # الظاهرة في تاب "بيانات المنتج"، مش كل حقول الموديل (مفيش داعي نسجّل
@@ -261,6 +262,10 @@ def _product_activity_count(product):
     ).count()
 
 
+def _product_tags_count(product):
+    return tags_for(product).count()
+
+
 def _product_related_orders(product, limit=8):
     """
     آخر الطلبات اللي فيها صنف من هذا المنتج (أي وحدة منه) — Related
@@ -353,6 +358,7 @@ def product_edit(request, pk):
                     'title': f'تعديل: {product.name_ar}', 'is_edit': True, 'product': product,
                     'back_url': url_with_qs(request, 'staff:product_list'),
                     'activity_count': _product_activity_count(product),
+                    'tags_count': _product_tags_count(product),
                 })
             except IntegrityError:
                 messages.error(
@@ -367,6 +373,7 @@ def product_edit(request, pk):
                     'title': f'تعديل: {product.name_ar}', 'is_edit': True, 'product': product,
                     'back_url': url_with_qs(request, 'staff:product_list'),
                     'activity_count': _product_activity_count(product),
+                    'tags_count': _product_tags_count(product),
                 })
 
             # أي وحدة جديدة اتضافت أثناء التعديل ومعاها كمية ابتدائية
@@ -408,6 +415,7 @@ def product_edit(request, pk):
         'product': product,
         'back_url': url_with_qs(request, 'staff:product_list'),
         'activity_count': _product_activity_count(product),
+        'tags_count': _product_tags_count(product),
         'related_orders': _product_related_orders(product),
         'inventory_item': getattr(product, 'inventory', None),
         'product_actions': product_actions,

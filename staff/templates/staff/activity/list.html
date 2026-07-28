@@ -62,6 +62,8 @@
                     {% status_badge log.get_event_display color="green" %}
                     {% elif log.event == 'UPDATED' %}
                     {% status_badge log.get_event_display color="blue" %}
+                    {% elif log.event == 'DELETED' %}
+                    {% status_badge log.get_event_display color="red" %}
                     {% else %}
                     {% status_badge log.get_event_display color="gray" %}
                     {% endif %}

@@ -7,12 +7,16 @@ from django.core.paginator import Paginator
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.db.models import ProtectedError, Count
+from django.contrib.contenttypes.models import ContentType
 
 from products.models import Category
 from products.forms import CategoryForm
 from staff.permissions import perm_required
+from activity.models import ActivityLog
+from activity.services import log_activity, diff_summary
 
 CATEGORY_LIST_PAGE_SIZE = 30
+CATEGORY_TRACKED_FIELDS = ['name', 'is_active']
 
 
 @perm_required('products.view_category')
@@ -39,6 +43,7 @@ def category_add(request):
         form = CategoryForm(request.POST, request.FILES)
         if form.is_valid():
             category = form.save()
+            log_activity(category, ActivityLog.Event.CREATED, user=request.user)
             messages.success(request, f'تم إضافة القسم "{category.name}" بنجاح.')
             return redirect('staff:category_list')
     else:
@@ -54,9 +59,13 @@ def category_add(request):
 def category_edit(request, pk):
     category = get_object_or_404(Category, pk=pk)
     if request.method == 'POST':
+        old_values = {f: getattr(category, f) for f in CATEGORY_TRACKED_FIELDS}
         form = CategoryForm(request.POST, request.FILES, instance=category)
         if form.is_valid():
             form.save()
+            summary = diff_summary(old_values, category, CATEGORY_TRACKED_FIELDS)
+            if summary:
+                log_activity(category, ActivityLog.Event.UPDATED, user=request.user, changes_summary=summary)
             messages.success(request, f'تم تعديل القسم "{category.name}" بنجاح.')
             return redirect('staff:category_list')
     else:
@@ -82,15 +91,27 @@ def category_delete(request, pk):
         if has_products:
             category.is_active = False
             category.save()
+            log_activity(category, ActivityLog.Event.UPDATED, user=request.user, changes_summary='تم تعطيل القسم')
             messages.warning(request, f'القسم "{name}" له أصناف مرتبطة به — تم تعطيله بدل الحذف.')
         else:
+            category_pk = category.pk
             try:
                 category.delete()
-                messages.success(request, f'تم حذف القسم "{name}".')
             except ProtectedError:
                 category.is_active = False
                 category.save()
+                log_activity(category, ActivityLog.Event.UPDATED, user=request.user, changes_summary='تم تعطيل القسم')
                 messages.warning(request, f'القسم "{name}" مرتبط بأصناف — تم تعطيله بدل الحذف.')
+            else:
+                # instance.pk بيتصفّر لـ None فور نجاح delete()، فبنستخدم
+                # الـ pk اللي حفظناه قبلها عشان نربط سجل النشاط بالكيان الصح.
+                ActivityLog.objects.create(
+                    content_type=ContentType.objects.get_for_model(Category),
+                    object_id=category_pk,
+                    event=ActivityLog.Event.DELETED,
+                    created_by=request.user,
+                )
+                messages.success(request, f'تم حذف القسم "{name}".')
         return redirect('staff:category_list')
 
     return render(request, 'staff/categories/delete.html', {

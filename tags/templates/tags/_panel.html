@@ -17,7 +17,16 @@
     <span class="text-xs text-gray-400">لا توجد وسوم على هذا العنصر بعد</span>
     {% endfor %}
 
-    <div x-data="{ open: false }" class="relative inline-block" @click.outside="open = false">
+    {{ existing_tag_colors|json_script:existing_colors_script_id }}
+    <div x-data="{
+            open: false,
+            name: '',
+            existingColors: JSON.parse(document.getElementById('{{ existing_colors_script_id }}').textContent),
+            get existingColor() {
+                return this.existingColors[this.name.trim().toLowerCase()] || null;
+            }
+         }"
+         class="relative inline-block" @click.outside="open = false">
         <button type="button" @click="open = !open"
                 class="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 border border-dashed border-primary-300 rounded-full px-2.5 py-1 font-semibold">
             <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
@@ -32,17 +41,30 @@
                 <input type="hidden" name="next" value="{{ request.get_full_path }}">
                 <label class="text-xs text-gray-500 block mb-1">اسم الوسم (موجود أو جديد)</label>
                 <input list="existing-tags-{{ app_label }}-{{ model_name }}-{{ object_id }}" name="name"
+                       x-model="name"
                        placeholder="مثال: عاجل" maxlength="50" required
                        class="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm mb-2">
                 <datalist id="existing-tags-{{ app_label }}-{{ model_name }}-{{ object_id }}">
                     {% for t in all_tags %}<option value="{{ t.name }}">{% endfor %}
                 </datalist>
-                <label class="text-xs text-gray-500 block mb-1">اللون (بيتطبق بس لو الوسم ده جديد كليًا)</label>
-                <select name="color" class="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm mb-3">
-                    {% for value, display in color_choices %}
-                    <option value="{{ value }}">{{ display }}</option>
-                    {% endfor %}
-                </select>
+
+                <!-- الوسم ده موجود بالفعل: بيتستخدم بلونه الحالي، مفيش داعي نطلب لون تاني -->
+                <div x-show="existingColor" class="mb-3">
+                    <p class="text-xs text-gray-500">هذا الوسم موجود بالفعل، وسيُستخدم بلونه الحالي:</p>
+                    <span class="inline-block mt-1 px-2.5 py-1 rounded-full text-xs font-semibold"
+                          :class="existingColor" x-text="name.trim()"></span>
+                </div>
+
+                <!-- الوسم ده جديد: محتاج نحدد لونه -->
+                <div x-show="!existingColor" class="mb-3">
+                    <label class="text-xs text-gray-500 block mb-1">اللون (وسم جديد)</label>
+                    <select name="color" class="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm">
+                        {% for value, display in color_choices %}
+                        <option value="{{ value }}">{{ display }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
                 <button type="submit"
                         class="w-full bg-primary-600 hover:bg-primary-700 text-white text-xs font-semibold py-1.5 rounded-lg transition">
                     إضافة

@@ -5,6 +5,8 @@ from django.shortcuts import get_object_or_404, redirect
 from django.views.decorators.http import require_POST
 
 from accounts.models import User
+from activity.models import ActivityLog
+from activity.services import log_activity
 from .models import Tag
 from .services import add_tag, remove_tag
 
@@ -45,6 +47,10 @@ def tag_add(request, app_label, model_name, object_id):
         messages.error(request, f'اسم الوسم طويل جدًا ({TAG_NAME_MAX_LENGTH} حرف كحد أقصى).')
     else:
         add_tag(instance, name, color=color, user=request.user)
+        log_activity(
+            instance, ActivityLog.Event.UPDATED, user=request.user,
+            changes_summary=f'تمت إضافة وسم "{name}"',
+        )
         messages.success(request, f'تم إضافة وسم "{name}".')
 
     return redirect(next_url)
@@ -63,7 +69,12 @@ def tag_remove(request, app_label, model_name, object_id, tag_id):
     content_type = get_object_or_404(ContentType, app_label=app_label, model=model_name)
     model_class = content_type.model_class()
     instance = get_object_or_404(model_class, pk=object_id)
+    tag = get_object_or_404(Tag, pk=tag_id)
 
     remove_tag(instance, tag_id)
+    log_activity(
+        instance, ActivityLog.Event.UPDATED, user=request.user,
+        changes_summary=f'تمت إزالة وسم "{tag.name}"',
+    )
     messages.success(request, 'تم إزالة الوسم.')
     return redirect(next_url)
