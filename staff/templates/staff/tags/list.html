@@ -1,0 +1,143 @@
+{% extends 'staff/base.html' %}
+{% load staff_ui %}
+{% block title %}الوسوم — Biozone{% endblock %}
+{% block breadcrumbs %}
+<nav class="flex items-center text-sm text-gray-500 mb-4">
+    {% crumb "الرئيسية" "staff:dashboard" %}
+    {% crumb "الوسوم" %}
+</nav>
+{% endblock %}
+{% block content %}
+
+<div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
+    <h1 class="text-2xl font-bold text-gray-800">الوسوم</h1>
+    {% if perms.tags.add_tag %}
+    <div x-data="{ addOpen: false }" class="relative inline-block" @click.outside="addOpen = false">
+        <button type="button" @click="addOpen = !addOpen"
+                class="bg-primary-600 hover:bg-primary-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
+            + إضافة وسم
+        </button>
+        <div x-show="addOpen" x-cloak x-transition
+             class="absolute left-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-100 z-20 p-3">
+            <form method="post" action="{% url 'staff:tag_add' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">
+                {% csrf_token %}
+                <label class="text-xs text-gray-500 block mb-1">اسم الوسم</label>
+                <input type="text" name="name" maxlength="50" required autofocus
+                       class="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm mb-2">
+                <label class="text-xs text-gray-500 block mb-1">اللون</label>
+                <select name="color" class="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm mb-3">
+                    {% for value, display in color_choices %}
+                    <option value="{{ value }}">{{ display }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit"
+                        class="w-full bg-primary-600 hover:bg-primary-700 text-white text-xs font-semibold py-1.5 rounded-lg transition">
+                    إضافة
+                </button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- بحث وفلتر اللون -->
+<form method="GET" class="bg-white rounded-2xl shadow-sm p-4 mb-6 flex flex-col sm:flex-row gap-3 sm:items-end">
+    <div class="flex-1 min-w-[180px]">
+        <label class="text-xs text-gray-500 mb-1 block">بحث بالاسم</label>
+        <input type="text" name="q" value="{{ search_q }}" placeholder="مثال: عاجل"
+               class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary-400">
+    </div>
+    <div class="w-full sm:w-44">
+        <label class="text-xs text-gray-500 mb-1 block">اللون</label>
+        <select name="color" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary-400">
+            <option value="" {% if not color_filter %}selected{% endif %}>الكل</option>
+            {% for value, display in color_choices %}
+            <option value="{{ value }}" {% if color_filter == value %}selected{% endif %}>{{ display }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <button type="submit" class="bg-gray-800 text-white text-sm px-4 py-2 rounded-lg hover:bg-gray-700 transition">
+        بحث
+    </button>
+</form>
+
+<div class="bg-white rounded-2xl shadow-sm overflow-x-auto">
+    <table class="w-full text-sm min-w-[560px]">
+        <thead class="bg-gray-50 text-gray-600">
+            <tr>
+                {% sortable_th "الاسم" "name" %}
+                <th class="px-4 py-3 text-right">اللون</th>
+                {% sortable_th "عدد الاستخدامات" "usage" %}
+                {% sortable_th "تاريخ الإنشاء" "created_at" %}
+                <th class="px-4 py-3"></th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            {% for tag in tags %}
+            <tr class="hover:bg-gray-50">
+                <td class="px-4 py-3 font-medium text-gray-800">{{ tag.name }}</td>
+                <td class="px-4 py-3">
+                    <span class="{{ tag.color|color_classes }} px-2.5 py-1 rounded-full text-xs font-semibold">{{ tag.get_color_display }}</span>
+                </td>
+                <td class="px-4 py-3 text-gray-600">{{ tag.usage_count }}</td>
+                <td class="px-4 py-3 text-gray-500">{{ tag.created_at|date:"Y-m-d" }}</td>
+                <td class="px-4 py-3">
+                    <div class="flex items-center justify-end gap-3">
+                        {% if perms.tags.change_tag %}
+                        <div x-data="{ editOpen: false }" class="relative inline-block" @click.outside="editOpen = false">
+                            <button type="button" @click="editOpen = !editOpen" class="text-primary-600 hover:underline text-xs">تعديل</button>
+                            <div x-show="editOpen" x-cloak x-transition
+                                 class="absolute left-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-100 z-20 p-3 text-right">
+                                <form method="post" action="{% url 'staff:tag_edit' tag.pk %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">
+                                    {% csrf_token %}
+                                    <label class="text-xs text-gray-500 block mb-1">اسم الوسم</label>
+                                    <input type="text" name="name" value="{{ tag.name }}" maxlength="50" required
+                                           class="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm mb-2">
+                                    <label class="text-xs text-gray-500 block mb-1">اللون</label>
+                                    <select name="color" class="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm mb-3">
+                                        {% for value, display in color_choices %}
+                                        <option value="{{ value }}" {% if tag.color == value %}selected{% endif %}>{{ display }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <button type="submit"
+                                            class="w-full bg-primary-600 hover:bg-primary-700 text-white text-xs font-semibold py-1.5 rounded-lg transition">
+                                        حفظ
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if perms.tags.delete_tag %}
+                        <form method="post" action="{% url 'staff:tag_delete' tag.pk %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}"
+                              data-confirm="حذف وسم &quot;{{ tag.name }}&quot;؟ هيتشال من كل العناصر المستخدم عليها ({{ tag.usage_count }} عنصر). لا يمكن التراجع." data-confirm-type="error">
+                            {% csrf_token %}
+                            <button type="submit" class="text-red-600 hover:underline text-xs">حذف</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="px-4 py-8 text-center text-gray-400">لا توجد وسوم مطابقة.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if page_obj.paginator.num_pages > 1 %}
+<div class="flex items-center justify-center gap-2 mt-4 text-sm">
+    {% if page_obj.has_previous %}
+    <a href="?{{ request.GET|without_page }}&page={{ page_obj.previous_page_number }}"
+       class="px-3 py-2 rounded-lg bg-white shadow-sm hover:bg-primary-50 text-gray-600">السابق</a>
+    {% endif %}
+    <span class="text-gray-500 px-2">صفحة {{ page_obj.number }} من {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+    <a href="?{{ request.GET|without_page }}&page={{ page_obj.next_page_number }}"
+       class="px-3 py-2 rounded-lg bg-white shadow-sm hover:bg-primary-50 text-gray-600">التالي</a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}

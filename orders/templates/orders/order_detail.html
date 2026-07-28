@@ -69,6 +69,25 @@
         </span>
       </a>
 
+      {% if order.status == 'DELIVERED' %}
+      <div class="bg-primary-50 border border-primary-200 text-primary-800 rounded-xl p-4 mb-6 text-sm">
+        <p class="font-bold mb-2 flex items-center gap-1.5">
+          <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+          تم تسليم طلبك
+        </p>
+        {% if invoice %}
+        <p class="mb-3">تم إصدار الفاتورة الرسمية لطلبك، وتقدر تعرضها أو تطبعها من هنا.</p>
+        <a href="{% url 'invoices:print' invoice.pk %}" target="_blank"
+           class="inline-flex items-center gap-1.5 bg-white hover:bg-primary-100 text-primary-700 text-sm font-semibold px-4 py-2 rounded-lg border border-primary-300 transition">
+          <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0l.229 2.523a1.125 1.125 0 01-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.32 0a42.475 42.475 0 00-11.32 0m11.32 0a41.678 41.678 0 00-2.13-.176M7.34 18a41.678 41.678 0 012.13-.176m0 0a41.72 41.72 0 015.06 0m-5.06 0V12.75a1.125 1.125 0 011.125-1.125h2.81a1.125 1.125 0 011.125 1.125v5.074"/></svg>
+          عرض/طباعة الفاتورة ({{ invoice.invoice_number }})
+        </a>
+        {% else %}
+        <p>تم تسليم طلبك، وجارٍ إصدار الفاتورة الرسمية.</p>
+        {% endif %}
+      </div>
+      {% endif %}
+
       {% if order.notes %}
       <div class="bg-gray-50 rounded-xl p-4 text-sm text-gray-600 mb-6">
         <p class="font-medium mb-1">ملاحظات:</p>

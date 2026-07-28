@@ -250,6 +250,22 @@
             الحسابات
         </a>
         {% endif %}
+        {% if perms.tags.view_tag %}
+        <a href="{% url 'staff:tag_list' %}"
+           class="flex items-center gap-3 px-3 py-2 rounded-lg border-l-4
+           {% if url_name == 'tag_list' %}bg-primary-50 text-primary-600 font-semibold border-primary-600{% else %}border-transparent hover:bg-primary-50 text-gray-700 hover:text-primary-600{% endif %}">
+            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z"/><path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6z"/></svg>
+            الوسوم
+        </a>
+        {% endif %}
+        {% if perms.activity.view_activitylog %}
+        <a href="{% url 'staff:activity_list' %}"
+           class="flex items-center gap-3 px-3 py-2 rounded-lg border-l-4
+           {% if url_name == 'activity_list' %}bg-primary-50 text-primary-600 font-semibold border-primary-600{% else %}border-transparent hover:bg-primary-50 text-gray-700 hover:text-primary-600{% endif %}">
+            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>
+            سجل الأنشطة
+        </a>
+        {% endif %}
         <hr class="my-2">
         <a href="/admin/" hx-boost="false" title="لوحة إدارة Django — لغير المطورين، افضل تستخدم صفحات النظام العادية بدل كده"
            class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-primary-50 text-gray-500 hover:text-primary-600 text-xs">

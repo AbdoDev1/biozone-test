@@ -17,9 +17,14 @@ def order_detail(request, pk):
     # مبقاش بيجيب items هنا — صفحة التفاصيل بقت ملخّص بس (رقم الطلب، الحالة،
     # التنبيهات، زرار الإلغاء)، وقائمة الأصناف نفسها انتقلت لصفحة منفصلة
     # (order_items) عشان الصفحة متبقاش مزدحمة، خصوصًا لو الطلب فيه أصناف كتير.
-    order = get_object_or_404(Order, pk=pk, client=request.user)
+    order = get_object_or_404(
+        Order.objects.select_related('invoice'), pk=pk, client=request.user,
+    )
     items_count = order.items.count()
-    return render(request, 'orders/order_detail.html', {'order': order, 'items_count': items_count})
+    invoice = order.invoice if hasattr(order, 'invoice') else None
+    return render(request, 'orders/order_detail.html', {
+        'order': order, 'items_count': items_count, 'invoice': invoice,
+    })
 
 
 @client_required

@@ -1,0 +1,99 @@
+{% extends 'staff/base.html' %}
+{% load staff_ui %}
+{% block title %}سجل الأنشطة — Biozone{% endblock %}
+{% block breadcrumbs %}
+<nav class="flex items-center text-sm text-gray-500 mb-4">
+    {% crumb "الرئيسية" "staff:dashboard" %}
+    {% crumb "سجل الأنشطة" %}
+</nav>
+{% endblock %}
+{% block content %}
+
+<div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold text-gray-800">سجل الأنشطة</h1>
+</div>
+
+<!-- بحث وفلاتر -->
+<form method="GET" class="bg-white rounded-2xl shadow-sm p-4 mb-6 flex flex-col sm:flex-row gap-3 sm:items-end sm:flex-wrap">
+    <div class="flex-1 min-w-[180px]">
+        <label class="text-xs text-gray-500 mb-1 block">بحث في الملاحظة/التغييرات</label>
+        <input type="text" name="q" value="{{ search_q }}" placeholder="نص الملاحظة..."
+               class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary-400">
+    </div>
+    <div class="w-full sm:w-44">
+        <label class="text-xs text-gray-500 mb-1 block">نوع الحدث</label>
+        <select name="event" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary-400">
+            <option value="" {% if not event_filter %}selected{% endif %}>الكل</option>
+            {% for value, display in event_choices %}
+            <option value="{{ value }}" {% if event_filter == value %}selected{% endif %}>{{ display }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="w-full sm:w-48">
+        <label class="text-xs text-gray-500 mb-1 block">نوع الكيان</label>
+        <select name="content_type" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary-400">
+            <option value="" {% if not content_type_filter %}selected{% endif %}>الكل</option>
+            {% for ct in content_type_choices %}
+            <option value="{{ ct.pk }}" {% if content_type_filter == ct.pk|stringformat:"s" %}selected{% endif %}>{{ ct.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <button type="submit" class="bg-gray-800 text-white text-sm px-4 py-2 rounded-lg hover:bg-gray-700 transition">
+        بحث
+    </button>
+</form>
+
+<div class="bg-white rounded-2xl shadow-sm overflow-x-auto">
+    <table class="w-full text-sm min-w-[720px]">
+        <thead class="bg-gray-50 text-gray-600">
+            <tr>
+                <th class="px-4 py-3 text-right">الحدث</th>
+                <th class="px-4 py-3 text-right">الكيان</th>
+                <th class="px-4 py-3 text-right">التفاصيل</th>
+                <th class="px-4 py-3 text-right">بواسطة</th>
+                <th class="px-4 py-3 text-right">التاريخ</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            {% for log in logs %}
+            <tr class="hover:bg-gray-50">
+                <td class="px-4 py-3">
+                    {% if log.event == 'CREATED' %}
+                    {% status_badge log.get_event_display color="green" %}
+                    {% elif log.event == 'UPDATED' %}
+                    {% status_badge log.get_event_display color="blue" %}
+                    {% else %}
+                    {% status_badge log.get_event_display color="gray" %}
+                    {% endif %}
+                </td>
+                <td class="px-4 py-3 text-gray-600">{{ log.content_type.name }} #{{ log.object_id }}</td>
+                <td class="px-4 py-3 text-gray-700 max-w-md">
+                    {% if log.event == 'NOTE' %}{{ log.note }}{% else %}{{ log.changes_summary|default:"—" }}{% endif %}
+                </td>
+                <td class="px-4 py-3 text-gray-500">{{ log.created_by.username|default:"النظام" }}</td>
+                <td class="px-4 py-3 text-gray-500">{{ log.created_at|date:"Y-m-d H:i" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="px-4 py-8 text-center text-gray-400">لا يوجد سجل أنشطة مطابق.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if page_obj.paginator.num_pages > 1 %}
+<div class="flex items-center justify-center gap-2 mt-4 text-sm">
+    {% if page_obj.has_previous %}
+    <a href="?{{ request.GET|without_page }}&page={{ page_obj.previous_page_number }}"
+       class="px-3 py-2 rounded-lg bg-white shadow-sm hover:bg-primary-50 text-gray-600">السابق</a>
+    {% endif %}
+    <span class="text-gray-500 px-2">صفحة {{ page_obj.number }} من {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+    <a href="?{{ request.GET|without_page }}&page={{ page_obj.next_page_number }}"
+       class="px-3 py-2 rounded-lg bg-white shadow-sm hover:bg-primary-50 text-gray-600">التالي</a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}

@@ -1,5 +1,5 @@
 from django.urls import path
-from staff.views import dashboard, inventory, clients, products, orders, accounting, employees, account_types, reports
+from staff.views import dashboard, inventory, clients, products, orders, accounting, employees, account_types, reports, tags, activity
 
 app_name = 'staff'
 
@@ -56,4 +56,9 @@ urlpatterns = [
     path('reports/customers/', reports.top_customers, name='reports_customers'),
     path('reports/profit/', reports.profit_report, name='reports_profit'),
     path('reports/stagnant/', reports.stagnant_products, name='reports_stagnant'),
+    path('tags/', tags.tag_list, name='tag_list'),
+    path('tags/add/', tags.tag_add, name='tag_add'),
+    path('tags/<int:pk>/edit/', tags.tag_edit, name='tag_edit'),
+    path('tags/<int:pk>/delete/', tags.tag_delete, name='tag_delete'),
+    path('activity/', activity.activity_list, name='activity_list'),
 ]

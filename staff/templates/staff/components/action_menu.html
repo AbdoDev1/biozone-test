@@ -1,7 +1,7 @@
 {% load staff_ui %}
 {% if actions %}
-<div class="relative inline-block" x-data="{ open: false }">
-    <button type="button" @click="open = !open" @click.outside="open = false"
+<div class="relative inline-block" x-data="{ open: false }" @click.outside="open = false">
+    <button type="button" @click="open = !open"
             class="inline-flex items-center gap-1.5 bg-white hover:bg-gray-50 text-gray-700 text-sm px-4 py-2 rounded-lg border border-gray-300 transition">
         {{ menu_label }}
         <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">

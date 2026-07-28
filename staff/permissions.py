@@ -106,6 +106,23 @@ PERMISSION_SECTIONS = [
             ('accounts', 'clientprofile', 'change', 'الموافقة / الرفض / تعديل بيانات العميل'),
         ],
     },
+    {
+        'key': 'tags',
+        'label': '🏷️ الوسوم',
+        'perms': [
+            ('tags', 'tag', 'view', 'عرض الوسوم'),
+            ('tags', 'tag', 'add', 'إضافة وسم'),
+            ('tags', 'tag', 'change', 'تعديل وسم'),
+            ('tags', 'tag', 'delete', 'حذف وسم'),
+        ],
+    },
+    {
+        'key': 'activity',
+        'label': '🗒️ سجل الأنشطة',
+        'perms': [
+            ('activity', 'activitylog', 'view', 'عرض سجل الأنشطة'),
+        ],
+    },
 ]
 
 
