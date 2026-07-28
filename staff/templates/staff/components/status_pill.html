@@ -1,0 +1,17 @@
+{# شارة إحصائية مختصرة لشريط الحالة أعلى الرئيسية — بديل مضغوط لكارت stat_card.html #}
+{# الاستخدام: include للملف ده مع with وباراميترات الشكل واللون (نفس أسماء stat_card.html). #}
+
+<a href="{{ link_url }}" class="flex items-center gap-2 shrink-0">
+    <span class="w-9 h-9 rounded-lg {{ icon_bg }} {{ icon_color }} flex items-center justify-center relative shrink-0">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="{{ icon_path }}"/></svg>
+        {% if badge_count %}
+        <span class="absolute -top-1.5 -left-1.5 bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[17px] h-[17px] flex items-center justify-center px-1" title="{{ badge_title }}">
+            {{ badge_count }}
+        </span>
+        {% endif %}
+    </span>
+    <span class="leading-tight">
+        <span class="block text-base font-bold {{ value_color }}">{{ value }}</span>
+        <span class="block text-[11px] text-gray-500">{{ label }}</span>
+    </span>
+</a>

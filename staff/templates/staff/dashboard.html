@@ -1,4 +1,5 @@
 {% extends 'staff/base.html' %}
+{% load staff_ui %}
 {% block title %}الرئيسية — Biozone{% endblock %}
 {% block content %}
 
@@ -7,18 +8,40 @@
 {% with inventory_low_url=inventory_url|add:"?low=1" %}
 {% if perms.accounts.view_clientprofile %}{% url 'staff:clients' as clients_url %}{% endif %}
 
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+<!-- شريط حالة مختصر أعلى الصفحة — بديل لشبكة الكروت الكبيرة الأربعة
+     اللي كانت هنا قبل كده؛ نفس الأرقام والروابط بس في مساحة أقل، عشان
+     شبكة أيقونات التطبيقات تحت تاخد التركيز كواجهة التنقل الرئيسية. -->
+<div class="bg-white rounded-2xl shadow-sm px-5 py-4 mb-8 flex flex-wrap items-center gap-x-8 gap-y-4 overflow-x-auto">
     {% if perms.orders.view_order %}
-    {% include 'staff/components/stat_card.html' with icon_bg='bg-green-50' icon_color='text-green-600' value_color='text-green-600' icon_path='M9 14.25l6-6m4.5-3.493V21.75l-3.75-1.5-3.75 1.5-3.75-1.5-3.75 1.5V4.757c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0c1.1.128 1.907 1.077 1.907 2.185zM9.75 9h.008v.008H9.75V9zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm4.875 4.5h.008v.008h-.008V13.5zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z' label='الطلبات النشطة' value=active_orders_count link_url=order_list_url link_text='عرض كل الطلبات' badge_count=unopened_orders_count badge_title='طلبات لسه ماتفتحتش' %}
+    {% include 'staff/components/status_pill.html' with icon_bg='bg-green-50' icon_color='text-green-600' value_color='text-green-600' icon_path='M9 14.25l6-6m4.5-3.493V21.75l-3.75-1.5-3.75 1.5-3.75-1.5-3.75 1.5V4.757c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0c1.1.128 1.907 1.077 1.907 2.185zM9.75 9h.008v.008H9.75V9zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm4.875 4.5h.008v.008h-.008V13.5zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z' label='الطلبات النشطة' value=active_orders_count link_url=order_list_url badge_count=unopened_orders_count badge_title='طلبات لسه ماتفتحتش' %}
     {% endif %}
 
-    {% include 'staff/components/stat_card.html' with icon_bg='bg-yellow-50' icon_color='text-yellow-500' value_color='text-yellow-500' icon_path='M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.331 0-4.512-.645-6.374-1.766z' label='طلبات التسجيل' value=pending_clients link_url=clients_url link_text='عرض الكل' %}
+    {% include 'staff/components/status_pill.html' with icon_bg='bg-yellow-50' icon_color='text-yellow-500' value_color='text-yellow-500' icon_path='M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.331 0-4.512-.645-6.374-1.766z' label='طلبات التسجيل' value=pending_clients link_url=clients_url %}
 
-    {% include 'staff/components/stat_card.html' with icon_bg='bg-primary-50' icon_color='text-primary-600' value_color='text-primary-600' icon_path='M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z' label='أصناف المخزون' value=total_products link_url=inventory_url link_text='عرض المخزون' %}
+    {% include 'staff/components/status_pill.html' with icon_bg='bg-primary-50' icon_color='text-primary-600' value_color='text-primary-600' icon_path='M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z' label='أصناف المخزون' value=total_products link_url=inventory_url %}
 
-    {% include 'staff/components/stat_card.html' with icon_bg='bg-red-50' icon_color='text-red-500' value_color='text-red-500' icon_path='M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z' label='تنبيهات المخزون' value=low_stock_count link_url=inventory_low_url link_text='عرض التنبيهات' %}
+    {% include 'staff/components/status_pill.html' with icon_bg='bg-red-50' icon_color='text-red-500' value_color='text-red-500' icon_path='M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z' label='تنبيهات المخزون' value=low_stock_count link_url=inventory_low_url %}
 </div>
 {% endwith %}
+
+<!-- شبكة أيقونات التطبيقات — واجهة التنقل الأساسية من الرئيسية (زي شاشة
+     تطبيقات Odoo) بدل الاعتماد على اختيار تاب من الشريط الجانبي، اللي
+     أصلًا مخفي في الصفحة دي (راجع staff/base.html وstaff/navigation.py). -->
+<div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4 mb-8">
+    {% for item in staff_nav_items %}
+    {% if item.key != 'dashboard' %}
+    <a href="{{ item.url }}"
+       class="flex flex-col items-center gap-2 p-4 rounded-2xl bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition text-center">
+        <span class="w-12 h-12 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                {% for d in item.icon_path|icon_paths %}<path stroke-linecap="round" stroke-linejoin="round" d="{{ d }}"/>{% endfor %}
+            </svg>
+        </span>
+        <span class="text-xs font-medium text-gray-700">{{ item.label }}</span>
+    </a>
+    {% endif %}
+    {% endfor %}
+</div>
 
 {% if perms.orders.view_order and recent_orders %}
 <div class="bg-white rounded-2xl shadow-sm p-6 mb-8">

@@ -59,6 +59,17 @@ COLOR_CLASSES = {
 
 
 @register.filter
+def icon_paths(value):
+    """
+    بتقسّم icon_path على '|' — بعض الأيقونات (زي أيقونة الوسم/تاج الخصم)
+    محتاجة أكتر من عنصر <path> واحد جوه نفس الـ <svg>، فبنخزنها كسطر
+    واحد مفصول بـ '|' في staff/navigation.py بدل ما نعقّد شكل البيانات
+    بقائمة متداخلة. الاستخدام: {% for d in item.icon_path|icon_paths %}
+    """
+    return value.split('|')
+
+
+@register.filter
 def color_classes(color):
     """
     بترجع كلاسات Tailwind لأي 'color' (نفس أسماء ألوان BADGE_COLOR_MAPS/

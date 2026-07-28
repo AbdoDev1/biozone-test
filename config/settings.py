@@ -119,6 +119,7 @@ TEMPLATES = [
                 'orders.context_processors.site_config',
                 'orders.context_processors.cart_count',
                 'store.context_processors.new_arrivals_count',
+                'staff.context_processors.staff_nav',
             ],
         },
     },
