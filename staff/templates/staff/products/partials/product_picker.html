@@ -1,8 +1,8 @@
 {% load staff_ui %}
-{# مكوّن "منتقي منتج" عام (بحث htmx + شرائح) — بيتستخدم 3 مرات في
+{% comment %} مكوّن "منتقي منتج" عام (بحث htmx + شرائح) — بيتستخدم 3 مرات في
    related_products_section.html (مشابه/مكمّل/تنويع مقاس)، ومفروض يتاح
    لأي علاقة اختيار مستقبلية تانية (Tags جوّه tags/_panel.html له نمط
-   مشابه لكن مبني على datalist بسيط؛ ده بيدعم بحث حي عن سجلات كاملة). #}
+   مشابه لكن مبني على datalist بسيط؛ ده بيدعم بحث حي عن سجلات كاملة). {% endcomment %}
 <div>
     {% if title %}<p class="text-sm font-semibold text-gray-700 mb-2">{{ title }}</p>{% endif %}
 
