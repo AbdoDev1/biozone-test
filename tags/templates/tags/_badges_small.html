@@ -1,0 +1,10 @@
+{% load staff_ui %}
+{% if tags %}
+<div class="flex flex-wrap gap-1 mt-1">
+    {% for tag in tags %}
+    <span class="{{ tag.color|color_classes }} px-1.5 py-0.5 rounded-full text-[10px] font-semibold leading-none">
+        {{ tag.name }}
+    </span>
+    {% endfor %}
+</div>
+{% endif %}

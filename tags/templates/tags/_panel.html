@@ -40,6 +40,16 @@
                 {% csrf_token %}
                 <input type="hidden" name="next" value="{{ request.get_full_path }}">
                 <label class="text-xs text-gray-500 block mb-1">اسم الوسم (موجود أو جديد)</label>
+                {% if available_tags %}
+                <div class="flex flex-wrap gap-1 mb-2">
+                    {% for t in available_tags %}
+                    <button type="button" @click="name = '{{ t.name|escapejs }}'"
+                            class="{{ t.color|color_classes }} px-2 py-0.5 rounded-full text-xs font-semibold hover:opacity-75">
+                        {{ t.name }}
+                    </button>
+                    {% endfor %}
+                </div>
+                {% endif %}
                 <input list="existing-tags-{{ app_label }}-{{ model_name }}-{{ object_id }}" name="name"
                        x-model="name"
                        placeholder="مثال: عاجل" maxlength="50" required

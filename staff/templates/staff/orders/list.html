@@ -1,5 +1,6 @@
 {% extends 'staff/base.html' %}
 {% load staff_ui %}
+{% load tag_tags %}
 {% block title %}الطلبات — Biozone{% endblock %}
 {% block content %}
 
@@ -36,7 +37,10 @@
         <tbody class="divide-y divide-gray-100">
             {% for order in orders %}
             <tr class="hover:bg-gray-50">
-                <td class="px-4 py-3 font-medium sticky-col">#{{ order.pk }}</td>
+                <td class="px-4 py-3 font-medium sticky-col">
+                    #{{ order.pk }}
+                    {% tag_badges_small order.tag_list %}
+                </td>
                 <td class="px-4 py-3">{{ order.client.username }}</td>
                 <td class="px-4 py-3 font-semibold text-primary-700">{{ order.total }} ج.م</td>
                 <td class="px-4 py-3">

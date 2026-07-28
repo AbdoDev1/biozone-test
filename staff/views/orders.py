@@ -7,6 +7,7 @@ from django.urls import reverse
 
 from orders.models import Order, OrderItem
 from staff.permissions import perm_required
+from tags.services import tags_for_many
 
 STAFF_LIST_PAGE_SIZE = 30
 ITEMS_PER_PRINT_PAGE = 14  # لو الأصناف زادت عن كده، النسخة القابلة للطباعة بتتقسم لصفحات مرقّمة 1/ن، 2/ن...
@@ -23,6 +24,12 @@ def order_list(request):
 
     paginator = Paginator(orders, STAFF_LIST_PAGE_SIZE)
     page_obj = paginator.get_page(request.GET.get('page'))
+
+    # وسم كل طلب في الصفحة الحالية باستعلام واحد بدل ما نستدعي tags_for
+    # لكل صف على حدة (N+1) — الوسوم بتتعرض صغيرة تحت رقم الطلب في الجدول.
+    tags_by_order_id = tags_for_many(Order, [order.pk for order in page_obj])
+    for order in page_obj:
+        order.tag_list = tags_by_order_id.get(order.pk, [])
 
     context = {
         'orders': page_obj,

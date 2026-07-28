@@ -16,6 +16,28 @@ def tags_for(instance):
     ).order_by('name')
 
 
+def tags_for_many(model_class, object_ids):
+    """
+    نسخة جماعية من tags_for — بترجع dict {object_id: [tags]} لكل
+    الوسوم على مجموعة عناصر من نفس النوع في استعلام واحد، بدل ما نستدعي
+    tags_for لكل صف على حدة (N+1) زي في صفحات القوائم (مثلاً جدول
+    الطلبات). العناصر اللي مالهاش وسوم أصلًا مش موجودة كمفتاح في الـ dict
+    (استخدم .get(pk, []) في التمبليت/الـ view).
+    """
+    object_ids = list(object_ids)
+    if not object_ids:
+        return {}
+    content_type = ContentType.objects.get_for_model(model_class)
+    tagged_items = TaggedItem.objects.filter(
+        content_type=content_type, object_id__in=object_ids,
+    ).select_related('tag').order_by('tag__name')
+
+    tags_by_object_id = {}
+    for tagged_item in tagged_items:
+        tags_by_object_id.setdefault(tagged_item.object_id, []).append(tagged_item.tag)
+    return tags_by_object_id
+
+
 def add_tag(instance, tag_name, color=None, user=None):
     """
     يضيف وسم لـ instance — لو الوسم بالاسم ده موجود بالفعل (حتى لو على
