@@ -9,9 +9,13 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 
 from accounts.models import AccountType
+from activity.models import ActivityLog
+from activity.services import diff_summary, log_activity, log_created
 from products.models import Product, ProductUnit, UnitDiscount
 from products.matching import normalize_name
 from staff.permissions import admin_required
+
+_TRACKED_ACCOUNT_TYPE_FIELDS = ['name', 'default_unit_size', 'is_active']
 
 DISCOUNTS_PAGE_SIZE = 20
 
@@ -43,11 +47,12 @@ def account_type_add(request):
         elif AccountType.objects.filter(name=name).exists():
             messages.error(request, f'يوجد نوع حساب بنفس الاسم "{name}" بالفعل.')
         else:
-            AccountType.objects.create(
+            account_type = AccountType.objects.create(
                 name=name,
                 default_unit_size=default_unit_size,
                 is_active=is_active,
             )
+            log_created(account_type, user=request.user)
             messages.success(request, f'تم إضافة نوع الحساب "{name}" بنجاح.')
             return redirect('staff:account_types')
 
@@ -73,10 +78,14 @@ def account_type_edit(request, pk):
         elif AccountType.objects.exclude(pk=account_type.pk).filter(name=name).exists():
             messages.error(request, f'يوجد نوع حساب بنفس الاسم "{name}" بالفعل.')
         else:
+            old_values = {f: getattr(account_type, f) for f in _TRACKED_ACCOUNT_TYPE_FIELDS}
             account_type.name = name
             account_type.default_unit_size = default_unit_size
             account_type.is_active = is_active
             account_type.save()
+            summary = diff_summary(old_values, account_type, _TRACKED_ACCOUNT_TYPE_FIELDS)
+            if summary:
+                log_activity(account_type, ActivityLog.Event.UPDATED, user=request.user, changes_summary=summary)
             messages.success(request, f'تم تعديل نوع الحساب "{name}" بنجاح.')
             return redirect('staff:account_types')
 
@@ -120,6 +129,8 @@ def account_type_discounts(request, pk):
         )
 
     if request.method == 'POST':
+        changed_units = []  # ملخص التغييرات الفعلية بس، عشان نسجلها كنشاط واحد مجمّع بعد الحفظ
+
         with transaction.atomic():
             for key, raw_value in request.POST.items():
                 if not key.startswith('discount_'):
@@ -132,6 +143,10 @@ def account_type_discounts(request, pk):
                 except (ProductUnit.DoesNotExist, ValueError):
                     continue
 
+                existing = UnitDiscount.objects.filter(unit_id=unit_id, account_type=account_type).first()
+                old_percent = existing.discount_percent if existing else None
+                unit_label = f'{unit.product.name_ar} ({unit.get_size_display()})'
+
                 # الخصم بيتحدد يدويًا بس على الوحدة الصغرى، أو على الكبرى لو
                 # المنتج مالوش وحدة صغرى أصلًا. أي وحدة كبرى معاها صغرى، سعرها
                 # بيتحسب تلقائيًا (مش قابلة للتعديل يدويًا) — فبنشيل أي صف قديم
@@ -140,11 +155,15 @@ def account_type_discounts(request, pk):
                     size=ProductUnit.Size.SMALL,
                 ).exists()
                 if has_small_sibling:
-                    UnitDiscount.objects.filter(unit_id=unit_id, account_type=account_type).delete()
+                    if existing:
+                        UnitDiscount.objects.filter(unit_id=unit_id, account_type=account_type).delete()
+                        changed_units.append(f'{unit_label}: {old_percent}% → بدون خصم (تلقائي)')
                     continue
 
                 if value == '':
-                    UnitDiscount.objects.filter(unit_id=unit_id, account_type=account_type).delete()
+                    if existing:
+                        UnitDiscount.objects.filter(unit_id=unit_id, account_type=account_type).delete()
+                        changed_units.append(f'{unit_label}: {old_percent}% → بدون خصم')
                     continue
 
                 try:
@@ -157,12 +176,21 @@ def account_type_discounts(request, pk):
                     messages.warning(request, f'نسبة الخصم يجب أن تكون بين 0 و100 (وحدة #{unit_id}) — تم تجاهلها.')
                     continue
 
+                if old_percent != discount_percent:
+                    old_label = f'{old_percent}%' if old_percent is not None else 'بدون خصم'
+                    changed_units.append(f'{unit_label}: {old_label} → {discount_percent}%')
+
                 UnitDiscount.objects.update_or_create(
                     unit_id=unit_id,
                     account_type=account_type,
                     defaults={'discount_percent': discount_percent},
                 )
 
+        if changed_units:
+            log_activity(
+                account_type, ActivityLog.Event.UPDATED,
+                user=request.user, changes_summary='، '.join(changed_units),
+            )
         messages.success(request, f'تم حفظ قائمة الخصومات لنوع الحساب "{account_type.name}".')
         base_url = reverse('staff:account_type_discounts', kwargs={'pk': account_type.pk})
         params = {}

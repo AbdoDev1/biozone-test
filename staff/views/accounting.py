@@ -8,6 +8,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 
 from accounts.models import User, ClientProfile
 from accounting.models import AccountTransaction
+from activity.models import ActivityLog
+from activity.services import log_activity
 from staff.permissions import perm_required
 from staff.excel_utils import build_simple_workbook, workbook_response
 
@@ -93,7 +95,7 @@ def accounting_quick_entry(request):
 
     if kind == AccountTransaction.Kind.PAYMENT:
         try:
-            AccountTransaction.objects.create(
+            txn = AccountTransaction.objects.create(
                 client=profile.user,
                 kind=AccountTransaction.Kind.PAYMENT,
                 amount=-amount,
@@ -104,6 +106,17 @@ def accounting_quick_entry(request):
         except ValidationError as e:
             messages.error(request, f'المبلغ غير صالح: {"، ".join(e.messages)}')
         else:
+            method_label = txn.get_method_display() if method else ''
+            summary = f'دفعة بقيمة {amount} ج.م لـ {profile.business_name}'
+            if method_label:
+                summary += f' ({method_label})'
+            log_activity(
+                txn,
+                ActivityLog.Event.CREATED,
+                user=request.user,
+                changes_summary=summary,
+                note=note,
+            )
             messages.success(request, f'تم تسجيل دفعة بقيمة {amount} ج.م لـ {profile.business_name}.')
             from notifications.services import notify
             from notifications.models import Notification
@@ -128,7 +141,7 @@ def accounting_quick_entry(request):
             return redirect('staff:accounting_overview')
         signed_amount = amount if direction == 'increase' else -amount
         try:
-            AccountTransaction.objects.create(
+            txn = AccountTransaction.objects.create(
                 client=profile.user,
                 kind=AccountTransaction.Kind.ADJUSTMENT,
                 amount=signed_amount,
@@ -138,6 +151,14 @@ def accounting_quick_entry(request):
         except ValidationError as e:
             messages.error(request, f'المبلغ غير صالح: {"، ".join(e.messages)}')
         else:
+            direction_label = 'زيادة' if direction == 'increase' else 'تخفيض'
+            log_activity(
+                txn,
+                ActivityLog.Event.CREATED,
+                user=request.user,
+                changes_summary=f'تسوية ({direction_label}) بقيمة {amount} ج.م لـ {profile.business_name}',
+                note=note,
+            )
             messages.success(request, f'تم تسجيل تسوية لـ {profile.business_name}.')
     else:
         messages.error(request, 'نوع الحركة غير معروف.')

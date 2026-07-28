@@ -69,6 +69,11 @@
             الحركات
             <span class="text-xs text-gray-400">({{ movements_count }})</span>
         </button>
+        <button @click="tab = 'activity'"
+                :class="tab === 'activity' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                class="px-5 py-3 border-b-2 font-medium whitespace-nowrap transition">
+            سجل النشاط
+        </button>
     </div>
 
     <!-- تبويب: بيانات الصنف -->
@@ -201,6 +206,12 @@
         {% if movements_count > 20 %}
         <p class="text-xs text-gray-400 text-center py-3">بيعرض آخر 20 حركة من إجمالي {{ movements_count }}.</p>
         {% endif %}
+    </div>
+
+    <!-- تبويب: سجل النشاط -->
+    <div x-show="tab === 'activity'" class="p-6 md:p-8">
+        {% load activity_tags %}
+        {% activity_panel item %}
     </div>
 </div>
 

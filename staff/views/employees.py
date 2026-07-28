@@ -4,7 +4,11 @@ from django.contrib.auth.hashers import make_password
 from django.shortcuts import render, redirect, get_object_or_404
 
 from accounts.models import User, Employee
+from activity.models import ActivityLog
+from activity.services import diff_summary, log_activity, log_created
 from staff.permissions import admin_required, grouped_permission_fields, permissions_queryset_from_codenames
+
+_TRACKED_EMPLOYEE_FIELDS = ['username', 'email', 'first_name', 'last_name', 'role', 'is_active']
 
 
 _TEXT_INPUT_CLASS = 'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400'
@@ -56,14 +60,31 @@ def employee_list(request):
 
 
 def _save_employee_permissions(request, employee):
-    """بتحفظ الصلاحيات الدقيقة المختارة (من كتالوج staff.permissions) للموظف."""
+    """
+    بتحفظ الصلاحيات الدقيقة المختارة (من كتالوج staff.permissions) للموظف.
+    بترجع ملخص عربي مختصر للصلاحيات المضافة/المحذوفة (أو '' لو مفيش تغيير)
+    عشان يتسجل في ActivityLog من الـ view نفسه.
+    """
+    old_permissions = set(employee.user_permissions.all()) if employee.pk else set()
+
     if employee.role == User.Role.ADMIN:
         # الأدمن Superuser تلقائيًا وعنده كل الصلاحيات دايمًا — مفيش داعي
         # نخزّن له صلاحيات فردية (ولو كان عنده صلاحيات قديمة من دور سابق، بنشيلها).
         employee.user_permissions.clear()
-        return
-    selected_codenames = request.POST.getlist('perm_codenames')
-    employee.user_permissions.set(permissions_queryset_from_codenames(selected_codenames))
+        new_permissions = set()
+    else:
+        selected_codenames = request.POST.getlist('perm_codenames')
+        new_permissions = set(permissions_queryset_from_codenames(selected_codenames))
+        employee.user_permissions.set(new_permissions)
+
+    added = new_permissions - old_permissions
+    removed = old_permissions - new_permissions
+    parts = []
+    if added:
+        parts.append('إضافة: ' + '، '.join(sorted(p.name for p in added)))
+    if removed:
+        parts.append('سحب: ' + '، '.join(sorted(p.name for p in removed)))
+    return ' | '.join(parts)
 
 
 @admin_required
@@ -75,7 +96,13 @@ def employee_add(request):
             employee.password = make_password(form.cleaned_data['password1'])
             employee.status = User.Status.ACTIVE
             employee.save()
-            _save_employee_permissions(request, employee)
+            permissions_summary = _save_employee_permissions(request, employee)
+            log_created(employee, user=request.user)
+            if permissions_summary:
+                log_activity(
+                    employee, ActivityLog.Event.UPDATED,
+                    user=request.user, changes_summary=permissions_summary,
+                )
             messages.success(request, f'تم إضافة الموظف {employee.username} بنجاح.')
             return redirect('staff:employees')
     else:
@@ -98,8 +125,16 @@ def employee_edit(request, pk):
             elif employee.pk == request.user.pk and form.cleaned_data['role'] != User.Role.ADMIN:
                 messages.error(request, 'لا يمكنك تغيير دورك الخاص كمدير.')
             else:
+                old_values = {f: getattr(employee, f) for f in _TRACKED_EMPLOYEE_FIELDS}
                 employee = form.save()
-                _save_employee_permissions(request, employee)
+                fields_summary = diff_summary(old_values, employee, _TRACKED_EMPLOYEE_FIELDS)
+                permissions_summary = _save_employee_permissions(request, employee)
+                summary = ' | '.join(s for s in [fields_summary, permissions_summary] if s)
+                if summary:
+                    log_activity(
+                        employee, ActivityLog.Event.UPDATED,
+                        user=request.user, changes_summary=summary,
+                    )
                 messages.success(request, f'تم تحديث بيانات وصلاحيات {employee.username}.')
                 return redirect('staff:employees')
     else:
@@ -119,8 +154,14 @@ def employee_toggle_active(request, pk):
         messages.error(request, 'لا يمكنك إيقاف حسابك الخاص.')
         return redirect('staff:employees')
 
+    was_active = employee.is_active
     employee.is_active = not employee.is_active
     employee.save(update_fields=['is_active'])
+    log_activity(
+        employee, ActivityLog.Event.UPDATED,
+        user=request.user,
+        changes_summary='نشط: {} → {}'.format('نعم' if was_active else 'لا', 'نعم' if employee.is_active else 'لا'),
+    )
     if employee.is_active:
         messages.success(request, f'تم تفعيل حساب {employee.username}.')
     else:

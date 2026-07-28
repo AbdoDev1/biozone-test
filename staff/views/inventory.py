@@ -4,10 +4,15 @@ from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Q
+from activity.models import ActivityLog
+from activity.services import diff_summary
+from activity.services import log_activity
 from inventory.models import Inventory, StockMovement
 from products.models import ProductUnit
 from staff.permissions import perm_required
 from staff.utils import list_qs, url_with_qs, redirect_with_qs
+
+_TRACKED_INVENTORY_FIELDS = ['min_quantity', 'is_available']
 
 STAFF_LIST_PAGE_SIZE = 30
 
@@ -85,9 +90,13 @@ def update_settings(request, pk):
             messages.error(request, 'الحد الأدنى يجب أن يكون رقمًا صحيحًا غير سالب.')
             return redirect_with_qs(request, 'staff:inventory_detail', pk=pk)
 
+        old_values = {f: getattr(item, f) for f in _TRACKED_INVENTORY_FIELDS}
         item.min_quantity = min_quantity
         item.is_available = request.POST.get('is_available') == 'on'
         item.save(update_fields=['min_quantity', 'is_available'])
+        summary = diff_summary(old_values, item, _TRACKED_INVENTORY_FIELDS)
+        if summary:
+            log_activity(item, ActivityLog.Event.UPDATED, user=request.user, changes_summary=summary)
         messages.success(request, 'تم تحديث إعدادات الصنف بنجاح.')
     return redirect_with_qs(request, 'staff:inventory_detail', pk=pk)
 
